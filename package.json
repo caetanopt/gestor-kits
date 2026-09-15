@@ -17,7 +17,9 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --local > lib/supabase/database.types.ts",
+    "test:sql": "./tests/sql/run-tests.sh",
+    "test:concurrency": "./tests/sql/run-concurrency.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
