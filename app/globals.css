@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens.
+ * As cores de estado seguem a secção 25 da especificação:
+ * azul = disponível, verde = entregue, vermelho = bloqueado, âmbar = aviso.
+ */
+@theme {
+  --color-ink-50: oklch(0.985 0.002 250);
+  --color-ink-100: oklch(0.96 0.003 250);
+  --color-ink-200: oklch(0.91 0.005 250);
+  --color-ink-300: oklch(0.82 0.008 250);
+  --color-ink-400: oklch(0.65 0.012 250);
+  --color-ink-500: oklch(0.52 0.014 250);
+  --color-ink-600: oklch(0.42 0.016 250);
+  --color-ink-700: oklch(0.33 0.018 250);
+  --color-ink-800: oklch(0.24 0.018 250);
+  --color-ink-900: oklch(0.17 0.016 250);
+
+  --color-available: oklch(0.55 0.17 255);
+  --color-available-soft: oklch(0.95 0.03 255);
+  --color-delivered: oklch(0.58 0.15 152);
+  --color-delivered-soft: oklch(0.95 0.04 152);
+  --color-blocked: oklch(0.56 0.21 25);
+  --color-blocked-soft: oklch(0.95 0.04 25);
+  --color-warning: oklch(0.72 0.15 75);
+  --color-warning-soft: oklch(0.96 0.05 85);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-ink-100);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Alvo de toque mínimo confortável em tablet (WCAG 2.2 AA: 24px; usamos 44px). */
+@layer base {
+  button,
+  [role="button"],
+  input,
+  select {
+    min-height: 2.75rem;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-available);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
