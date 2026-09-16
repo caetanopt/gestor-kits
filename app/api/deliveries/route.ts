@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
-import { requireApiUser } from "@/lib/auth/dal";
+import { requireApiSession } from "@/lib/auth/dal";
 import { deliveryRequestSchema } from "@/lib/validation/delivery";
 import { deliverKit } from "@/server/use-cases/deliveries";
 
@@ -14,7 +14,7 @@ import { deliverKit } from "@/server/use-cases/deliveries";
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireApiUser();
+    await requireApiSession();
 
     const body: unknown = await request.json().catch(() => null);
     const parsed = deliveryRequestSchema.safeParse(body);

@@ -78,12 +78,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";
 
-  // As rotas de API nunca são redirecionadas: um redirecionamento devolveria
-  // HTML a quem espera JSON. O route handler trata do caso sem sessão com
-  // requireApiUser(), que produz um 401 com o envelope de erro normal.
-  const isApi = pathname.startsWith("/api/");
-
-  if (!user && !isLogin && !isApi) {
+  if (!user && !isLogin) {
     const target = request.nextUrl.clone();
     target.pathname = "/login";
     target.searchParams.set("seguinte", pathname);
@@ -103,13 +98,21 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Tudo exceto ficheiros estáticos, o endpoint de saúde e os ficheiros
-     * que os rastreadores e o browser vão buscar à raiz.
+     * Tudo exceto ficheiros estáticos, as rotas de API e os ficheiros que os
+     * rastreadores e o browser vão buscar à raiz.
+     *
+     * As rotas de API ficam de fora porque aqui não tênhamos nada a fazer por
+     * elas: nunca são redirecionadas (um redirecionamento devolveria HTML a
+     * quem espera JSON) e cada route handler valida a sessão por si, com um
+     * getUser() que também a renova e grava os cookies atualizados na
+     * resposta. Mantê-las aqui custava uma ida ao Supabase por pedido — em
+     * cada tecla escrita na pesquisa — para repetir o que o handler faz a
+     * seguir.
      *
      * O robots.txt tem de ficar de fora: redirecionado para o login, um
      * rastreador receberia HTML em vez das diretivas, e a aplicação ficaria
      * sem a instrução de não indexar que é suposto dar.
      */
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

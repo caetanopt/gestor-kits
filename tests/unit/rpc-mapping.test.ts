@@ -2,10 +2,10 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { mapPostgrestError } from "@/lib/api/rpc";
 
-function pgError(message: string): PostgrestError {
+function pgError(message: string, code = "P0001"): PostgrestError {
   const error = {
     message,
-    code: "P0001",
+    code,
     details: "",
     hint: "",
     name: "PostgrestError",
@@ -28,6 +28,22 @@ describe("mapPostgrestError", () => {
   it("reconhece NO_STOCK e EMPLOYEE_NOT_FOUND", () => {
     expect(mapPostgrestError(pgError("NO_STOCK")).code).toBe("NO_STOCK");
     expect(mapPostgrestError(pgError("EMPLOYEE_NOT_FOUND")).status).toBe(404);
+  });
+
+  it("uma recusa de sessão da base de dados é 401, não 500", () => {
+    // As funções de distribuição têm execute revogado a anon, por isso um
+    // pedido sem sessão nem chega a correr a função e não traz um código de
+    // negócio. Sem este ramo, o operador via "o servidor respondeu de forma
+    // inesperada" quando o que aconteceu foi a sessão acabar.
+    const negado = mapPostgrestError(
+      pgError("permission denied for function search_employees_for_delivery", "42501"),
+    );
+    expect(negado.code).toBe("UNAUTHENTICATED");
+    expect(negado.status).toBe(401);
+
+    for (const code of ["PGRST301", "PGRST302"]) {
+      expect(mapPostgrestError(pgError("JWT expired", code)).status).toBe(401);
+    }
   });
 
   it("não expõe detalhes internos de erros inesperados", () => {

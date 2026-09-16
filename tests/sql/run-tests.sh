@@ -317,6 +317,12 @@ r=$(as_user "$ADMIN" "select set_user_active('$OPER', false) ->> 'isActive';")
 check "administrador desativa um distribuidor" "false" "$r"
 r=$(as_user "$OPER" "select find_employee_for_delivery('12345');")
 check "conta desativada perde acesso imediatamente" "INACTIVE_ACCOUNT" "$r"
+# As rotas de distribuição confiam nesta verificação: o route handler só
+# confirma que há sessão, quem decide se a conta está ativa é a função SQL.
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ');")
+check "conta desativada também não pesquisa por nome" "INACTIVE_ACCOUNT" "$r"
+r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid());")
+check "conta desativada não entrega" "INACTIVE_ACCOUNT" "$r"
 r=$(as_user "$ADMIN" "select set_user_active('$OPER', true) ->> 'isActive';")
 check "administrador reativa" "true" "$r"
 r=$(as_user "$OPER" "select find_employee_for_delivery('12345') -> 'employee' ->> 'name';")

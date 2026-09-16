@@ -273,8 +273,12 @@ export function DistributionScreen() {
   /**
    * Sugestões enquanto se escreve.
    *
-   * O atraso de 250 ms evita um pedido por tecla; combinado com a regra do
-   * primeiro espaço, a maioria das teclas nem chega a provocar um pedido.
+   * O atraso evita um pedido por tecla; combinado com a regra do primeiro
+   * espaço, a maioria das teclas nem chega a provocar um pedido.
+   *
+   * Eram 250 ms quando cada pesquisa custava quatro idas ao Supabase. Agora
+   * que custa duas, o atraso pesa mais na espera do que o pedido em si, e
+   * 120 ms continuam a apanhar a escrita normal sem a perseguir.
    */
   useEffect(() => {
     if (mode !== "nome") return;
@@ -282,7 +286,7 @@ export function DistributionScreen() {
     const termo = query;
     const temporizador = setTimeout(() => {
       void searchByName(termo, true);
-    }, 250);
+    }, 120);
 
     return () => clearTimeout(temporizador);
   }, [query, mode, searchByName]);

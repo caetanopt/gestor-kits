@@ -72,6 +72,31 @@ export async function requireApiUser(): Promise<CurrentUser> {
   return user;
 }
 
+/**
+ * Exige sessão válida, sem ler o perfil.
+ *
+ * Para as rotas de distribuição, chamadas em ciclo — a pesquisa por nome faz
+ * um pedido por cada pausa na escrita. `requireApiUser()` custa duas idas ao
+ * Supabase: uma para validar o token e outra para ler `profiles`. Aqui só se
+ * faz a primeira.
+ *
+ * A segunda não se perde, muda de sítio: `find_employee_for_delivery`,
+ * `search_employees_for_delivery` e `deliver_kit` começam todas por
+ * `is_active_user()`, dentro da mesma transação que lê os dados. É a
+ * verificação mais forte das duas: a do route handler respondia a partir de
+ * uma leitura anterior à consulta, e podia estar desatualizada quando a
+ * consulta acontecesse.
+ *
+ * Usar isto numa rota cuja função SQL não verifique a conta seria um erro.
+ */
+export async function requireApiSession(): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new AppError("UNAUTHENTICATED");
+}
+
 export async function requireApiAdmin(): Promise<CurrentUser> {
   const user = await requireApiUser();
   if (user.role !== "admin") throw new AppError("FORBIDDEN");

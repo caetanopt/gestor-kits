@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
-import { requireApiUser } from "@/lib/auth/dal";
+import { requireApiSession } from "@/lib/auth/dal";
 import { employeeNumberSchema } from "@/lib/validation/delivery";
 import { findEmployeeForDelivery } from "@/server/use-cases/deliveries";
 
@@ -16,7 +16,7 @@ export async function GET(
   context: { params: Promise<{ employeeNumber: string }> },
 ) {
   try {
-    await requireApiUser();
+    await requireApiSession();
 
     const { employeeNumber } = await context.params;
     const parsed = employeeNumberSchema.safeParse(decodeURIComponent(employeeNumber));

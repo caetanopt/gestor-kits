@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
-import { requireApiUser } from "@/lib/auth/dal";
+import { requireApiSession } from "@/lib/auth/dal";
 import { searchTermSchema } from "@/lib/validation/delivery";
 import { searchEmployeesForDelivery } from "@/server/use-cases/deliveries";
 
@@ -17,7 +17,7 @@ import { searchEmployeesForDelivery } from "@/server/use-cases/deliveries";
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireApiUser();
+    await requireApiSession();
 
     const parsed = searchTermSchema.safeParse(
       request.nextUrl.searchParams.get("q") ?? "",

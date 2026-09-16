@@ -16,6 +16,17 @@ export function mapPostgrestError(error: PostgrestError): AppError {
     return new AppError(message as ErrorCode);
   }
 
+  // Falta de sessão, dita pela própria base de dados.
+  //
+  // As funções de distribuição têm `execute` revogado a `anon`, por isso um
+  // pedido sem sessão nem chega a correr a função: o PostgreSQL recusa com
+  // 42501. Um token expirado é recusado antes disso pelo PostgREST, com
+  // PGRST301/PGRST302. Nos dois casos o que aconteceu foi a sessão acabar, e
+  // o operador precisa de o saber em vez de ver um erro interno.
+  if (error.code === "42501" || error.code === "PGRST301" || error.code === "PGRST302") {
+    return new AppError("UNAUTHENTICATED");
+  }
+
   console.error("[rpc] erro inesperado da base de dados", {
     code: error.code,
     details: error.details,
