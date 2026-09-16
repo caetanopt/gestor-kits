@@ -19,23 +19,25 @@ export function StockPanel({
           <dd className="text-ink-900 text-2xl font-semibold tabular-nums">
             {stock.allocated}
           </dd>
-          <dt className="text-ink-500 text-xs">atribuídos</dt>
+          <dt className="text-ink-700 text-xs">atribuídos</dt>
         </div>
         <div>
           <dd className="text-ink-900 text-2xl font-semibold tabular-nums">
             {stock.delivered}
           </dd>
-          <dt className="text-ink-500 text-xs">entregues</dt>
+          <dt className="text-ink-700 text-xs">entregues</dt>
         </div>
         <div>
-          <dd
-            className={`text-2xl font-semibold tabular-nums ${
-              exhausted ? "text-blocked" : "text-delivered"
-            }`}
-          >
-            {stock.available}
+          <dd className="text-2xl font-semibold tabular-nums">
+            {exhausted ? (
+              <span className="bg-laranja-500 text-ink-800 inline-block rounded-md px-2.5">
+                0<span className="sr-only"> — esgotado</span>
+              </span>
+            ) : (
+              <span className="text-ink-900">{stock.available}</span>
+            )}
           </dd>
-          <dt className="text-ink-500 text-xs">disponíveis</dt>
+          <dt className="text-ink-700 text-xs">disponíveis</dt>
         </div>
       </dl>
     </div>

@@ -55,7 +55,7 @@ export default async function HistoricoPage(props: {
     <div className="space-y-6">
       <div>
         <h1 className="text-ink-900 text-xl font-semibold">Histórico</h1>
-        <p className="text-ink-500 mt-1 text-sm">
+        <p className="text-ink-700 mt-1 text-sm">
           Todas as entregas, anulações e alterações administrativas.
         </p>
       </div>
@@ -129,13 +129,13 @@ export default async function HistoricoPage(props: {
         <div className="flex items-end gap-2 sm:col-span-5">
           <button
             type="submit"
-            className="bg-available rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
+            className="rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-white"
           >
             Filtrar
           </button>
           <Link
             href="/admin/historico"
-            className="text-ink-600 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
+            className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
           >
             Limpar
           </Link>
@@ -143,7 +143,7 @@ export default async function HistoricoPage(props: {
       </form>
 
       {entries.length === 0 ? (
-        <p className="text-ink-500 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
+        <p className="text-ink-700 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
           Sem registos para estes filtros.
         </p>
       ) : (
@@ -151,7 +151,7 @@ export default async function HistoricoPage(props: {
           <table className="w-full text-sm">
             <caption className="sr-only">Registo de ações</caption>
             <thead>
-              <tr className="border-ink-200 text-ink-600 border-b text-left">
+              <tr className="border-ink-200 text-ink-700 border-b text-left">
                 <th scope="col" className="px-4 py-2 font-medium">
                   Data e hora
                 </th>
@@ -175,41 +175,44 @@ export default async function HistoricoPage(props: {
             <tbody>
               {entries.map((entry) => (
                 <tr key={entry.id} className="border-ink-100 border-b last:border-0">
-                  <td className="text-ink-600 px-4 py-2.5 whitespace-nowrap tabular-nums">
+                  <td className="text-ink-700 px-4 py-2.5 whitespace-nowrap tabular-nums">
                     {formatDateTime(entry.performedAt)}
                   </td>
                   <td className="px-4 py-2.5">
+                    {/* A ação é distinguida por uma pastilha com fundo de cor
+                        e texto antracite: as cores da marca não têm contraste
+                        para servirem de cor de texto sobre branco. */}
                     <span
                       className={
                         entry.action === "DELIVERY_REVERSED"
-                          ? "text-blocked font-medium"
+                          ? "bg-laranja-500 text-ink-800 inline-block rounded-md px-2 py-0.5 font-semibold"
                           : entry.action === "DELIVERED"
-                            ? "text-delivered font-medium"
+                            ? "bg-eco-500 text-ink-800 inline-block rounded-md px-2 py-0.5 font-semibold"
                             : "text-ink-700"
                       }
                     >
                       {AUDIT_ACTION_LABELS[entry.action]}
                     </span>
                     {entry.notes && (
-                      <span className="text-ink-500 block text-xs">{entry.notes}</span>
+                      <span className="text-ink-700 block text-xs">{entry.notes}</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
                     {entry.employeeName ? (
                       <>
                         {entry.employeeName}
-                        <span className="text-ink-400 block text-xs tabular-nums">
+                        <span className="text-ink-700 block text-xs tabular-nums">
                           N.º {entry.employeeNumber}
                         </span>
                       </>
                     ) : (
-                      <span className="text-ink-400">—</span>
+                      <span className="text-ink-700">—</span>
                     )}
                   </td>
-                  <td className="text-ink-600 px-4 py-2.5">
-                    {entry.companyName ?? <span className="text-ink-400">—</span>}
+                  <td className="text-ink-700 px-4 py-2.5">
+                    {entry.companyName ?? <span className="text-ink-700">—</span>}
                   </td>
-                  <td className="text-ink-600 px-4 py-2.5">{entry.performedByName}</td>
+                  <td className="text-ink-700 px-4 py-2.5">{entry.performedByName}</td>
                   <td className="px-4 py-2.5 text-right">
                     {entry.action === "DELIVERED" &&
                       entry.isActiveDelivery &&
@@ -264,7 +267,7 @@ function Filter({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="text-ink-600 mb-1 block text-xs font-medium">
+      <label htmlFor={htmlFor} className="text-ink-700 mb-1 block text-xs font-medium">
         {label}
       </label>
       {children}

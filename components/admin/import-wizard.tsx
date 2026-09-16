@@ -80,7 +80,7 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
             }}
             className="text-ink-700 ring-ink-200 file:bg-ink-100 file:text-ink-700 mt-2 block w-full rounded-lg text-sm ring-1 file:mr-3 file:rounded-l-lg file:border-0 file:px-4 file:py-2.5 file:text-sm file:font-medium"
           />
-          <p className="text-ink-500 mt-2 text-xs">
+          <p className="text-ink-700 mt-2 text-xs">
             CSV ou Excel (.xlsx). Colunas:{" "}
             <code className="bg-ink-100 rounded px-1">employee_number</code>,{" "}
             <code className="bg-ink-100 rounded px-1">name</code>,{" "}
@@ -147,7 +147,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
               Primeiros colaboradores a criar
             </caption>
             <thead>
-              <tr className="border-ink-200 text-ink-600 border-y text-left">
+              <tr className="border-ink-200 text-ink-700 border-y text-left">
                 <th scope="col" className="px-4 py-2 font-medium">
                   Número
                 </th>
@@ -167,7 +167,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
                 >
                   <td className="px-4 py-2 tabular-nums">{row.employeeNumber}</td>
                   <td className="px-4 py-2">{row.name}</td>
-                  <td className="text-ink-500 px-4 py-2">{row.companyName}</td>
+                  <td className="text-ink-700 px-4 py-2">{row.companyName}</td>
                 </tr>
               ))}
             </tbody>
@@ -211,15 +211,17 @@ function IssueList({
       <ul className="mt-3 space-y-1.5 text-sm">
         {shown.map((issue, index) => (
           <li key={`${issue.line}-${index}`} className="flex gap-2">
-            <span className="text-ink-400 shrink-0 tabular-nums">linha {issue.line}</span>
-            <span className={tone === "error" ? "text-blocked" : "text-ink-600"}>
+            <span className="text-ink-700 shrink-0 tabular-nums">linha {issue.line}</span>
+            <span
+              className={tone === "error" ? "text-ink-800 font-medium" : "text-ink-700"}
+            >
               {issue.message}
             </span>
           </li>
         ))}
       </ul>
       {issues.length > shown.length && (
-        <p className="text-ink-500 mt-2 text-xs">
+        <p className="text-ink-700 mt-2 text-xs">
           … e mais {issues.length - shown.length}.
         </p>
       )}

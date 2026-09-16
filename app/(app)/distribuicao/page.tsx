@@ -11,7 +11,7 @@ export default async function DistribuicaoPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-ink-600 text-center text-lg font-semibold tracking-wide uppercase">
+      <h1 className="text-ink-700 text-center text-lg font-semibold tracking-wide uppercase">
         Distribuição de Kits
       </h1>
       <DistributionScreen />

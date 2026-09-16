@@ -64,11 +64,11 @@ export function ReverseDeliveryButton({
   }
 
   return (
-    <div className="bg-warning-soft ring-warning/40 space-y-2 rounded-xl p-3 text-left ring-1">
+    <div className="bg-amarelo-100 ring-amarelo-300 space-y-2 rounded-xl p-3 text-left ring-1">
       <p className="text-ink-800 text-sm font-medium">
         Anular a entrega a {employeeLabel}?
       </p>
-      <p className="text-ink-600 text-xs">O kit volta a ficar disponível.</p>
+      <p className="text-ink-700 text-xs">O kit volta a ficar disponível.</p>
 
       {error && <Alert tone="error">{error}</Alert>}
 

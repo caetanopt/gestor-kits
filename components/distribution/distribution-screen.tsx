@@ -180,7 +180,7 @@ export function DistributionScreen() {
       <div className="ring-ink-200 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
         <label
           htmlFor="employee-number"
-          className="text-ink-600 block text-center text-sm font-medium"
+          className="text-ink-700 block text-center text-sm font-medium"
         >
           Número de colaborador
         </label>
@@ -205,7 +205,7 @@ export function DistributionScreen() {
             // obrigar o operador a voltar a tocar no campo.
             if (!busy) requestAnimationFrame(focusSearch);
           }}
-          className="bg-ink-50 text-ink-900 ring-ink-200 focus:ring-available mt-3 w-full rounded-xl px-4 py-5 text-center text-4xl font-semibold tracking-wider tabular-nums ring-1 focus:bg-white focus:ring-2 disabled:opacity-60"
+          className="bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 py-5 text-center text-4xl font-semibold tracking-wider tabular-nums ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60"
           placeholder="—"
         />
 
@@ -224,7 +224,7 @@ export function DistributionScreen() {
           </Button>
         </div>
 
-        <p className="text-ink-400 mt-3 text-center text-xs">
+        <p className="text-ink-700 mt-3 text-center text-xs">
           <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Enter</kbd> pesquisa
           · <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Esc</kbd> limpa
         </p>
@@ -233,7 +233,7 @@ export function DistributionScreen() {
       {/* Resultado ------------------------------------------------------- */}
       <div aria-live="polite" aria-atomic="true" className="space-y-6">
         {screen.kind === "busy" && (
-          <p className="text-ink-500 text-center text-sm">{screen.label}</p>
+          <p className="text-ink-700 text-center text-sm">{screen.label}</p>
         )}
 
         {screen.kind === "error" && <Alert tone="error">{screen.message}</Alert>}
@@ -271,18 +271,18 @@ function FoundCard({
     <div className="ring-ink-200 space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
       <div>
         <h2 className="text-ink-900 text-2xl font-semibold">{employee.name}</h2>
-        <p className="text-ink-500 mt-1 text-sm">
+        <p className="text-ink-700 mt-1 text-sm">
           N.º {employee.employeeNumber} · {company.name}
         </p>
       </div>
 
       <div>
         {alreadyDelivered ? (
-          <StatusBadge state="blocked" label="JÁ ENTREGUE" />
+          <StatusBadge state="bloqueado" label="JÁ ENTREGUE" />
         ) : exhausted ? (
-          <StatusBadge state="blocked" label="STOCK ESGOTADO" />
+          <StatusBadge state="bloqueado" label="STOCK ESGOTADO" />
         ) : (
-          <StatusBadge state="available" label="KIT AINDA NÃO ENTREGUE" />
+          <StatusBadge state="disponivel" label="KIT AINDA NÃO ENTREGUE" />
         )}
       </div>
 
@@ -314,7 +314,7 @@ function FoundCard({
       </Button>
 
       {canDeliver && (
-        <p className="text-ink-400 text-center text-xs">
+        <p className="text-ink-700 text-center text-xs">
           Ou prima <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Enter</kbd>{" "}
           com o campo de pesquisa vazio.
         </p>
@@ -327,9 +327,12 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
   const { employee, company, stock, repeated } = result;
 
   return (
-    <div className="bg-delivered-soft ring-delivered/30 space-y-5 rounded-2xl p-5 ring-1 sm:p-6">
+    <div className="bg-eco-100 ring-eco-300 space-y-5 rounded-2xl p-5 ring-1 sm:p-6">
       <div className="flex items-start gap-3">
-        <span aria-hidden="true" className="text-delivered text-3xl leading-none">
+        <span
+          aria-hidden="true"
+          className="bg-eco-500 text-ink-800 flex size-10 shrink-0 items-center justify-center rounded-full text-xl font-bold"
+        >
           ✓
         </span>
         <div>
@@ -338,7 +341,7 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
               ? "Kit já tinha sido entregue nesta operação."
               : "Kit entregue com sucesso."}
           </p>
-          <p className="text-ink-600 mt-1 text-sm">
+          <p className="text-ink-700 mt-1 text-sm">
             {employee.name} · N.º {employee.employeeNumber}
           </p>
         </div>
@@ -349,7 +352,7 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
         {stock.available === 1 ? "kit ainda disponível" : "kits ainda disponíveis"}.
       </p>
 
-      <p className="text-ink-500 text-sm">Escreva o número seguinte para continuar.</p>
+      <p className="text-ink-700 text-sm">Escreva o número seguinte para continuar.</p>
     </div>
   );
 }

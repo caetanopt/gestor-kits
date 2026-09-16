@@ -23,12 +23,15 @@ export function Field({
       </label>
       {children}
       {hint && (
-        <p id={hintId} className="text-ink-500 text-xs">
+        <p id={hintId} className="text-ink-700 text-xs">
           {hint}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-blocked text-sm font-medium">
+        <p
+          id={errorId}
+          className="border-laranja-500 text-ink-800 border-s-3 ps-2 text-sm font-semibold"
+        >
           {error}
         </p>
       )}
@@ -41,7 +44,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
-      className={`text-ink-900 ring-ink-200 placeholder:text-ink-400 focus:ring-available disabled:bg-ink-100 w-full rounded-lg bg-white px-3.5 py-2.5 ring-1 focus:ring-2 ${className}`}
+      className={`text-ink-900 ring-ink-200 placeholder:text-ink-700 disabled:bg-ink-100 w-full rounded-lg bg-white px-3.5 py-2.5 ring-1 focus:ring-2 focus:ring-cyan-500 ${className}`}
       {...props}
     />
   );

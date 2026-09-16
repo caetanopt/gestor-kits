@@ -1,33 +1,92 @@
 @import "tailwindcss";
 
-/*
- * Design tokens.
- * As cores de estado seguem a secção 25 da especificação:
- * azul = disponível, verde = entregue, vermelho = bloqueado, âmbar = aviso.
- */
+/* ==========================================================================
+ * Identidade Caetano — Brand Book, abril 2026
+ *
+ * Paleta transcrita do manual, sem cores inventadas.
+ *
+ * O manual fornece tintas mais claras de cada cor (pensadas para impressão)
+ * mas nenhuma variante escura. Isso determina como as cores podem ser usadas
+ * no digital, porque só duas passam nos rácios de contraste da WCAG:
+ *
+ *   sobre branco          azul profundo 13.6:1 · antracite 11.6:1
+ *                         cyan 2.5:1 · verde 2.6:1 · laranja 1.9:1 · amarelo 1.4:1
+ *   antracite sobre cor   laranja 6.1:1 · amarelo 8.0:1 · verde 4.5:1 · cyan 4.6:1
+ *
+ * Daí as três regras que este ficheiro implementa:
+ *
+ *   1. Texto e botões principais usam azul profundo ou antracite.
+ *   2. As cores secundárias sinalizam estado como FUNDO, com texto antracite
+ *      por cima — nunca como cor de texto, nunca com texto branco.
+ *   3. As tintas claras servem de fundo a caixas de aviso, com texto
+ *      antracite.
+ * ========================================================================== */
+
 @theme {
-  --color-ink-50: oklch(0.985 0.002 250);
-  --color-ink-100: oklch(0.96 0.003 250);
-  --color-ink-200: oklch(0.91 0.005 250);
-  --color-ink-300: oklch(0.82 0.008 250);
-  --color-ink-400: oklch(0.65 0.012 250);
-  --color-ink-500: oklch(0.52 0.014 250);
-  --color-ink-600: oklch(0.42 0.016 250);
-  --color-ink-700: oklch(0.33 0.018 250);
-  --color-ink-800: oklch(0.24 0.018 250);
-  --color-ink-900: oklch(0.17 0.016 250);
+  /* ── Primárias ───────────────────────────────────────────────────────── */
+  --color-azul-900: #002e5d; /* azul profundo — cor principal da marca */
+  --color-azul-700: #33587d;
+  --color-azul-500: #66829e;
+  --color-azul-300: #99abbe;
+  --color-azul-100: #ccd5df;
 
-  --color-available: oklch(0.55 0.17 255);
-  --color-available-soft: oklch(0.95 0.03 255);
-  --color-delivered: oklch(0.58 0.15 152);
-  --color-delivered-soft: oklch(0.95 0.04 152);
-  --color-blocked: oklch(0.56 0.21 25);
-  --color-blocked-soft: oklch(0.95 0.04 25);
-  --color-warning: oklch(0.72 0.15 75);
-  --color-warning-soft: oklch(0.96 0.05 85);
+  /* ── Neutras ─────────────────────────────────────────────────────────────
+   * Hierarquia de texto. Só os três primeiros tons servem para texto:
+   *
+   *   ink-900  títulos                   13.6:1 sobre branco
+   *   ink-800  texto corrente            11.6:1
+   *   ink-700  texto auxiliar e rótulos   6.3:1
+   *
+   * Do ink-600 para baixo ficam abaixo de 4.5:1 e servem apenas para fundos,
+   * contornos e separadores. O cinza médio da marca (#9CAEB8) dá 2.3:1 sobre
+   * branco, por isso nunca é cor de texto.
+   * ──────────────────────────────────────────────────────────────────────── */
+  --color-ink-900: #002e5d; /* títulos: azul profundo */
+  --color-ink-800: #2e3a46; /* texto corrente: cinza antracite */
+  --color-ink-700: #58616b; /* texto auxiliar */
+  --color-ink-600: #828990;
+  --color-ink-500: #9caeb8; /* cinza médio */
+  --color-ink-400: #b0bec6;
+  --color-ink-300: #c4ced4;
+  --color-ink-200: #d7dfe3;
+  --color-ink-100: #ebeff1;
+  --color-ink-50: #f5f8f9;
 
+  /* ── Secundárias ─────────────────────────────────────────────────────── */
+  --color-cyan-500: #00aeef; /* azul cyan */
+  --color-cyan-300: #66cef5;
+  --color-cyan-100: #cceffc; /* azul céu */
+
+  --color-eco-500: #49b489; /* verde eco */
+  --color-eco-300: #92d2b8;
+  --color-eco-100: #dbf0e7; /* verde pastel */
+
+  --color-laranja-500: #ffa931; /* laranja dinâmico */
+  --color-laranja-300: #ffcb83;
+  --color-laranja-100: #ffeed6;
+
+  --color-amarelo-500: #ffd23f; /* amarelo liberdade */
+  --color-amarelo-300: #ffe48c;
+  --color-amarelo-100: #fff6d9;
+
+  --color-claim: #2aa8e0; /* cor do claim "Your favourite way to move" */
+
+  /* ── Papéis de estado ────────────────────────────────────────────────────
+   * Nomes semânticos para o domínio. Sempre usados como FUNDO.
+   * ──────────────────────────────────────────────────────────────────── */
+  --color-disponivel: var(--color-cyan-500);
+  --color-disponivel-suave: var(--color-cyan-100);
+  --color-entregue: var(--color-eco-500);
+  --color-entregue-suave: var(--color-eco-100);
+  --color-bloqueado: var(--color-laranja-500);
+  --color-bloqueado-suave: var(--color-laranja-100);
+  --color-aviso: var(--color-amarelo-500);
+  --color-aviso-suave: var(--color-amarelo-100);
+
+  /* Montserrat, a tipografia secundária da marca. O logótipo é lettering
+     autoral e nunca deve ser substituído por tipografia. */
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     sans-serif;
 }
 
@@ -37,13 +96,20 @@ html {
 
 body {
   background-color: var(--color-ink-100);
-  color: var(--color-ink-900);
+  color: var(--color-ink-800);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Alvo de toque mínimo confortável em tablet (WCAG 2.2 AA: 24px; usamos 44px). */
 @layer base {
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink-900);
+    letter-spacing: -0.01em;
+  }
+
+  /* Alvo de toque confortável para utilização em tablet durante o evento. */
   button,
   [role="button"],
   input,
@@ -52,7 +118,7 @@ body {
   }
 
   :focus-visible {
-    outline: 3px solid var(--color-available);
+    outline: 3px solid var(--color-cyan-500);
     outline-offset: 2px;
   }
 }

@@ -3,14 +3,25 @@ import type { ButtonHTMLAttributes } from "react";
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "md" | "lg" | "xl";
 
+/**
+ * Cores segundo o Brand Book.
+ *
+ * O azul profundo é a única cor da marca que suporta texto branco com
+ * contraste suficiente (13.6:1), por isso é a cor de toda a ação principal —
+ * tal como no site institucional.
+ *
+ * A ação destrutiva usa laranja dinâmico com texto antracite (6.1:1). A
+ * paleta não tem vermelho; o laranja é a cor de alerta disponível, e o texto
+ * escuro por cima mantém-na legível.
+ */
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-available text-white hover:brightness-110 active:brightness-95 disabled:bg-ink-300",
+    "bg-azul-900 text-white hover:bg-azul-700 disabled:bg-ink-200 disabled:text-ink-700",
   secondary:
-    "bg-white text-ink-800 ring-1 ring-ink-200 hover:bg-ink-50 disabled:text-ink-400",
+    "bg-white text-ink-900 ring-1 ring-ink-300 hover:bg-ink-50 disabled:text-ink-700",
   danger:
-    "bg-blocked text-white hover:brightness-110 active:brightness-95 disabled:bg-ink-300",
-  ghost: "text-ink-600 hover:bg-ink-100 disabled:text-ink-300",
+    "bg-laranja-500 text-ink-800 hover:bg-laranja-300 disabled:bg-ink-200 disabled:text-ink-700",
+  ghost: "text-ink-700 hover:bg-ink-100 disabled:text-ink-700",
 };
 
 const SIZES: Record<Size, string> = {

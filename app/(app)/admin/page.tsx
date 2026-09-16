@@ -43,10 +43,10 @@ export default async function AdminPage() {
 
       {companies.length === 0 ? (
         <div className="ring-ink-200 rounded-2xl bg-white p-8 text-center ring-1">
-          <p className="text-ink-500 text-sm">Ainda não existem empresas.</p>
+          <p className="text-ink-700 text-sm">Ainda não existem empresas.</p>
           <Link
             href="/admin/empresas"
-            className="text-available mt-3 inline-block text-sm font-medium underline"
+            className="text-azul-900 mt-3 inline-block text-sm font-medium underline"
           >
             Criar a primeira empresa
           </Link>
@@ -58,7 +58,7 @@ export default async function AdminPage() {
               Distribuição por empresa
             </caption>
             <thead>
-              <tr className="border-ink-200 text-ink-600 border-y text-left">
+              <tr className="border-ink-200 text-ink-700 border-y text-left">
                 <th scope="col" className="px-4 py-2 font-medium">
                   Empresa
                 </th>
@@ -83,7 +83,7 @@ export default async function AdminPage() {
                   <tr key={company.id} className="border-ink-100 border-b last:border-0">
                     <td className="text-ink-900 px-4 py-2.5 font-medium">
                       {company.name}
-                      <span className="text-ink-400 ms-2 text-xs font-normal">
+                      <span className="text-ink-700 ms-2 text-xs font-normal">
                         {company.code}
                       </span>
                     </td>
@@ -93,12 +93,8 @@ export default async function AdminPage() {
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {company.delivered}
                     </td>
-                    <td
-                      className={`px-4 py-2.5 text-right font-semibold tabular-nums ${
-                        company.available === 0 ? "text-blocked" : "text-delivered"
-                      }`}
-                    >
-                      {company.available}
+                    <td className="px-4 py-2.5 text-right">
+                      <Disponiveis value={company.available} />
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -107,11 +103,11 @@ export default async function AdminPage() {
                           aria-hidden="true"
                         >
                           <div
-                            className="bg-delivered h-full rounded-full"
+                            className="bg-eco-500 h-full rounded-full"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="text-ink-600 w-10 tabular-nums">{pct}%</span>
+                        <span className="text-ink-700 w-10 tabular-nums">{pct}%</span>
                       </div>
                     </td>
                   </tr>
@@ -153,17 +149,40 @@ function Stat({
   value: number;
   tone?: "delivered" | "blocked";
 }) {
-  const color =
+  // A cor identifica a métrica através de uma barra, não do número: sobre
+  // branco, as cores secundárias da marca não têm contraste para texto.
+  const bar =
     tone === "delivered"
-      ? "text-delivered"
+      ? "bg-eco-500"
       : tone === "blocked"
-        ? "text-blocked"
-        : "text-ink-900";
+        ? "bg-laranja-500"
+        : "bg-ink-300";
 
   return (
-    <div className="ring-ink-200 rounded-2xl bg-white p-4 shadow-sm ring-1">
-      <dd className={`text-3xl font-semibold tabular-nums ${color}`}>{value}</dd>
-      <dt className="text-ink-500 mt-1 text-xs">{label}</dt>
+    <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
+      <div aria-hidden="true" className={`h-1.5 ${bar}`} />
+      <div className="p-4">
+        <dd className="text-ink-900 text-3xl font-semibold tabular-nums">{value}</dd>
+        <dt className="text-ink-700 mt-1 text-xs">{label}</dt>
+      </div>
     </div>
   );
+}
+
+/**
+ * Número de kits disponíveis.
+ *
+ * A zero, ganha fundo laranja com texto antracite (6.1:1) em vez de texto
+ * colorido: é mais visível numa tabela e legível, ao contrário de laranja
+ * sobre branco.
+ */
+function Disponiveis({ value }: { value: number }) {
+  if (value === 0) {
+    return (
+      <span className="bg-laranja-500 text-ink-800 inline-block rounded-md px-2.5 py-1 font-bold tabular-nums">
+        0<span className="sr-only"> — esgotado</span>
+      </span>
+    );
+  }
+  return <span className="text-ink-900 font-semibold tabular-nums">{value}</span>;
 }

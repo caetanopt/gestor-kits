@@ -147,7 +147,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
       )}
 
       {companies.length === 0 ? (
-        <p className="text-ink-500 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
+        <p className="text-ink-700 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
           Ainda não existem empresas. Crie a primeira para poder importar colaboradores.
         </p>
       ) : (
@@ -157,7 +157,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
               Empresas participantes e respetivo stock de kits
             </caption>
             <thead>
-              <tr className="border-ink-200 text-ink-600 border-b text-left">
+              <tr className="border-ink-200 text-ink-700 border-b text-left">
                 <th scope="col" className="px-4 py-3 font-medium">
                   Empresa
                 </th>
@@ -185,21 +185,25 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
               {companies.map((company) => (
                 <tr key={company.id} className="border-ink-100 border-b last:border-0">
                   <td className="text-ink-900 px-4 py-3 font-medium">{company.name}</td>
-                  <td className="text-ink-500 px-4 py-3">{company.code}</td>
+                  <td className="text-ink-700 px-4 py-3">{company.code}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {company.allocated}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {company.delivered}
                   </td>
-                  <td
-                    className={`px-4 py-3 text-right font-semibold tabular-nums ${
-                      company.available === 0 ? "text-blocked" : "text-delivered"
-                    }`}
-                  >
-                    {company.available}
+                  <td className="px-4 py-3 text-right">
+                    {company.available === 0 ? (
+                      <span className="bg-laranja-500 text-ink-800 inline-block rounded-md px-2.5 py-1 font-bold tabular-nums">
+                        0<span className="sr-only"> — esgotado</span>
+                      </span>
+                    ) : (
+                      <span className="text-ink-900 font-semibold tabular-nums">
+                        {company.available}
+                      </span>
+                    )}
                   </td>
-                  <td className="text-ink-500 px-4 py-3 text-right tabular-nums">
+                  <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
                     {company.employeeCount}
                   </td>
                   <td className="px-4 py-3 text-right">
