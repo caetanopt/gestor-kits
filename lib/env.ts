@@ -13,40 +13,36 @@ import { z } from "zod";
  * erro identifica sempre a variável em falta pelo nome.
  */
 
-/** Analisa um URL sem lançar exceção. */
-function parseUrl(value: string): URL | null {
-  try {
-    return new URL(value);
-  } catch {
-    return null;
-  }
-}
-
 /**
  * URL do projeto Supabase.
  *
- * Normalizado de propósito. Uma barra final — que é o que acontece quando se
- * copia o URL da barra de endereços do browser — faz a biblioteca construir
- * `https://projeto.supabase.co//auth/v1/token`, e o gateway responde
- * `404 Invalid path specified in request URL`. Do lado da aplicação isso
- * aparece como um login que falha sempre, sem explicação nenhuma.
+ * Reduzido à origem (`https://projeto.supabase.co`), descartando barras
+ * finais, caminhos, query e fragmento.
  *
- * Um caminho a mais (por exemplo `/rest/v1`) provoca o mesmo erro, mas não se
- * corrige sozinho: esse é rejeitado com uma mensagem que diz o que fazer.
+ * Isto não é permissividade gratuita: um URL de projeto Supabase é sempre uma
+ * origem nua, e qualquer coisa a mais produz pedidos como
+ * `https://projeto.supabase.co//auth/v1/token`, a que o gateway responde
+ * `404 Invalid path specified in request URL`. Na aplicação isso aparece como
+ * um login que falha sempre, sem explicação.
+ *
+ * A versão anterior desta validação rejeitava esses casos em vez de os
+ * corrigir, o que transformava um URL mal copiado numa página de erro 500 —
+ * pior do que o problema que resolvia. Só o que não é recuperável (não ser um
+ * URL, ou não ser https) continua a ser erro.
  *
  * As verificações estão num `superRefine` e não em `refine` encadeados porque
- * o Zod executa todos os `refine`: com um valor que nem sequer é URL, o
- * segundo rebentaria com um TypeError em vez da mensagem útil.
+ * o Zod executa todos os `refine`: com um valor que nem sequer é um URL, o
+ * seguinte rebentaria com TypeError em vez da mensagem útil.
  */
 const supabaseUrlSchema = z
   .string({ message: "NEXT_PUBLIC_SUPABASE_URL é obrigatória." })
   .trim()
   .min(1, "NEXT_PUBLIC_SUPABASE_URL é obrigatória.")
-  .transform((value) => value.replace(/\/+$/, ""))
   .superRefine((value, ctx) => {
-    const url = parseUrl(value);
-
-    if (!url) {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
       ctx.addIssue({
         code: "custom",
         message:
@@ -60,17 +56,9 @@ const supabaseUrlSchema = z
         code: "custom",
         message: "NEXT_PUBLIC_SUPABASE_URL tem de começar por https://",
       });
-      return;
     }
-
-    if (url.pathname !== "/") {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "NEXT_PUBLIC_SUPABASE_URL não pode incluir caminho. Use apenas https://abcdefg.supabase.co",
-      });
-    }
-  });
+  })
+  .transform((value) => new URL(value).origin);
 
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: supabaseUrlSchema,

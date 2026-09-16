@@ -38,10 +38,15 @@ export function GET() {
   else if (url === null) problemas.push("NEXT_PUBLIC_SUPABASE_URL não é um URL válido.");
   else if (url.protocol !== "https:")
     problemas.push("NEXT_PUBLIC_SUPABASE_URL não usa https.");
+  // Caminho e barra final são corrigidos pela aplicação (ver lib/env.ts), por
+  // isso são avisos e não problemas: a aplicação funciona à mesma.
+  const avisos: string[] = [];
   if (temCaminho)
-    problemas.push(
-      `NEXT_PUBLIC_SUPABASE_URL inclui o caminho "${url?.pathname}" — remova-o.`,
+    avisos.push(
+      `NEXT_PUBLIC_SUPABASE_URL inclui o caminho "${url?.pathname}", que é ignorado. Convém removê-lo.`,
     );
+  if (temBarraFinal)
+    avisos.push("NEXT_PUBLIC_SUPABASE_URL termina em barra, que é ignorada.");
   if (anonKey === "") problemas.push("NEXT_PUBLIC_SUPABASE_ANON_KEY não está definida.");
 
   return ok({
@@ -56,6 +61,7 @@ export function GET() {
       anonKeyComprimento: anonKey.length,
     },
     problemas,
+    avisos,
     autenticacaoDesativada: Boolean(
       process.env.AUTH_BYPASS_EMAIL && process.env.AUTH_BYPASS_PASSWORD,
     ),

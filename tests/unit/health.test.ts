@@ -20,6 +20,7 @@ type HealthBody = {
       anonKeyComprimento: number;
     };
     problemas: string[];
+    avisos: string[];
     autenticacaoDesativada: boolean;
   };
 };
@@ -60,8 +61,10 @@ describe("/api/health", () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "chave";
     const { data } = await body();
     expect(data.supabase.temCaminho).toBe(true);
-    expect(data.status).toBe("configuracao_invalida");
-    expect(data.problemas.join(" ")).toContain("/rest/v1");
+    // A aplicação corrige-o, por isso é aviso e não problema.
+    expect(data.status).toBe("ok");
+    expect(data.problemas).toEqual([]);
+    expect(data.avisos.join(" ")).toContain("/rest/v1");
   });
 
   it("assinala configuração em falta", async () => {

@@ -54,10 +54,20 @@ describe("NEXT_PUBLIC_SUPABASE_URL", () => {
     expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://abcdefg.supabase.co");
   });
 
-  it("rejeita um URL com caminho, explicando o que fazer", async () => {
-    await expect(
-      load({ ...anon, NEXT_PUBLIC_SUPABASE_URL: "https://abcdefg.supabase.co/rest/v1" }),
-    ).rejects.toThrow(/não pode incluir caminho/);
+  it("descarta um caminho a mais em vez de rebentar a aplicação", async () => {
+    const env = await load({
+      ...anon,
+      NEXT_PUBLIC_SUPABASE_URL: "https://abcdefg.supabase.co/rest/v1",
+    });
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://abcdefg.supabase.co");
+  });
+
+  it("descarta query e fragmento", async () => {
+    const env = await load({
+      ...anon,
+      NEXT_PUBLIC_SUPABASE_URL: "https://abcdefg.supabase.co/?ref=painel#topo",
+    });
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe("https://abcdefg.supabase.co");
   });
 
   it("rejeita http", async () => {
