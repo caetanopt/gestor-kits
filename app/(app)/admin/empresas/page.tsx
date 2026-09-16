@@ -14,7 +14,8 @@ export default async function EmpresasPage() {
       <div>
         <h1 className="text-ink-900 text-xl font-semibold">Empresas</h1>
         <p className="text-ink-700 mt-1 text-sm">
-          Cada empresa tem um limite de kits independente.
+          Cada empresa tem um limite de kits independente. O código é gerado a partir do
+          nome e serve para identificar a empresa nos ficheiros de importação.
         </p>
       </div>
       <CompanyManager companies={companies} />

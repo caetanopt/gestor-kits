@@ -23,9 +23,17 @@ export const allocatedKitsSchema = z
   .min(0, "O número de kits não pode ser negativo.")
   .max(1_000_000, "O número de kits é implausível.");
 
+/**
+ * O código é opcional.
+ *
+ * Continua a existir na base de dados — é a chave estável que a importação
+ * usa para identificar a empresa mesmo quando o nome muda — mas quem cria a
+ * empresa não tem de o inventar: é derivado do nome em
+ * `public.derive_company_code`.
+ */
 export const companyInputSchema = z.object({
   name: companyNameSchema,
-  code: companyCodeSchema,
+  code: companyCodeSchema.optional(),
   allocatedKits: allocatedKitsSchema,
 });
 

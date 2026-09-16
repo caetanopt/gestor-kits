@@ -148,7 +148,7 @@ export type Database = {
         Args: {
           p_id: string | null;
           p_name: string;
-          p_code: string;
+          p_code: string | null;
           p_allocated_kits: number;
         };
         Returns: Json;

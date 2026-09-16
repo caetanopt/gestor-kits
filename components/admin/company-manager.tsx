@@ -7,9 +7,9 @@ import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import type { CompanyStockRow } from "@/lib/validation/company";
 
-type Draft = { id?: string; name: string; code: string; allocatedKits: string };
+type Draft = { id?: string; name: string; allocatedKits: string };
 
-const EMPTY: Draft = { name: "", code: "", allocatedKits: "0" };
+const EMPTY: Draft = { name: "", allocatedKits: "0" };
 
 type ApiEnvelope =
   | { success: true; data: unknown }
@@ -42,7 +42,8 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
       {
         method: draft.id ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: draft.name, code: draft.code, allocatedKits }),
+        // Sem código: é derivado do nome ao criar, e preservado ao editar.
+        body: JSON.stringify({ name: draft.name, allocatedKits }),
       },
     ).catch(() => null);
 
@@ -89,7 +90,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
 
           {error && <Alert tone="error">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nome" htmlFor="company-name">
               <Input
                 id="company-name"
@@ -97,16 +98,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                 required
                 maxLength={120}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              />
-            </Field>
-
-            <Field label="Código" htmlFor="company-code">
-              <Input
-                id="company-code"
-                value={draft.code}
-                required
-                maxLength={40}
-                onChange={(e) => setDraft({ ...draft, code: e.target.value })}
               />
             </Field>
 
@@ -214,7 +205,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                         setDraft({
                           id: company.id,
                           name: company.name,
-                          code: company.code,
                           allocatedKits: String(company.allocated),
                         });
                         setError(null);

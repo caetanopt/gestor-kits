@@ -132,6 +132,24 @@ r=$(q "select count(*) from public.delivery_logs where action = 'COMPANY_LIMIT_U
 check "alteração de limite fica auditada" "1" "$r"
 
 echo
+echo "═══ Código da empresa gerado automaticamente ═══"
+r=$(q "select public.derive_company_code('Águas de Portugal');")
+check "remove acentos e espaços" "AGUASDEPORTU" "$r"
+r=$(q "select public.derive_company_code('José & Filhos, Lda.');")
+check "remove pontuação" "JOSEFILHOSLD" "$r"
+r=$(q "select public.derive_company_code('•••');")
+check "nome sem letras recorre a um código genérico" "EMPRESA" "$r"
+r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null, 10) ->> 'code';")
+check "criar sem código deriva do nome" "EMPRESANOVA" "$r"
+r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null, 10) ->> 'code';")
+check "nome repetido recebe sufixo, sem colidir" "EMPRESANOV2" "$r"
+CID=$(q "select id from public.companies where name = 'Empresa Nova' limit 1;")
+r=$(as_user "$ADMIN" "select save_company('$CID', 'Outro Nome', null, 10) ->> 'code';")
+check "editar sem código preserva o código existente" "EMPRESANOVA" "$r"
+r=$(q "select count(*) from public.companies where code is null or btrim(code) = '';")
+check "nenhuma empresa fica sem código" "0" "$r"
+
+echo
 echo "═══ Secção 19: importação ═══"
 ROWS='[{"employeeNumber":"55501","name":"Novo Um","companyId":"00000000-0000-0000-0000-0000000000c1"},{"employeeNumber":"55502","name":"Novo Dois","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
 r=$(as_user "$OPER" "select import_employees('$ROWS'::jsonb);")
@@ -162,7 +180,7 @@ check "administrador consegue listar colaboradores" "7" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
 r=$(as_user "$OPER" "select count(*) from public.company_stock;")
-check "operador vê o stock das empresas" "2" "$r"
+check "operador vê o stock das empresas" "4" "$r"
 r=$(as_user "$OPER" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$OPER', gen_random_uuid());")
 check "operador não pode inserir entregas diretamente" "denied for table deliveries" "$r"
 r=$(as_user "$ADMIN" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$ADMIN', gen_random_uuid());")

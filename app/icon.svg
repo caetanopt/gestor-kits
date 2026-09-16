@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!--
+    Ícone da aplicação.
+
+    É a inicial do logótipo oficial — o traçado vetorial do "c" da wordmark,
+    recortado do ficheiro da marca, em branco sobre azul profundo. É uma das
+    aplicações previstas em 04.3 do Brand Book; nada foi redesenhado.
+
+    Interino: substituir por `app/icon.png` com o símbolo oficial da marca
+    quando este estiver disponível.
+  -->
+  <rect width="100" height="100" rx="22" fill="#002E5D" />
+  <g transform="translate(-787.352 -527.679) scale(1.05855)" fill="#FFFFFF" fill-rule="nonzero">
+    <path d="M 796.195312 562.007812 C 787.203125 562.007812 779.910156 554.71875 779.910156 545.722656 C 779.910156 536.730469 787.203125 529.4375 796.195312 529.4375 C 800.03125 529.4375 803.554688 530.761719 806.339844 532.984375 L 812.320312 524.753906 C 807.855469 521.3125 802.265625 519.273438 796.195312 519.273438 C 781.589844 519.273438 769.746094 531.113281 769.746094 545.722656 C 769.746094 560.332031 781.589844 572.175781 796.195312 572.175781 C 802.265625 572.175781 807.855469 570.128906 812.320312 566.691406 L 806.339844 558.464844 C 803.554688 560.683594 800.03125 562.007812 796.195312 562.007812 " />
+  </g>
+</svg>

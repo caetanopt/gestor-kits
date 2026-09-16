@@ -124,7 +124,9 @@ pnpm dev          # http://localhost:3000
 
 ## Preparar um evento
 
-1. **Empresas** — criar cada empresa com o respetivo limite de kits.
+1. **Empresas** — criar cada empresa com o nome e o limite de kits. O código
+   é gerado a partir do nome e serve para identificar a empresa nos ficheiros
+   de importação; não muda quando a empresa é renomeada.
 2. **Importar** — carregar o ficheiro de colaboradores (CSV ou Excel).
    O ficheiro é analisado primeiro; nada é escrito até confirmar.
 3. **Distribuição** — os operadores entram e trabalham só neste ecrã.

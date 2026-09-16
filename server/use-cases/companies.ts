@@ -46,12 +46,14 @@ export async function listCompanyStock(): Promise<CompanyStockRow[]> {
 export async function saveCompany(
   input: CompanyInput & { id?: string | undefined },
 ): Promise<CompanyResult> {
+  // Código ausente: o SQL deriva-o do nome ao criar, ou mantém o existente
+  // ao editar.
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.rpc("save_company", {
     p_id: input.id ?? null,
     p_name: input.name,
-    p_code: input.code,
+    p_code: input.code ?? null,
     p_allocated_kits: input.allocatedKits,
   });
 
