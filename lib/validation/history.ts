@@ -10,6 +10,10 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   COMPANY_CREATED: "Empresa criada",
   COMPANY_UPDATED: "Empresa alterada",
   COMPANY_LIMIT_UPDATED: "Limite de kits alterado",
+  USER_CREATED: "Conta criada",
+  USER_ROLE_CHANGED: "Perfil de conta alterado",
+  USER_ACTIVATED: "Conta ativada",
+  USER_DEACTIVATED: "Conta desativada",
 };
 
 export const historyFilterSchema = z.object({
@@ -24,6 +28,10 @@ export const historyFilterSchema = z.object({
       "COMPANY_CREATED",
       "COMPANY_UPDATED",
       "COMPANY_LIMIT_UPDATED",
+      "USER_CREATED",
+      "USER_ROLE_CHANGED",
+      "USER_ACTIVATED",
+      "USER_DEACTIVATED",
     ])
     .optional(),
   employeeNumber: z.string().trim().max(40).optional(),

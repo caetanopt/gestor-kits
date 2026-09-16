@@ -230,6 +230,53 @@ r=$(q "select email from public.employees where employee_number = '78001';")
 check "email importado é normalizado" "a@b.pt" "$r"
 
 echo
+echo "═══ Utilizadores: papéis e salvaguardas ═══"
+r=$(q "select role from public.profiles where email = 'operador@teste.pt';")
+check "o papel operator foi renomeado para distributor" "distributor" "$r"
+r=$(as_user "$OPER" "select set_user_role('$OPER', 'admin');")
+check "distribuidor não se pode promover" "FORBIDDEN" "$r"
+r=$(as_user "$ADMIN" "select set_user_role('$OPER', 'admin') ->> 'role';")
+check "administrador promove um distribuidor" "admin" "$r"
+r=$(as_user "$ADMIN" "select set_user_role('$OPER', 'distributor') ->> 'role';")
+check "administrador despromove de volta" "distributor" "$r"
+r=$(as_user "$ADMIN" "select set_user_role('$ADMIN', 'inventado');")
+check "papel desconhecido é recusado" "VALIDATION_ERROR" "$r"
+r=$(as_user "$ADMIN" "select set_user_role('00000000-0000-0000-0000-0000000000ff', 'admin');")
+check "utilizador inexistente é recusado" "USER_NOT_FOUND" "$r"
+
+echo "    — salvaguarda do último administrador —"
+r=$(as_user "$ADMIN" "select set_user_role('$ADMIN', 'distributor');")
+check "o último administrador não se pode despromover" "LAST_ADMIN" "$r"
+r=$(as_user "$ADMIN" "select set_user_active('$ADMIN', false);")
+check "o último administrador não se pode desativar" "LAST_ADMIN" "$r"
+as_user "$ADMIN" "select set_user_role('$OPER2', 'admin');" >/dev/null
+r=$(as_user "$ADMIN" "select set_user_role('$ADMIN', 'distributor') ->> 'role';")
+check "com outro administrador ativo, já pode despromover-se" "distributor" "$r"
+as_user "$OPER2" "select set_user_role('$ADMIN', 'admin');" >/dev/null
+r=$(q "select role from public.profiles where id = '$ADMIN';")
+check "e o outro administrador consegue repor" "admin" "$r"
+
+echo "    — ativação —"
+r=$(as_user "$ADMIN" "select set_user_active('$OPER', false) ->> 'isActive';")
+check "administrador desativa um distribuidor" "false" "$r"
+r=$(as_user "$OPER" "select find_employee_for_delivery('12345');")
+check "conta desativada perde acesso imediatamente" "INACTIVE_ACCOUNT" "$r"
+r=$(as_user "$ADMIN" "select set_user_active('$OPER', true) ->> 'isActive';")
+check "administrador reativa" "true" "$r"
+r=$(as_user "$OPER" "select find_employee_for_delivery('12345') -> 'employee' ->> 'name';")
+check "e o acesso volta" "João Silva" "$r"
+
+echo "    — escrita direta bloqueada —"
+r=$(as_user "$ADMIN" "update public.profiles set role = 'admin' where id = '$OPER';")
+check "nem o administrador altera perfis diretamente" "denied for table profiles" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'USER_ROLE_CHANGED';")
+check "as mudanças de papel ficam auditadas" "5" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'USER_DEACTIVATED';")
+check "a desativação fica auditada" "1" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'USER_ACTIVATED';")
+check "a reativação fica auditada" "1" "$r"
+
+echo
 echo "═══ RLS ═══"
 r=$(as_user "$OPER" "select count(*) from public.employees;")
 check "operador não consegue enumerar colaboradores" "0" "$r"
@@ -243,8 +290,8 @@ r=$(as_user "$OPER" "insert into public.deliveries (employee_id, company_id, del
 check "operador não pode inserir entregas diretamente" "denied for table deliveries" "$r"
 r=$(as_user "$ADMIN" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$ADMIN', gen_random_uuid());")
 check "nem sequer o administrador escreve entregas diretamente" "denied for table deliveries" "$r"
-r=$(as_user "$OPER" "update public.profiles set role = 'admin' where id = '$OPER'; select role from public.profiles where id = '$OPER';")
-check "operador não consegue promover-se a administrador" "operator" "$r"
+r=$(as_user "$OPER" "update public.profiles set role = 'admin' where id = '$OPER';")
+check "distribuidor não consegue promover-se a administrador" "denied for table profiles" "$r"
 
 echo
 echo "───────────────────────────────────"

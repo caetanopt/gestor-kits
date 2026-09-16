@@ -33,6 +33,14 @@ export const ERROR_CODES = {
   DUPLICATE_EMPLOYEE_NUMBER: "Já existe um colaborador com este número.",
   EMPLOYEE_EMAIL_REQUIRED: "O email do colaborador é obrigatório.",
 
+  // Utilizadores
+  USER_NOT_FOUND: "Utilizador não encontrado.",
+  LAST_ADMIN:
+    "Tem de existir sempre pelo menos um administrador ativo. Promova outra pessoa antes de fazer esta alteração.",
+  DUPLICATE_USER_EMAIL: "Já existe uma conta com este email.",
+  USER_CREATION_UNAVAILABLE:
+    "A criação de contas pela aplicação não está configurada. Crie a conta no painel do Supabase.",
+
   // Inesperado
   INTERNAL_ERROR: "Ocorreu um erro inesperado. Tente novamente.",
 } as const;
@@ -72,6 +80,7 @@ function defaultStatusFor(code: ErrorCode): number {
     case "EMPLOYEE_NOT_FOUND":
     case "COMPANY_NOT_FOUND":
     case "DELIVERY_NOT_FOUND":
+    case "USER_NOT_FOUND":
       return 404;
     case "ALREADY_DELIVERED":
     case "ALREADY_REVERSED":
@@ -79,12 +88,16 @@ function defaultStatusFor(code: ErrorCode): number {
     case "DUPLICATE_COMPANY_CODE":
     case "DUPLICATE_EMPLOYEE_NUMBER":
     case "LIMIT_BELOW_DELIVERED":
+    case "LAST_ADMIN":
+    case "DUPLICATE_USER_EMAIL":
       return 409;
     case "VALIDATION_ERROR":
     case "INVALID_FILE":
     case "INVALID_COMPANY":
     case "EMPLOYEE_EMAIL_REQUIRED":
       return 422;
+    case "USER_CREATION_UNAVAILABLE":
+      return 501;
     case "INTERNAL_ERROR":
       return 500;
   }

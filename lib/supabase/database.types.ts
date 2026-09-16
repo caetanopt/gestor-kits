@@ -6,7 +6,7 @@
  * a correr; mantenha os dois em sincronia ao alterar o esquema.
  */
 
-export type UserRole = "admin" | "operator";
+export type UserRole = "admin" | "distributor";
 
 export type AuditAction =
   | "DELIVERED"
@@ -16,7 +16,11 @@ export type AuditAction =
   | "EMPLOYEES_IMPORTED"
   | "COMPANY_CREATED"
   | "COMPANY_UPDATED"
-  | "COMPANY_LIMIT_UPDATED";
+  | "COMPANY_LIMIT_UPDATED"
+  | "USER_CREATED"
+  | "USER_ROLE_CHANGED"
+  | "USER_ACTIVATED"
+  | "USER_DEACTIVATED";
 
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
@@ -172,6 +176,11 @@ export type Database = {
         Returns: Json;
       };
       import_employees: { Args: { p_rows: Json }; Returns: Json };
+      set_user_role: { Args: { p_user_id: string; p_role: string }; Returns: Json };
+      set_user_active: {
+        Args: { p_user_id: string; p_active: boolean };
+        Returns: Json;
+      };
       save_employee: {
         Args: {
           p_id: string | null;

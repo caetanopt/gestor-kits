@@ -188,23 +188,54 @@ Atalhos: `Enter` pesquisa/entrega · `Esc` limpa.
 
 ## Perfis
 
-|                                      | Operador | Administrador |
-| ------------------------------------ | :------: | :-----------: |
-| Pesquisar colaborador e entregar kit |    ✓     |       ✓       |
-| Ver stock das empresas               |    ✓     |       ✓       |
-| Listar colaboradores                 |    ✗     |       ✓       |
-| Criar e editar empresas e limites    |    ✗     |       ✓       |
-| Importar colaboradores               |    ✗     |       ✓       |
-| Anular entregas                      |    ✗     |       ✓       |
-| Consultar histórico                  |    ✗     |       ✓       |
+|                                      | Distribuidor | Administrador |
+| ------------------------------------ | :----------: | :-----------: |
+| Dashboard                            |      ✓       |       ✓       |
+| Pesquisar colaborador e entregar kit |      ✓       |       ✓       |
+| Listar, criar e editar colaboradores |      ✗       |       ✓       |
+| Criar e editar empresas e limites    |      ✗       |       ✓       |
+| Importar colaboradores               |      ✗       |       ✓       |
+| Anular entregas                      |      ✗       |       ✓       |
+| Consultar histórico                  |      ✗       |       ✓       |
+| Gerir utilizadores                   |      ✗       |       ✓       |
+
+Os distribuidores acedem a `/dashboard` e `/distribuicao`. Tudo o que está em
+`/admin` exige perfil de administrador — a fronteira de permissões coincide
+com a estrutura do URL, e é verificada no servidor em cada pedido.
 
 O email do colaborador nunca é mostrado no ecrã de distribuição: durante o
 evento só se mostram nome, número, empresa e estado do kit.
 
-O operador não consegue ler a tabela de colaboradores: se conseguisse,
+O distribuidor não consegue ler a tabela de colaboradores: se conseguisse,
 podia enumerar toda a base de pessoas pela API do Supabase. A pesquisa do
 ecrã de distribuição passa por uma função que exige correspondência exata
 do número e devolve no máximo uma linha.
+
+## Utilizadores
+
+A área **Utilizadores**, só para administradores, lista as contas e permite
+trocar o perfil e desativar ou reativar cada uma.
+
+Nunca é possível ficar sem administradores ativos: a última despromoção ou
+desativação que deixaria a aplicação sem ninguém capaz de a gerir é recusada.
+A verificação vive na base de dados, com a linha bloqueada — verificá-la na
+aplicação seria uma condição de corrida entre dois administradores a
+despromoverem-se ao mesmo tempo.
+
+Uma conta desativada perde o acesso imediatamente, sem ter de terminar sessão.
+
+### Criar contas
+
+Criar contas a partir da aplicação exige a variável
+`SUPABASE_SERVICE_ROLE_KEY`, porque só a API de administração do Supabase Auth
+cria utilizadores. É **opcional**: sem ela a aplicação funciona na íntegra e
+as contas criam-se em **Authentication → Users** no painel do Supabase,
+aparecendo na lista como distribuidores.
+
+A opção é sua. Essa chave contorna todas as políticas de segurança da base de
+dados, por isso não é exigida só por comodidade. Se a configurar, é usada
+exclusivamente para criar contas, a partir de uma rota já restrita a
+administradores.
 
 ## Testes
 

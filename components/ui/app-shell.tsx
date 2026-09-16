@@ -12,14 +12,17 @@ export type NavItem = { href: string; label: string };
  * Isto é conveniência de interface, não segurança: cada página protege-se a
  * si própria no servidor através de requireUser()/requireAdmin().
  */
-export const OPERATOR_NAV: NavItem[] = [{ href: "/distribuicao", label: "Distribuição" }];
+export const DISTRIBUTOR_NAV: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/distribuicao", label: "Distribuição" },
+];
 
 export const ADMIN_NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/distribuicao", label: "Distribuição" },
+  ...DISTRIBUTOR_NAV,
   { href: "/admin/empresas", label: "Empresas" },
   { href: "/admin/colaboradores", label: "Colaboradores" },
   { href: "/admin/historico", label: "Histórico" },
+  { href: "/admin/utilizadores", label: "Utilizadores" },
 ];
 
 export function AppShell({
@@ -74,7 +77,7 @@ export function AppShell({
             <span className="text-ink-700 hidden text-sm sm:inline">
               {user.name}
               {user.role === "admin" && (
-                <span className="bg-amarelo-100 text-ink-700 ms-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                <span className="bg-amarelo-100 text-ink-800 ms-2 rounded-full px-2 py-0.5 text-xs font-medium">
                   Administrador
                 </span>
               )}

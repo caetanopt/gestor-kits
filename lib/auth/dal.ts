@@ -56,7 +56,9 @@ export async function requireUser(): Promise<CurrentUser> {
 /** Exige perfil de administrador numa página. */
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
-  if (user.role !== "admin") redirect("/distribuicao");
+  // Um distribuidor que chegue a um URL administrativo vai para onde tem
+  // acesso, em vez de receber um erro.
+  if (user.role !== "admin") redirect("/dashboard");
   return user;
 }
 
@@ -76,7 +78,18 @@ export async function requireApiAdmin(): Promise<CurrentUser> {
   return user;
 }
 
-/** Página inicial de cada perfil. */
-export function homePathFor(role: UserRole): "/admin" | "/distribuicao" {
-  return role === "admin" ? "/admin" : "/distribuicao";
+/**
+ * Página inicial de cada perfil.
+ *
+ * O distribuidor cai na Distribuição e não no Dashboard: durante o evento é
+ * o ecrã onde trabalha, e cada clique a menos conta.
+ */
+export function homePathFor(role: UserRole): "/dashboard" | "/distribuicao" {
+  return role === "admin" ? "/dashboard" : "/distribuicao";
 }
+
+/** Nome do perfil tal como aparece na interface. */
+export const ROLE_LABELS: Record<UserRole, string> = {
+  admin: "Administrador",
+  distributor: "Distribuidor",
+};
