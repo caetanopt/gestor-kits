@@ -65,11 +65,18 @@ supabase/migrations/0004_import_employees.sql
 supabase/migrations/0005_history_view.sql
 ```
 
-Ou, se tiver a CLI ligada ao projeto:
+Em alternativa, para uma base de dados nova, cole de uma só vez o ficheiro
+[`docs/operations/todas-as-migracoes.sql`](docs/operations/todas-as-migracoes.sql),
+que é a concatenação das cinco migrações pela ordem correta.
+
+Se tiver a CLI ligada ao projeto, prefira:
 
 ```bash
 pnpm exec supabase db push
 ```
+
+A CLI regista o que já foi aplicado; o ficheiro combinado não, por isso só
+deve ser usado uma vez, numa base de dados nova.
 
 ### Supabase local
 
