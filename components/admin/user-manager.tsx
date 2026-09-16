@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import type { UserRole } from "@/lib/supabase/database.types";
 import type { UserRow } from "@/lib/validation/user";
@@ -189,15 +189,14 @@ export function UserManager({
               htmlFor="user-role"
               hint={ROLE_DESCRIPTIONS[draft.role]}
             >
-              <select
+              <Select
                 id="user-role"
                 value={draft.role}
                 onChange={(e) => setDraft({ ...draft, role: e.target.value as UserRole })}
-                className="ring-ink-200 w-full rounded-lg bg-white px-3.5 py-2.5 ring-1 focus:ring-2 focus:ring-cyan-500"
               >
                 <option value="distributor">Distribuidor</option>
                 <option value="admin">Administrador</option>
-              </select>
+              </Select>
             </Field>
           </div>
 

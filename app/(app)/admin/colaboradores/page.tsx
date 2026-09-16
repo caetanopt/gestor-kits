@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/field";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
@@ -92,11 +93,11 @@ export default async function ColaboradoresPage(props: {
           >
             Empresa
           </label>
-          <select
+          <Select
             id="empresa"
             name="empresa"
             defaultValue={filter.companyId ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            compact
           >
             <option value="">Todas</option>
             {companies.map((company) => (
@@ -104,23 +105,23 @@ export default async function ColaboradoresPage(props: {
                 {company.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div>
           <label htmlFor="estado" className="text-ink-700 mb-1 block text-xs font-medium">
             Kit
           </label>
-          <select
+          <Select
             id="estado"
             name="estado"
             defaultValue={filter.estado ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            compact
           >
             <option value="">Todos</option>
             <option value="por-entregar">Por entregar</option>
             <option value="entregue">Entregue</option>
-          </select>
+          </Select>
         </div>
 
         <div className="flex items-end sm:col-span-4">

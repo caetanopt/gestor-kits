@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { formatDateTime } from "@/lib/format/date";
 import type { EmployeeRow } from "@/lib/validation/employee";
@@ -150,12 +150,11 @@ export function EmployeeManager({
             </Field>
 
             <Field label="Empresa" htmlFor="emp-company">
-              <select
+              <Select
                 id="emp-company"
                 value={draft.companyId}
                 required
                 onChange={(e) => setDraft({ ...draft, companyId: e.target.value })}
-                className="ring-ink-200 w-full rounded-lg bg-white px-3.5 py-2.5 ring-1 focus:ring-2 focus:ring-cyan-500"
               >
                 <option value="">Selecione…</option>
                 {companies.map((company) => (
@@ -163,7 +162,7 @@ export function EmployeeManager({
                     {company.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
           </div>
 

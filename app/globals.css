@@ -123,6 +123,31 @@ body {
   }
 }
 
+@layer components {
+  /**
+   * Seta dos campos de seleção.
+   *
+   * A seta nativa do browser encosta-se à margem direita e ignora o padding
+   * do campo, o que a deixa colada à borda e desalinhada do texto do outro
+   * lado. Desenhada aqui, tem o mesmo afastamento das duas margens e fica
+   * igual em todos os browsers — cada um desenha a sua de maneira diferente.
+   *
+   * O espaço que ela ocupa é reservado pelo `pe-*` do componente Select; sem
+   * isso, uma opção comprida passaria por baixo da seta.
+   */
+  .campo-selecao {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%2358616b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 0.75rem 0.5rem;
+  }
+
+  .campo-selecao:disabled {
+    opacity: 0.6;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

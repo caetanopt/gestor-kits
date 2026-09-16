@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/field";
 import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
@@ -76,11 +77,11 @@ export default async function HistoricoPage(props: {
         </Filter>
 
         <Filter label="Empresa" htmlFor="empresa">
-          <select
+          <Select
             id="empresa"
             name="empresa"
             defaultValue={filter.companyId ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            compact
           >
             <option value="">Todas</option>
             {companies.map((company) => (
@@ -88,15 +89,15 @@ export default async function HistoricoPage(props: {
                 {company.name}
               </option>
             ))}
-          </select>
+          </Select>
         </Filter>
 
         <Filter label="Ação" htmlFor="acao">
-          <select
+          <Select
             id="acao"
             name="acao"
             defaultValue={filter.action ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            compact
           >
             <option value="">Todas</option>
             {Object.entries(AUDIT_ACTION_LABELS).map(([value, label]) => (
@@ -104,7 +105,7 @@ export default async function HistoricoPage(props: {
                 {label}
               </option>
             ))}
-          </select>
+          </Select>
         </Filter>
 
         <Filter label="De" htmlFor="de">
