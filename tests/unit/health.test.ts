@@ -10,12 +10,16 @@ afterEach(() => {
 
 type HealthBody = {
   data: {
+    status: string;
     supabase: {
       projectRef: string | null;
-      urlTemFormatoValido: boolean;
+      origem: string | null;
+      temBarraFinal: boolean;
+      temCaminho: boolean;
       anonKeyConfigurada: boolean;
       anonKeyComprimento: number;
     };
+    problemas: string[];
     autenticacaoDesativada: boolean;
   };
 };
@@ -31,15 +35,33 @@ describe("/api/health", () => {
 
     const { data } = await body();
     expect(data.supabase.projectRef).toBe("abcdefghijklm");
-    expect(data.supabase.urlTemFormatoValido).toBe(true);
     expect(data.supabase.anonKeyConfigurada).toBe(true);
+    expect(data.status).toBe("ok");
+    expect(data.problemas).toEqual([]);
   });
 
   it("assinala um URL com formato inválido", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "abcdefghijklm.supabase.co";
     const { data } = await body();
     expect(data.supabase.projectRef).toBeNull();
-    expect(data.supabase.urlTemFormatoValido).toBe(false);
+    expect(data.status).toBe("configuracao_invalida");
+  });
+
+  it("deteta a barra final, que provoca 404 no gateway do Supabase", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://abcdefghijklm.supabase.co/";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "chave";
+    const { data } = await body();
+    expect(data.supabase.temBarraFinal).toBe(true);
+    expect(data.supabase.projectRef).toBe("abcdefghijklm");
+  });
+
+  it("deteta um caminho a mais no URL e diz qual é", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://abcdefghijklm.supabase.co/rest/v1";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "chave";
+    const { data } = await body();
+    expect(data.supabase.temCaminho).toBe(true);
+    expect(data.status).toBe("configuracao_invalida");
+    expect(data.problemas.join(" ")).toContain("/rest/v1");
   });
 
   it("assinala configuração em falta", async () => {
