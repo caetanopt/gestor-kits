@@ -21,16 +21,21 @@ select 'Vistas',
 
 union all
 select 'Funções de negócio',
-       count(*) || ' de 17',
-       case when count(*) = 17 then '✓' else '✗ FALTAM' end
-  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
- where n.nspname = 'public'
-   and p.proname in ('deliver_kit','reverse_delivery','save_company',
-                     'import_employees','find_employee_for_delivery',
-                     'is_admin','is_active_user','handle_new_user',
-                     'stock_snapshot','delivery_payload','app_error',
-                     'touch_updated_at','derive_company_code','save_employee',
-                     'set_user_role','set_user_active','active_admin_count')
+       case when count(*) filter (where p.oid is null) = 0
+            then count(*) || ' de ' || count(*)
+            else 'faltam: ' || string_agg(esperada, ', ') filter (where p.oid is null)
+       end,
+       case when count(*) filter (where p.oid is null) = 0 then '✓' else '✗ FALTAM' end
+  from unnest(array[
+         'deliver_kit','reverse_delivery','save_company','import_employees',
+         'find_employee_for_delivery','is_admin','is_active_user',
+         'handle_new_user','stock_snapshot','delivery_payload','app_error',
+         'touch_updated_at','derive_company_code','save_employee',
+         'set_user_role','set_user_active','active_admin_count'
+       ]) as esperada
+  left join pg_proc p
+    on p.proname = esperada
+   and p.pronamespace = 'public'::regnamespace
 
 union all
 select 'RLS ativo em todas as tabelas',
@@ -56,7 +61,9 @@ select 'Email obrigatório em colaboradores',
 union all
 select 'Políticas RLS',
        count(*) || ' de 8',
-       case when count(*) = 8 then '✓' else '✗ FALTAM' end
+       case when count(*) = 8 then '✓'
+            when count(*) > 8 then '✗ A MAIS — falta uma migração que remove políticas'
+            else '✗ FALTAM' end
   from pg_policies where schemaname = 'public'
 
 union all
