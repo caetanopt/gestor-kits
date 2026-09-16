@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ProgressLink } from "@/components/ui/route-progress";
 import { requireUser } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
 
@@ -47,12 +47,12 @@ export default async function DashboardPage() {
       {companies.length === 0 ? (
         <div className="ring-ink-200 rounded-2xl bg-white p-8 text-center ring-1">
           <p className="text-ink-700 text-sm">Ainda não existem empresas.</p>
-          <Link
+          <ProgressLink
             href="/admin/empresas"
             className="text-azul-900 mt-3 inline-block text-sm font-medium underline"
           >
             Criar a primeira empresa
-          </Link>
+          </ProgressLink>
         </div>
       ) : (
         <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">

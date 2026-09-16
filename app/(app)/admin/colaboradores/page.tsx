@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
 import { listEmployees } from "@/server/use-cases/employees";
@@ -58,12 +58,12 @@ export default async function ColaboradoresPage(props: {
             Adicione um a um ou importe um ficheiro.
           </p>
         </div>
-        <Link
+        <ProgressLink
           href="/admin/importar"
           className="ring-ink-300 text-ink-900 hover:bg-ink-50 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold ring-1"
         >
           Importar ficheiro
-        </Link>
+        </ProgressLink>
       </div>
 
       <form
@@ -142,12 +142,12 @@ export default async function ColaboradoresPage(props: {
           >
             Filtrar
           </button>
-          <Link
+          <ProgressLink
             href="/admin/colaboradores"
             className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
           >
             Limpar
-          </Link>
+          </ProgressLink>
         </div>
       </form>
 
@@ -161,22 +161,22 @@ export default async function ColaboradoresPage(props: {
       {(page > 0 || hasMore) && (
         <nav aria-label="Paginação" className="flex justify-between">
           {page > 0 ? (
-            <Link
+            <ProgressLink
               href={paginaHref(page - 1)}
               className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               ← Anteriores
-            </Link>
+            </ProgressLink>
           ) : (
             <span />
           )}
           {hasMore && (
-            <Link
+            <ProgressLink
               href={paginaHref(page + 1)}
               className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               Seguintes →
-            </Link>
+            </ProgressLink>
           )}
         </nav>
       )}

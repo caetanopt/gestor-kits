@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ProgressLink, RouteProgress } from "@/components/ui/route-progress";
 import { signOut } from "@/app/login/actions";
 import { isAuthBypassEnabled } from "@/lib/auth/bypass";
 import { CaetanoLogo } from "@/components/brand/caetano-logo";
@@ -36,6 +36,8 @@ export function AppShell({
 }) {
   return (
     <div className="min-h-dvh">
+      <RouteProgress />
+
       {/* Aviso deliberadamente impossível de ignorar: enquanto a autenticação
           estiver desativada, qualquer pessoa com o URL entra. */}
       {isAuthBypassEnabled() && (
@@ -63,13 +65,13 @@ export function AppShell({
 
           <nav aria-label="Navegação principal" className="flex flex-wrap gap-1">
             {nav.map((item) => (
-              <Link
+              <ProgressLink
                 key={item.href}
                 href={item.href}
                 className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 rounded-lg px-3 py-2 text-sm font-medium"
               >
                 {item.label}
-              </Link>
+              </ProgressLink>
             ))}
           </nav>
 

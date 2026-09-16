@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
 import { ImportWizard } from "@/components/admin/import-wizard";
@@ -17,12 +17,12 @@ export default async function ImportarPage() {
         <p className="text-ink-700 mt-1 text-sm">
           O ficheiro é analisado primeiro; nada é escrito até confirmar.
         </p>
-        <Link
+        <ProgressLink
           href="/admin/colaboradores"
           className="text-azul-900 mt-2 inline-block text-sm font-medium underline"
         >
           ← Voltar aos colaboradores
-        </Link>
+        </ProgressLink>
       </div>
       <ImportWizard hasCompanies={companies.length > 0} />
     </div>

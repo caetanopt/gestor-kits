@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
 import { listHistory } from "@/server/use-cases/history";
@@ -133,12 +133,12 @@ export default async function HistoricoPage(props: {
           >
             Filtrar
           </button>
-          <Link
+          <ProgressLink
             href="/admin/historico"
             className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
           >
             Limpar
-          </Link>
+          </ProgressLink>
         </div>
       </form>
 
@@ -233,22 +233,22 @@ export default async function HistoricoPage(props: {
       {(safePage > 0 || hasMore) && (
         <nav aria-label="Paginação" className="flex justify-between">
           {safePage > 0 ? (
-            <Link
+            <ProgressLink
               href={pageHref(safePage - 1)}
               className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               ← Anteriores
-            </Link>
+            </ProgressLink>
           ) : (
             <span />
           )}
           {hasMore && (
-            <Link
+            <ProgressLink
               href={pageHref(safePage + 1)}
               className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               Seguintes →
-            </Link>
+            </ProgressLink>
           )}
         </nav>
       )}

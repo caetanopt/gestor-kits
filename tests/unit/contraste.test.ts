@@ -18,6 +18,14 @@ describe("cores da marca como texto", () => {
     expect(contraste(TEXTO.auxiliar, "#FFFFFF")).toBeGreaterThanOrEqual(AA);
   });
 
+  it("a barra de progresso cumpre o mínimo de elementos não textuais", () => {
+    // 3:1 é o limiar para gráficos e componentes de interface, mais baixo que
+    // o do texto. O cyan seria a escolha natural para uma barra de progresso
+    // e não chega lá — daqui sai a decisão de usar azul profundo.
+    expect(contraste(PALETA.azulProfundo, "#FFFFFF")).toBeGreaterThanOrEqual(3);
+    expect(contraste(PALETA.azulCyan, "#FFFFFF")).toBeLessThan(3);
+  });
+
   it("as cores secundárias NÃO servem de texto — daí serem usadas como fundo", () => {
     for (const cor of [
       PALETA.azulCyan,
