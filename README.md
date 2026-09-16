@@ -292,3 +292,9 @@ no SQL Editor. A causa mais frequente é a conta ter sido criada sem ligar
 **Auto Confirm User**;
 [`docs/operations/corrigir-login.sql`](docs/operations/corrigir-login.sql) tem
 a correção para cada caso.
+
+Para não andar a adivinhar,
+[`docs/operations/repor-conta-admin.sql`](docs/operations/repor-conta-admin.sql)
+trata das três causas de uma só vez: define uma palavra-passe nova, confirma o
+email e garante o perfil de administrador ativo. Basta alterar o email e a
+palavra-passe nas duas primeiras linhas.
