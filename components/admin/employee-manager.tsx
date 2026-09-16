@@ -67,7 +67,7 @@ export function EmployeeManager({
         body: JSON.stringify({
           employeeNumber: draft.employeeNumber,
           name: draft.name,
-          email: draft.email.trim() || undefined,
+          email: draft.email,
           companyId: draft.companyId,
         }),
       },
@@ -136,11 +136,12 @@ export function EmployeeManager({
               />
             </Field>
 
-            <Field label="Email" htmlFor="emp-email" hint="Opcional.">
+            <Field label="Email" htmlFor="emp-email">
               <Input
                 id="emp-email"
                 type="email"
                 value={draft.email}
+                required
                 maxLength={254}
                 autoComplete="off"
                 autoCapitalize="none"
@@ -221,8 +222,16 @@ export function EmployeeManager({
                     {employee.employeeNumber}
                   </td>
                   <td className="text-ink-800 px-4 py-3">{employee.name}</td>
-                  <td className="text-ink-700 px-4 py-3">
-                    {employee.email ?? <span className="text-ink-700">—</span>}
+                  <td className="px-4 py-3">
+                    {employee.email ? (
+                      <span className="text-ink-700">{employee.email}</span>
+                    ) : (
+                      // Registo anterior à obrigatoriedade do email. Editá-lo
+                      // obriga a preenchê-lo.
+                      <span className="bg-amarelo-500 text-ink-800 inline-block rounded-md px-2 py-0.5 text-xs font-semibold">
+                        Sem email
+                      </span>
+                    )}
                   </td>
                   <td className="text-ink-700 px-4 py-3">{employee.companyName}</td>
                   <td className="px-4 py-3">

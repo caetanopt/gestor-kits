@@ -130,7 +130,8 @@ pnpm dev          # http://localhost:3000
 2. **Colaboradores** — adicionar um a um, ou importar um ficheiro (CSV ou
    Excel). O ficheiro é analisado primeiro; nada é escrito até confirmar. A
    listagem permite pesquisar por número, nome ou email, filtrar por empresa
-   e por estado do kit, e editar qualquer colaborador.
+   e por estado do kit, e editar qualquer colaborador. O email é obrigatório;
+   o filtro "apenas sem email" encontra registos criados antes dessa regra.
 3. **Distribuição** — os operadores entram e trabalham só neste ecrã.
 
 ### Formato do ficheiro de colaboradores
@@ -138,11 +139,11 @@ pnpm dev          # http://localhost:3000
 ```csv
 employee_number,name,company,email
 12345,João Silva,Empresa A,joao.silva@empresa.pt
-12346,Ana Costa,Empresa A,
+12346,Ana Costa,Empresa A,ana.costa@empresa.pt
 98989,Rui Sousa,Empresa B,rui.sousa@empresa.pt
 ```
 
-A coluna `email` é opcional, tal como o valor de cada linha.
+Todas as colunas são obrigatórias.
 
 São aceites também:
 
@@ -160,8 +161,7 @@ Regras da importação:
 - números repetidos no ficheiro e colaboradores já existentes são
   reportados com o número da linha e ignorados;
 - uma linha inválida não impede as restantes de serem importadas;
-- um email malformado não rejeita a linha: o colaborador é criado sem email e
-  o relatório assinala a ocorrência.
+- uma linha sem email, ou com email malformado, é rejeitada.
 
 > **Zeros à esquerda:** se a coluna do número estiver formatada como
 > número numa folha de Excel, o `012345` é guardado como `12345` e os

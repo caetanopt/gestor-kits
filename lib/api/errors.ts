@@ -31,6 +31,7 @@ export const ERROR_CODES = {
 
   // Colaboradores
   DUPLICATE_EMPLOYEE_NUMBER: "Já existe um colaborador com este número.",
+  EMPLOYEE_EMAIL_REQUIRED: "O email do colaborador é obrigatório.",
 
   // Inesperado
   INTERNAL_ERROR: "Ocorreu um erro inesperado. Tente novamente.",
@@ -82,6 +83,7 @@ function defaultStatusFor(code: ErrorCode): number {
     case "VALIDATION_ERROR":
     case "INVALID_FILE":
     case "INVALID_COMPANY":
+    case "EMPLOYEE_EMAIL_REQUIRED":
       return 422;
     case "INTERNAL_ERROR":
       return 500;

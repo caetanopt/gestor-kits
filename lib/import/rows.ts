@@ -69,7 +69,7 @@ export type ImportCandidate = {
   line: number;
   employeeNumber: string;
   name: string;
-  email: string | null;
+  email: string;
   companyId: string;
   companyName: string;
 };
@@ -106,6 +106,13 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     issues.push({
       line: 1,
       message: "Não foi encontrada a coluna do nome. Cabeçalhos aceites: name, nome.",
+    });
+  }
+  if (headerMap.email === undefined) {
+    issues.push({
+      line: 1,
+      message:
+        "Não foi encontrada a coluna do email, que é obrigatória. Cabeçalhos aceites: email, e-mail, correio.",
     });
   }
   if (headerMap.company === undefined && headerMap.companyCode === undefined) {
@@ -190,20 +197,23 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     }
     seen.set(key, line);
 
-    // O email é opcional: uma morada malformada não deve impedir a
-    // importação do colaborador, por isso é descartada com um aviso em vez
-    // de rejeitar a linha inteira.
-    let email: string | null = null;
-    if (rawEmail) {
-      if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) && rawEmail.length <= 254) {
-        email = rawEmail.toLowerCase();
-      } else {
-        issues.push({
-          line,
-          message: `Email inválido ignorado: "${rawEmail}". O colaborador ${number.data} é importado sem email.`,
-        });
-      }
+    // O email é obrigatório: a linha sem email válido é rejeitada, como
+    // acontece com o nome ou com a empresa.
+    if (!rawEmail) {
+      issues.push({
+        line,
+        message: `Falta o email do colaborador ${number.data}.`,
+      });
+      continue;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) || rawEmail.length > 254) {
+      issues.push({
+        line,
+        message: `Email inválido: "${rawEmail}" (colaborador ${number.data}).`,
+      });
+      continue;
+    }
+    const email = rawEmail.toLowerCase();
 
     candidates.push({
       line,

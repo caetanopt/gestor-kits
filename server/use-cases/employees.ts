@@ -36,6 +36,7 @@ export async function listEmployees(
 
   if (filter.companyId) query = query.eq("company_id", filter.companyId);
   if (filter.estado) query = query.eq("kit_delivered", filter.estado === "entregue");
+  if (filter.semEmail) query = query.is("email", null);
 
   if (filter.q) {
     // Pesquisa por número, nome ou email. As vírgulas e parênteses têm
@@ -79,7 +80,7 @@ export async function saveEmployee(
     p_id: input.id ?? null,
     p_employee_number: input.employeeNumber,
     p_name: input.name,
-    p_email: input.email ?? null,
+    p_email: input.email,
     p_company_id: input.companyId,
   });
 

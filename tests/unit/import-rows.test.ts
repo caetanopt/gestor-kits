@@ -53,7 +53,9 @@ describe("mapHeaders", () => {
 describe("analyseRows", () => {
   it("aceita o formato exato da especificação", () => {
     const result = analyse(
-      "employee_number,name,company\n12345,João Silva,Empresa A\n12346,Ana Costa,Empresa A",
+      "employee_number,name,company,email\n" +
+        "12345,João Silva,Empresa A,joao@a.pt\n" +
+        "12346,Ana Costa,Empresa A,ana@a.pt",
     );
     expect(result.issues).toHaveLength(0);
     expect(result.candidates).toHaveLength(2);
@@ -66,23 +68,25 @@ describe("analyseRows", () => {
   });
 
   it("resolve a empresa ignorando acentos e maiúsculas", () => {
-    const result = analyse("numero,nome,empresa\n1,Teste,AGUAS DE PORTUGAL");
+    const result = analyse("numero,nome,empresa,email\n1,Teste,AGUAS DE PORTUGAL,t@a.pt");
     expect(result.issues).toHaveLength(0);
     expect(result.candidates[0]?.companyId).toBe(COMPANIES[2]!.id);
   });
 
   it("resolve a empresa pelo código quando o nome não bate certo", () => {
-    const result = analyse("numero,nome,empresa\n1,Teste,SMC");
+    const result = analyse("numero,nome,empresa,email\n1,Teste,SMC,t@a.pt");
     expect(result.candidates[0]?.companyId).toBe(COMPANIES[1]!.id);
   });
 
   it("dá prioridade ao código quando existem as duas colunas", () => {
-    const result = analyse("numero,nome,empresa,codigo\n1,Teste,Empresa A,SMC");
+    const result = analyse(
+      "numero,nome,empresa,codigo,email\n1,Teste,Empresa A,SMC,t@a.pt",
+    );
     expect(result.candidates[0]?.companyId).toBe(COMPANIES[1]!.id);
   });
 
   it("rejeita empresa desconhecida em vez de a criar", () => {
-    const result = analyse("numero,nome,empresa\n1,Teste,Empresa Fantasma");
+    const result = analyse("numero,nome,empresa,email\n1,Teste,Empresa Fantasma,t@a.pt");
     expect(result.candidates).toHaveLength(0);
     expect(result.issues[0]?.message).toContain("Empresa Fantasma");
     expect(result.issues[0]?.line).toBe(2);
@@ -90,7 +94,9 @@ describe("analyseRows", () => {
 
   it("deteta números repetidos dentro do ficheiro", () => {
     const result = analyse(
-      "numero,nome,empresa\n12345,João,Empresa A\n12345,Outro João,Empresa A",
+      "numero,nome,empresa,email\n" +
+        "12345,João,Empresa A,j@a.pt\n" +
+        "12345,Outro João,Empresa A,o@a.pt",
     );
     expect(result.candidates).toHaveLength(1);
     expect(result.duplicatesInFile).toHaveLength(1);
@@ -99,7 +105,10 @@ describe("analyseRows", () => {
 
   it("assinala a linha em falta sem parar o resto do ficheiro", () => {
     const result = analyse(
-      "numero,nome,empresa\n1,Ana,Empresa A\n2,,Empresa A\n3,Rui,Empresa A",
+      "numero,nome,empresa,email\n" +
+        "1,Ana,Empresa A,a@a.pt\n" +
+        "2,,Empresa A,x@a.pt\n" +
+        "3,Rui,Empresa A,r@a.pt",
     );
     expect(result.candidates).toHaveLength(2);
     expect(result.issues).toHaveLength(1);
@@ -109,10 +118,10 @@ describe("analyseRows", () => {
   it("ignora linhas totalmente vazias", () => {
     const result = analyseRows(
       [
-        ["numero", "nome", "empresa"],
-        ["1", "Ana", "Empresa A"],
-        ["", "", ""],
-        ["2", "Rui", "Empresa A"],
+        ["numero", "nome", "empresa", "email"],
+        ["1", "Ana", "Empresa A", "a@a.pt"],
+        ["", "", "", ""],
+        ["2", "Rui", "Empresa A", "r@a.pt"],
       ],
       COMPANIES,
     );
@@ -123,19 +132,20 @@ describe("analyseRows", () => {
   it("indica que faltam cabeçalhos em vez de processar lixo", () => {
     const result = analyse("coluna1,coluna2\n1,Ana");
     expect(result.candidates).toHaveLength(0);
-    expect(result.issues).toHaveLength(3);
+    expect(result.issues).toHaveLength(4);
     expect(result.issues.every((i) => i.line === 1)).toBe(true);
   });
 
   it("aceita um ficheiro do Excel português de ponta a ponta", () => {
     const file =
-      "﻿N.º Colaborador;Nome;Empresa\r\n" +
-      '12345;"Silva, João";Empresa A\r\n' +
-      "12346;Ana Costa;ÁGUAS DE PORTUGAL\r\n";
+      "﻿N.º Colaborador;Nome;Empresa;E-mail\r\n" +
+      '12345;"Silva, João";Empresa A;joao@a.pt\r\n' +
+      "12346;Ana Costa;ÁGUAS DE PORTUGAL;ana@adp.pt\r\n";
     const result = analyse(file);
     expect(result.issues).toHaveLength(0);
     expect(result.candidates).toHaveLength(2);
     expect(result.candidates[0]?.name).toBe("Silva, João");
+    expect(result.candidates[0]?.email).toBe("joao@a.pt");
     expect(result.candidates[1]?.companyId).toBe(COMPANIES[2]!.id);
   });
 
@@ -154,25 +164,33 @@ describe("analyseRows", () => {
     }
   });
 
-  it("o colaborador entra sem email quando a coluna não existe", () => {
+  it("exige a coluna de email", () => {
     const result = analyse("numero,nome,empresa\n1,Ana,Empresa A");
-    expect(result.candidates[0]?.email).toBeNull();
+    expect(result.candidates).toHaveLength(0);
+    expect(result.issues.some((i) => i.message.includes("email"))).toBe(true);
   });
 
-  it("um email malformado não rejeita a linha — o colaborador entra sem ele", () => {
+  it("rejeita a linha sem email", () => {
+    const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A,");
+    expect(result.candidates).toHaveLength(0);
+    expect(result.issues[0]?.message).toContain("Falta o email");
+  });
+
+  it("rejeita a linha com email malformado", () => {
     const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A,não-é-email");
-    expect(result.candidates).toHaveLength(1);
-    expect(result.candidates[0]?.email).toBeNull();
-    expect(result.issues[0]?.message).toContain("Email inválido ignorado");
+    expect(result.candidates).toHaveLength(0);
+    expect(result.issues[0]?.message).toContain("Email inválido");
   });
 
   it("uma linha só com email é ignorada como as outras vazias", () => {
-    const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A\n,,,");
+    const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A,a@a.pt\n,,,");
     expect(result.candidates).toHaveLength(1);
   });
 
   it("rejeita um número de colaborador com caracteres perigosos", () => {
-    const result = analyse('numero,nome,empresa\n"\'; drop table x; --",Ana,Empresa A');
+    const result = analyse(
+      'numero,nome,empresa,email\n"\'; drop table x; --",Ana,Empresa A,a@a.pt',
+    );
     expect(result.candidates).toHaveLength(0);
     expect(result.issues[0]?.message).toContain("inválido");
   });

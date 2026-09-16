@@ -8,18 +8,19 @@ export const employeeNameSchema = z
   .max(160, "O nome é demasiado longo (máximo 160 caracteres).");
 
 /**
- * Email do colaborador.
+ * Email do colaborador. Obrigatório.
  *
- * Opcional: nem todos os colaboradores têm email conhecido, e exigi-lo
- * bloquearia importações legítimas. Uma string vazia é tratada como ausente.
+ * Também imposto em `public.save_employee` e `public.import_employees`: a
+ * validação aqui dá mensagens úteis, mas a garantia está na base de dados,
+ * que é o único caminho de escrita.
  */
 export const employeeEmailSchema = z
-  .string()
+  .string({ message: "Indique o email do colaborador." })
   .trim()
+  .min(1, "Indique o email do colaborador.")
   .max(254, "O email é demasiado longo.")
   .email("Email inválido.")
-  .optional()
-  .or(z.literal("").transform(() => undefined));
+  .transform((valor) => valor.toLowerCase());
 
 export const employeeInputSchema = z.object({
   employeeNumber: employeeNumberSchema,
@@ -41,6 +42,9 @@ export const employeeFilterSchema = z.object({
   q: z.string().trim().max(160).optional(),
   companyId: z.string().uuid().optional(),
   estado: z.enum(["entregue", "por-entregar"]).optional(),
+  // Colaboradores criados antes de o email passar a obrigatório. Sem forma de
+  // os encontrar, ficariam incompletos para sempre.
+  semEmail: z.boolean().optional(),
 });
 
 export type EmployeeInput = z.infer<typeof employeeInputSchema>;

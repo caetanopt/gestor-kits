@@ -7,9 +7,14 @@ const base = {
   companyId: "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
 };
 
+/** `base` sem email; `completo` é o mínimo aceite. */
+const completo = { ...base, email: "joao@empresa.pt" };
+
 describe("employeeInputSchema", () => {
-  it("aceita um colaborador sem email", () => {
-    expect(employeeInputSchema.safeParse(base).success).toBe(true);
+  it("exige email", () => {
+    expect(employeeInputSchema.safeParse(base).success).toBe(false);
+    expect(employeeInputSchema.safeParse({ ...base, email: "" }).success).toBe(false);
+    expect(employeeInputSchema.safeParse({ ...base, email: "   " }).success).toBe(false);
   });
 
   it("aceita um colaborador com email", () => {
@@ -17,10 +22,9 @@ describe("employeeInputSchema", () => {
     expect(r.success && r.data.email).toBe("joao@empresa.pt");
   });
 
-  it("trata o email vazio como ausente", () => {
-    const r = employeeInputSchema.safeParse({ ...base, email: "" });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.email).toBeUndefined();
+  it("normaliza o email para minúsculas", () => {
+    const r = employeeInputSchema.safeParse({ ...base, email: "Joao@Empresa.PT" });
+    expect(r.success && r.data.email).toBe("joao@empresa.pt");
   });
 
   it("remove espaços à volta do email", () => {
@@ -37,11 +41,11 @@ describe("employeeInputSchema", () => {
   });
 
   it("exige empresa", () => {
-    const semEmpresa: Record<string, unknown> = { ...base };
+    const semEmpresa: Record<string, unknown> = { ...completo };
     delete semEmpresa["companyId"];
     expect(employeeInputSchema.safeParse(semEmpresa).success).toBe(false);
     expect(
-      employeeInputSchema.safeParse({ ...base, companyId: "não-é-uuid" }).success,
+      employeeInputSchema.safeParse({ ...completo, companyId: "não-é-uuid" }).success,
     ).toBe(false);
   });
 

@@ -26,6 +26,7 @@ export default async function ColaboradoresPage(props: {
     q: single("q"),
     companyId: single("empresa"),
     estado: single("estado"),
+    semEmail: single("sem-email") === "1",
   });
   const filter = parsed.success ? parsed.data : {};
 
@@ -119,6 +120,19 @@ export default async function ColaboradoresPage(props: {
             <option value="por-entregar">Por entregar</option>
             <option value="entregue">Entregue</option>
           </select>
+        </div>
+
+        <div className="flex items-end sm:col-span-4">
+          <label className="text-ink-800 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="sem-email"
+              value="1"
+              defaultChecked={filter.semEmail === true}
+              className="size-4 min-h-0"
+            />
+            Apenas sem email
+          </label>
         </div>
 
         <div className="flex items-end gap-2 sm:col-span-4">

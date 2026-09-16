@@ -20,6 +20,32 @@ describe("AppError", () => {
     expect(new AppError("EMPLOYEE_NOT_FOUND").status).toBe(404);
   });
 
+  it("mapeia cada código para o estado esperado", () => {
+    const esperado: Record<ErrorCode, number> = {
+      UNAUTHENTICATED: 401,
+      FORBIDDEN: 403,
+      INACTIVE_ACCOUNT: 403,
+      EMPLOYEE_NOT_FOUND: 404,
+      COMPANY_NOT_FOUND: 404,
+      DELIVERY_NOT_FOUND: 404,
+      ALREADY_DELIVERED: 409,
+      ALREADY_REVERSED: 409,
+      NO_STOCK: 409,
+      DUPLICATE_COMPANY_CODE: 409,
+      DUPLICATE_EMPLOYEE_NUMBER: 409,
+      LIMIT_BELOW_DELIVERED: 409,
+      VALIDATION_ERROR: 422,
+      INVALID_FILE: 422,
+      INVALID_COMPANY: 422,
+      EMPLOYEE_EMAIL_REQUIRED: 422,
+      INTERNAL_ERROR: 500,
+    };
+
+    for (const [code, status] of Object.entries(esperado)) {
+      expect(new AppError(code as ErrorCode).status, code).toBe(status);
+    }
+  });
+
   it("permite sobrepor o estado", () => {
     expect(new AppError("NO_STOCK", { status: 400 }).status).toBe(400);
   });

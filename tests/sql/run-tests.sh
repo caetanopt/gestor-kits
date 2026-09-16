@@ -155,7 +155,7 @@ check "nenhuma empresa fica sem código" "0" "$r"
 
 echo
 echo "═══ Secção 19: importação ═══"
-ROWS='[{"employeeNumber":"55501","name":"Novo Um","companyId":"00000000-0000-0000-0000-0000000000c1"},{"employeeNumber":"55502","name":"Novo Dois","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
+ROWS='[{"employeeNumber":"55501","name":"Novo Um","email":"um@exemplo.pt","companyId":"00000000-0000-0000-0000-0000000000c1"},{"employeeNumber":"55502","name":"Novo Dois","email":"dois@exemplo.pt","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
 r=$(as_user "$OPER" "select import_employees('$ROWS'::jsonb);")
 check "operador não pode importar" "FORBIDDEN" "$r"
 r=$(as_user "$ADMIN" "select import_employees('$ROWS'::jsonb) ->> 'inserted';")
@@ -166,10 +166,10 @@ r=$(q "select count(*) from public.employees where employee_number in ('55501','
 check "existe exatamente um de cada" "2" "$r"
 r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEES_IMPORTED';")
 check "importação fica auditada" "2" "$r"
-DUP='[{"employeeNumber":"12345","name":"Colisao","companyId":"00000000-0000-0000-0000-0000000000c2"}]'
+DUP='[{"employeeNumber":"12345","name":"Colisao","email":"c@exemplo.pt","companyId":"00000000-0000-0000-0000-0000000000c2"}]'
 r=$(as_user "$ADMIN" "select import_employees('$DUP'::jsonb) ->> 'skipped';")
 check "número já existente noutra empresa é ignorado" "1" "$r"
-BAD='[{"employeeNumber":"55503","name":"Sem Empresa","companyId":"00000000-0000-0000-0000-0000000000ff"}]'
+BAD='[{"employeeNumber":"55503","name":"Sem Empresa","email":"se@exemplo.pt","companyId":"00000000-0000-0000-0000-0000000000ff"}]'
 r=$(as_user "$ADMIN" "select import_employees('$BAD'::jsonb);")
 check "empresa inexistente aborta a importação inteira" "violates foreign key" "$r"
 r=$(q "select count(*) from public.employees where employee_number = '55503';")
@@ -177,17 +177,19 @@ check "nada foi escrito na importação abortada" "0" "$r"
 
 echo
 echo "═══ Colaboradores: criação, edição e email ═══"
-r=$(as_user "$OPER" "select save_employee(null, '77001', 'Novo Colaborador', null, '00000000-0000-0000-0000-0000000000c1');")
+r=$(as_user "$OPER" "select save_employee(null, '77001', 'Novo Colaborador', 'op@exemplo.pt', '00000000-0000-0000-0000-0000000000c1');")
 check "operador não pode criar colaboradores" "FORBIDDEN" "$r"
 r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Novo Colaborador', 'Novo@Exemplo.PT ', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
 check "email é normalizado para minúsculas e sem espaços" "novo@exemplo.pt" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Sem Email', '', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
-check "email vazio fica nulo, não string vazia" "" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Duplicado', null, '00000000-0000-0000-0000-0000000000c1');")
+r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Sem Email', '', '00000000-0000-0000-0000-0000000000c1');")
+check "email vazio é recusado" "EMPLOYEE_EMAIL_REQUIRED" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Com Email', 'dois@exemplo.pt', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
+check "email preenchido é aceite" "dois@exemplo.pt" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Duplicado', 'dup@exemplo.pt', '00000000-0000-0000-0000-0000000000c1');")
 check "número duplicado é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '77003', 'Empresa Inexistente', null, '00000000-0000-0000-0000-0000000000ff');")
+r=$(as_user "$ADMIN" "select save_employee(null, '77003', 'Empresa Inexistente', 'x@exemplo.pt', '00000000-0000-0000-0000-0000000000ff');")
 check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '', 'Sem Número', null, '00000000-0000-0000-0000-0000000000c1');")
+r=$(as_user "$ADMIN" "select save_employee(null, '', 'Sem Número', 'y@exemplo.pt', '00000000-0000-0000-0000-0000000000c1');")
 check "número em falta é recusado" "VALIDATION_ERROR" "$r"
 EID=$(q "select id from public.employees where employee_number = '77001';")
 r=$(as_user "$ADMIN" "select save_employee('$EID', '77001', 'Nome Corrigido', 'corrigido@exemplo.pt', '00000000-0000-0000-0000-0000000000c2') ->> 'name';")
@@ -219,6 +221,11 @@ echo "═══ Importação com email ═══"
 ROWS_E='[{"employeeNumber":"78001","name":"Com Email","email":"A@B.PT","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
 r=$(as_user "$ADMIN" "select import_employees('$ROWS_E'::jsonb) ->> 'inserted';")
 check "importa uma linha com email" "1" "$r"
+ROWS_S='[{"employeeNumber":"78002","name":"Sem Email","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
+r=$(as_user "$ADMIN" "select import_employees('$ROWS_S'::jsonb);")
+check "importação recusa linha sem email" "EMPLOYEE_EMAIL_REQUIRED" "$r"
+r=$(q "select count(*) from public.employees where employee_number = '78002';")
+check "nada foi escrito nessa importação" "0" "$r"
 r=$(q "select email from public.employees where employee_number = '78001';")
 check "email importado é normalizado" "a@b.pt" "$r"
 
