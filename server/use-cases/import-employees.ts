@@ -12,7 +12,12 @@ export type ImportReport = {
   alreadyExists: ImportIssue[];
   duplicatesInFile: ImportIssue[];
   issues: ImportIssue[];
-  preview: { employeeNumber: string; name: string; companyName: string }[];
+  preview: {
+    employeeNumber: string;
+    name: string;
+    email: string | null;
+    companyName: string;
+  }[];
   committed: boolean;
   inserted: number;
   skipped: number;
@@ -111,6 +116,7 @@ export async function importEmployees(input: {
     preview: toInsert.slice(0, 10).map((c) => ({
       employeeNumber: c.employeeNumber,
       name: c.name,
+      email: c.email,
       companyName: c.companyName,
     })),
     committed: false,
@@ -124,6 +130,7 @@ export async function importEmployees(input: {
     p_rows: toInsert.map((c) => ({
       employeeNumber: c.employeeNumber,
       name: c.name,
+      email: c.email,
       companyId: c.companyId,
     })),
   });

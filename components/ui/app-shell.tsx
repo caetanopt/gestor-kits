@@ -18,7 +18,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard" },
   { href: "/distribuicao", label: "Distribuição" },
   { href: "/admin/empresas", label: "Empresas" },
-  { href: "/admin/importar", label: "Importar" },
+  { href: "/admin/colaboradores", label: "Colaboradores" },
   { href: "/admin/historico", label: "Histórico" },
 ];
 

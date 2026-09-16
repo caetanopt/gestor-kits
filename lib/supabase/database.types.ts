@@ -57,12 +57,23 @@ export type Database = {
           employee_number: string;
           employee_number_key: string;
           name: string;
+          email: string | null;
           company_id: string;
           created_at: string;
           updated_at: string;
         };
-        Insert: { employee_number: string; name: string; company_id: string };
-        Update: { employee_number?: string; name?: string; company_id?: string };
+        Insert: {
+          employee_number: string;
+          name: string;
+          email?: string | null;
+          company_id: string;
+        };
+        Update: {
+          employee_number?: string;
+          name?: string;
+          email?: string | null;
+          company_id?: string;
+        };
         Relationships: [];
       };
       deliveries: {
@@ -111,6 +122,23 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_list: {
+        Row: {
+          id: string;
+          employee_number: string;
+          name: string;
+          email: string | null;
+          company_id: string;
+          company_name: string;
+          company_code: string;
+          delivery_id: string | null;
+          delivered_at: string | null;
+          delivered_by_name: string | null;
+          kit_delivered: boolean;
+          created_at: string;
+        };
+        Relationships: [];
+      };
       delivery_history: {
         Row: {
           id: number;
@@ -144,6 +172,16 @@ export type Database = {
         Returns: Json;
       };
       import_employees: { Args: { p_rows: Json }; Returns: Json };
+      save_employee: {
+        Args: {
+          p_id: string | null;
+          p_employee_number: string;
+          p_name: string;
+          p_email: string | null;
+          p_company_id: string;
+        };
+        Returns: Json;
+      };
       save_company: {
         Args: {
           p_id: string | null;

@@ -139,6 +139,38 @@ describe("analyseRows", () => {
     expect(result.candidates[1]?.companyId).toBe(COMPANIES[2]!.id);
   });
 
+  it("lê a coluna de email e normaliza-a", () => {
+    const result = analyse(
+      "numero,nome,empresa,email\n1,Ana,Empresa A,  Ana@Exemplo.PT  ",
+    );
+    expect(result.issues).toHaveLength(0);
+    expect(result.candidates[0]?.email).toBe("ana@exemplo.pt");
+  });
+
+  it("aceita cabeçalhos de email em português", () => {
+    for (const cabecalho of ["e-mail", "correio", "Mail"]) {
+      const result = analyse(`numero,nome,empresa,${cabecalho}\n1,Ana,Empresa A,a@b.pt`);
+      expect(result.candidates[0]?.email, cabecalho).toBe("a@b.pt");
+    }
+  });
+
+  it("o colaborador entra sem email quando a coluna não existe", () => {
+    const result = analyse("numero,nome,empresa\n1,Ana,Empresa A");
+    expect(result.candidates[0]?.email).toBeNull();
+  });
+
+  it("um email malformado não rejeita a linha — o colaborador entra sem ele", () => {
+    const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A,não-é-email");
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.email).toBeNull();
+    expect(result.issues[0]?.message).toContain("Email inválido ignorado");
+  });
+
+  it("uma linha só com email é ignorada como as outras vazias", () => {
+    const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A\n,,,");
+    expect(result.candidates).toHaveLength(1);
+  });
+
   it("rejeita um número de colaborador com caracteres perigosos", () => {
     const result = analyse('numero,nome,empresa\n"\'; drop table x; --",Ana,Empresa A');
     expect(result.candidates).toHaveLength(0);

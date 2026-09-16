@@ -103,6 +103,10 @@ r=$(as_user "$OPER" "select find_employee_for_delivery('12345') -> 'delivery' ->
 check "mostra quem entregou" "Bruno Operador" "$r"
 r=$(as_user "$OPER" "select find_employee_for_delivery('12348') ->> 'delivery';")
 check "colaborador por entregar não tem entrega" "" "$r"
+# Privacidade (secção 30): no evento só se mostra nome, número, empresa e estado.
+q "update public.employees set email = 'privado@exemplo.pt' where employee_number = '12348';" >/dev/null
+r=$(as_user "$OPER" "select find_employee_for_delivery('12348')::text ~ 'privado@exemplo.pt';")
+check "a pesquisa NÃO devolve o email do colaborador" "f" "$r"
 
 echo
 echo "═══ Secção 20: anulação administrativa ═══"
@@ -172,11 +176,58 @@ r=$(q "select count(*) from public.employees where employee_number = '55503';")
 check "nada foi escrito na importação abortada" "0" "$r"
 
 echo
+echo "═══ Colaboradores: criação, edição e email ═══"
+r=$(as_user "$OPER" "select save_employee(null, '77001', 'Novo Colaborador', null, '00000000-0000-0000-0000-0000000000c1');")
+check "operador não pode criar colaboradores" "FORBIDDEN" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Novo Colaborador', 'Novo@Exemplo.PT ', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
+check "email é normalizado para minúsculas e sem espaços" "novo@exemplo.pt" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Sem Email', '', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
+check "email vazio fica nulo, não string vazia" "" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Duplicado', null, '00000000-0000-0000-0000-0000000000c1');")
+check "número duplicado é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77003', 'Empresa Inexistente', null, '00000000-0000-0000-0000-0000000000ff');")
+check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '', 'Sem Número', null, '00000000-0000-0000-0000-0000000000c1');")
+check "número em falta é recusado" "VALIDATION_ERROR" "$r"
+EID=$(q "select id from public.employees where employee_number = '77001';")
+r=$(as_user "$ADMIN" "select save_employee('$EID', '77001', 'Nome Corrigido', 'corrigido@exemplo.pt', '00000000-0000-0000-0000-0000000000c2') ->> 'name';")
+check "editar altera nome, email e empresa" "Nome Corrigido" "$r"
+r=$(q "select company_id from public.employees where employee_number = '77001';")
+check "a empresa foi mesmo alterada" "00000000-0000-0000-0000-0000000000c2" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
+check "as duas criações ficam auditadas" "2" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEE_UPDATED';")
+check "a edição fica auditada" "1" "$r"
+
+echo
+echo "═══ Listagem de colaboradores ═══"
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list where employee_number like '77%';")
+check "administrador vê a listagem" "2" "$r"
+r=$(as_user "$OPER" "select count(*) from public.employee_list;")
+check "operador NÃO vê a listagem" "0" "$r"
+r=$(as_user "$ADMIN" "select email from public.employee_list where employee_number = '77001';")
+check "listagem traz o email" "corrigido@exemplo.pt" "$r"
+r=$(as_user "$ADMIN" "select company_name from public.employee_list where employee_number = '77001';")
+check "listagem traz o nome da empresa" "Empresa B" "$r"
+r=$(as_user "$ADMIN" "select kit_delivered from public.employee_list where employee_number = '12345';")
+check "listagem traz o estado da entrega" "t" "$r"
+r=$(as_user "$ADMIN" "select delivered_by_name from public.employee_list where employee_number = '12345';")
+check "listagem traz quem entregou" "Bruno Operador" "$r"
+
+echo
+echo "═══ Importação com email ═══"
+ROWS_E='[{"employeeNumber":"78001","name":"Com Email","email":"A@B.PT","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
+r=$(as_user "$ADMIN" "select import_employees('$ROWS_E'::jsonb) ->> 'inserted';")
+check "importa uma linha com email" "1" "$r"
+r=$(q "select email from public.employees where employee_number = '78001';")
+check "email importado é normalizado" "a@b.pt" "$r"
+
+echo
 echo "═══ RLS ═══"
 r=$(as_user "$OPER" "select count(*) from public.employees;")
 check "operador não consegue enumerar colaboradores" "0" "$r"
 r=$(as_user "$ADMIN" "select count(*) from public.employees;")
-check "administrador consegue listar colaboradores" "7" "$r"
+check "administrador consegue listar colaboradores" "10" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
 r=$(as_user "$OPER" "select count(*) from public.company_stock;")

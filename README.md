@@ -127,22 +127,26 @@ pnpm dev          # http://localhost:3000
 1. **Empresas** — criar cada empresa com o nome e o limite de kits. O código
    é gerado a partir do nome e serve para identificar a empresa nos ficheiros
    de importação; não muda quando a empresa é renomeada.
-2. **Importar** — carregar o ficheiro de colaboradores (CSV ou Excel).
-   O ficheiro é analisado primeiro; nada é escrito até confirmar.
+2. **Colaboradores** — adicionar um a um, ou importar um ficheiro (CSV ou
+   Excel). O ficheiro é analisado primeiro; nada é escrito até confirmar. A
+   listagem permite pesquisar por número, nome ou email, filtrar por empresa
+   e por estado do kit, e editar qualquer colaborador.
 3. **Distribuição** — os operadores entram e trabalham só neste ecrã.
 
 ### Formato do ficheiro de colaboradores
 
 ```csv
-employee_number,name,company
-12345,João Silva,Empresa A
-12346,Ana Costa,Empresa A
-98989,Rui Sousa,Empresa B
+employee_number,name,company,email
+12345,João Silva,Empresa A,joao.silva@empresa.pt
+12346,Ana Costa,Empresa A,
+98989,Rui Sousa,Empresa B,rui.sousa@empresa.pt
 ```
+
+A coluna `email` é opcional, tal como o valor de cada linha.
 
 São aceites também:
 
-- cabeçalhos em português: `número`, `nome`, `empresa`, `código`;
+- cabeçalhos em português: `número`, `nome`, `empresa`, `código`, `e-mail`;
 - as colunas por qualquer ordem, e colunas extra são ignoradas;
 - separador `;` (o predefinido do Excel português) e BOM UTF-8;
 - ficheiros `.xlsx` (lê a primeira folha);
@@ -155,7 +159,9 @@ Regras da importação:
   rejeitadas, nunca criam a empresa em silêncio;
 - números repetidos no ficheiro e colaboradores já existentes são
   reportados com o número da linha e ignorados;
-- uma linha inválida não impede as restantes de serem importadas.
+- uma linha inválida não impede as restantes de serem importadas;
+- um email malformado não rejeita a linha: o colaborador é criado sem email e
+  o relatório assinala a ocorrência.
 
 > **Zeros à esquerda:** se a coluna do número estiver formatada como
 > número numa folha de Excel, o `012345` é guardado como `12345` e os
@@ -191,6 +197,9 @@ Atalhos: `Enter` pesquisa/entrega · `Esc` limpa.
 | Importar colaboradores               |    ✗     |       ✓       |
 | Anular entregas                      |    ✗     |       ✓       |
 | Consultar histórico                  |    ✗     |       ✓       |
+
+O email do colaborador nunca é mostrado no ecrã de distribuição: durante o
+evento só se mostram nome, número, empresa e estado do kit.
 
 O operador não consegue ler a tabela de colaboradores: se conseguisse,
 podia enumerar toda a base de pessoas pela API do Supabase. A pesquisa do

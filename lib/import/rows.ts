@@ -19,7 +19,7 @@ export function normaliseKey(value: string): string {
     .replace(/[^a-z0-9]/g, "");
 }
 
-type Column = "employeeNumber" | "name" | "company" | "companyCode";
+type Column = "employeeNumber" | "name" | "email" | "company" | "companyCode";
 
 const HEADER_ALIASES: Record<string, Column> = {};
 
@@ -45,6 +45,7 @@ alias(
   "matricula",
 );
 alias("name", "name", "nome", "nome colaborador", "nome do colaborador", "nome completo");
+alias("email", "email", "e-mail", "correio", "correio eletronico", "mail");
 alias("company", "company", "empresa", "nome empresa", "nome da empresa");
 alias("companyCode", "company_code", "companycode", "codigo", "codigo empresa", "sigla");
 
@@ -68,6 +69,7 @@ export type ImportCandidate = {
   line: number;
   employeeNumber: string;
   name: string;
+  email: string | null;
   companyId: string;
   companyName: string;
 };
@@ -135,10 +137,11 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
 
     const rawNumber = cell("employeeNumber");
     const rawName = cell("name");
+    const rawEmail = cell("email");
     const rawCompany = cell("company");
     const rawCode = cell("companyCode");
 
-    if (!rawNumber && !rawName && !rawCompany && !rawCode) continue;
+    if (!rawNumber && !rawName && !rawCompany && !rawCode && !rawEmail) continue;
 
     const number = employeeNumberSchema.safeParse(rawNumber);
     if (!number.success) {
@@ -187,10 +190,26 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     }
     seen.set(key, line);
 
+    // O email é opcional: uma morada malformada não deve impedir a
+    // importação do colaborador, por isso é descartada com um aviso em vez
+    // de rejeitar a linha inteira.
+    let email: string | null = null;
+    if (rawEmail) {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) && rawEmail.length <= 254) {
+        email = rawEmail.toLowerCase();
+      } else {
+        issues.push({
+          line,
+          message: `Email inválido ignorado: "${rawEmail}". O colaborador ${number.data} é importado sem email.`,
+        });
+      }
+    }
+
     candidates.push({
       line,
       employeeNumber: number.data,
       name: rawName,
+      email,
       companyId: company.id,
       companyName: company.name,
     });

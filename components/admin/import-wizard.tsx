@@ -84,8 +84,9 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
             CSV ou Excel (.xlsx). Colunas:{" "}
             <code className="bg-ink-100 rounded px-1">employee_number</code>,{" "}
             <code className="bg-ink-100 rounded px-1">name</code>,{" "}
-            <code className="bg-ink-100 rounded px-1">company</code>. São aceites
-            cabeçalhos em português (número, nome, empresa) e o separador{" "}
+            <code className="bg-ink-100 rounded px-1">company</code> e, opcionalmente,{" "}
+            <code className="bg-ink-100 rounded px-1">email</code>. São aceites cabeçalhos
+            em português (número, nome, empresa) e o separador{" "}
             <code className="bg-ink-100 rounded px-1">;</code> do Excel português.
           </p>
         </div>
@@ -155,6 +156,9 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
                   Nome
                 </th>
                 <th scope="col" className="px-4 py-2 font-medium">
+                  Email
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
                   Empresa
                 </th>
               </tr>
@@ -167,6 +171,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
                 >
                   <td className="px-4 py-2 tabular-nums">{row.employeeNumber}</td>
                   <td className="px-4 py-2">{row.name}</td>
+                  <td className="text-ink-700 px-4 py-2">{row.email ?? "—"}</td>
                   <td className="text-ink-700 px-4 py-2">{row.companyName}</td>
                 </tr>
               ))}
