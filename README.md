@@ -251,3 +251,44 @@ tests/
   sql/                   regras de negócio e concorrência
 docs/decisions/          decisões de arquitetura
 ```
+
+## Desativar temporariamente a autenticação
+
+Para demonstrações e desenvolvimento é possível entrar automaticamente, sem
+passar pelo ecrã de login. Defina as duas variáveis:
+
+```bash
+AUTH_BYPASS_EMAIL=conta@exemplo.pt
+AUTH_BYPASS_PASSWORD=a-palavra-passe-dessa-conta
+```
+
+Para voltar a exigir login, apague-as e faça deploy outra vez.
+
+> **Isto não remove a autenticação — automatiza-a.** A segurança desta
+> aplicação vive na base de dados: todas as funções SQL verificam
+> `auth.uid()` e o RLS filtra todas as leituras. Esconder o ecrã de login não
+> daria uma aplicação sem autenticação, daria uma aplicação avariada. O que
+> estas variáveis fazem é iniciar sessão automaticamente com a conta
+> indicada.
+>
+> **Enquanto estiver ativo, qualquer pessoa que conheça o endereço entra com
+> as permissões dessa conta** — incluindo ver os dados dos colaboradores e,
+> se for uma conta de administrador, anular entregas. Nunca usar em produção
+> com dados reais.
+>
+> Quando está ativo, aparece um aviso vermelho permanente no topo de todas as
+> páginas e o botão "Sair" desaparece (o proxy voltaria a iniciar sessão no
+> pedido seguinte).
+
+## Diagnosticar falhas de login
+
+A mensagem "Email ou palavra-passe incorretos" é deliberadamente vaga: se
+distinguisse credenciais erradas de conta inexistente, permitiria descobrir
+que emails estão registados. O motivo real fica nos logs do servidor.
+
+Para diagnosticar a partir da base de dados, execute
+[`docs/operations/diagnosticar-login.sql`](docs/operations/diagnosticar-login.sql)
+no SQL Editor. A causa mais frequente é a conta ter sido criada sem ligar
+**Auto Confirm User**;
+[`docs/operations/corrigir-login.sql`](docs/operations/corrigir-login.sql) tem
+a correção para cada caso.

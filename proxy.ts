@@ -41,9 +41,39 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Modo de autenticação desativada (ver lib/auth/bypass.ts). Entra
+  // automaticamente com a conta configurada em vez de mostrar o login.
+  //
+  // É feito aqui, no proxy, porque é o único sítio do pedido onde se podem
+  // escrever os cookies da sessão: um Server Component não os consegue
+  // definir.
+  const bypassEmail = process.env.AUTH_BYPASS_EMAIL?.trim();
+  const bypassPassword = process.env.AUTH_BYPASS_PASSWORD;
+
+  if (!user && bypassEmail && bypassPassword) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: bypassEmail,
+      password: bypassPassword,
+    });
+
+    if (error) {
+      console.error("[proxy] autenticação automática falhou", {
+        email: bypassEmail,
+        code: error.code,
+        reason: error.message,
+      });
+    } else {
+      console.warn(
+        "[proxy] AUTENTICAÇÃO DESATIVADA — sessão automática iniciada como",
+        bypassEmail,
+      );
+      user = data.user;
+    }
+  }
 
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";

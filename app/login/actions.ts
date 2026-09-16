@@ -28,9 +28,21 @@ export async function signIn(
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
-  // Mensagem única para credenciais erradas e conta inexistente: dizer qual
-  // dos dois falhou permitiria descobrir que emails estão registados.
   if (error || !data.user) {
+    // O utilizador recebe sempre a mesma mensagem, quer as credenciais
+    // estejam erradas, quer a conta não exista ou não esteja confirmada:
+    // distinguir os casos permitiria descobrir que emails estão registados.
+    //
+    // Mas o motivo real fica nos logs do servidor. Sem isto, um operador
+    // bloqueado a meio de um evento não tem como ser diagnosticado — só o
+    // email é registado, nunca a palavra-passe.
+    console.warn("[login] autenticação recusada", {
+      email: parsed.data.email,
+      code: error?.code ?? "sem_utilizador",
+      status: error?.status,
+      reason: error?.message,
+    });
+
     return { error: "Email ou palavra-passe incorretos." };
   }
 
@@ -41,6 +53,14 @@ export async function signIn(
     .maybeSingle();
 
   if (!profile || !profile.is_active) {
+    // Distinguido nos logs porque são problemas diferentes: sem perfil
+    // significa que o trigger de criação não correu; inativo é uma decisão
+    // administrativa.
+    console.warn("[login] sessão recusada depois de autenticar", {
+      email: parsed.data.email,
+      motivo: profile ? "conta_inativa" : "perfil_inexistente",
+    });
+
     await supabase.auth.signOut();
     return { error: "A sua conta está desativada. Contacte um administrador." };
   }

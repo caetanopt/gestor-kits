@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
+import { isAuthBypassEnabled } from "@/lib/auth/bypass";
 import type { CurrentUser } from "@/lib/auth/dal";
 
 export type NavItem = { href: string; label: string };
@@ -31,6 +32,18 @@ export function AppShell({
 }) {
   return (
     <div className="min-h-dvh">
+      {/* Aviso deliberadamente impossível de ignorar: enquanto a autenticação
+          estiver desativada, qualquer pessoa com o URL entra. */}
+      {isAuthBypassEnabled() && (
+        <div
+          role="alert"
+          className="bg-blocked px-4 py-2 text-center text-sm font-semibold text-white"
+        >
+          ⚠ Autenticação desativada — qualquer pessoa com este endereço tem acesso total.
+          Não usar com dados reais.
+        </div>
+      )}
+
       <header className="border-ink-200 border-b bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
           <span className="text-ink-900 font-semibold">Distribuição de Kits</span>
@@ -56,14 +69,18 @@ export function AppShell({
                 </span>
               )}
             </span>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="text-ink-600 hover:bg-ink-100 hover:text-ink-900 rounded-lg px-3 py-2 text-sm font-medium"
-              >
-                Sair
-              </button>
-            </form>
+            {/* Sem o botão quando a autenticação está desativada: o proxy
+                voltaria a iniciar sessão no pedido seguinte. */}
+            {!isAuthBypassEnabled() && (
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="text-ink-600 hover:bg-ink-100 hover:text-ink-900 rounded-lg px-3 py-2 text-sm font-medium"
+                >
+                  Sair
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </header>
