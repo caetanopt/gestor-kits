@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
-import { listHistory } from "@/server/use-cases/history";
+import { HISTORY_PAGE_SIZE, listHistory } from "@/server/use-cases/history";
+import { paginar } from "@/lib/ui/paginacao";
 import { historyFilterSchema, AUDIT_ACTION_LABELS } from "@/lib/validation/history";
 import { formatDateTime } from "@/lib/format/date";
 import { ReverseDeliveryButton } from "@/components/admin/reverse-delivery-button";
@@ -37,10 +38,13 @@ export default async function HistoricoPage(props: {
   const page = Number(single("pagina") ?? "0");
   const safePage = Number.isInteger(page) && page >= 0 ? page : 0;
 
-  const [{ entries, hasMore }, companies] = await Promise.all([
+  const [{ entries, total }, companies] = await Promise.all([
     listHistory(filter, safePage),
     listCompanyStock(),
   ]);
+
+  const { pageCount, primeiro, ultimo, temAnterior, temSeguinte, foraDeAlcance } =
+    paginar(total, safePage, HISTORY_PAGE_SIZE);
 
   const pageHref = (next: number) => {
     const params = new URLSearchParams();
@@ -93,12 +97,7 @@ export default async function HistoricoPage(props: {
         </Filter>
 
         <Filter label="Ação" htmlFor="acao">
-          <Select
-            id="acao"
-            name="acao"
-            defaultValue={filter.action ?? ""}
-            compact
-          >
+          <Select id="acao" name="acao" defaultValue={filter.action ?? ""} compact>
             <option value="">Todas</option>
             {Object.entries(AUDIT_ACTION_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
@@ -140,9 +139,26 @@ export default async function HistoricoPage(props: {
       </form>
 
       {entries.length === 0 ? (
-        <p className="text-ink-700 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
-          Sem registos para estes filtros.
-        </p>
+        <div className="text-ink-700 ring-ink-200 space-y-3 rounded-2xl bg-white p-8 text-center text-sm ring-1">
+          {foraDeAlcance ? (
+            <>
+              <p>
+                Esta página já não existe: os filtros atuais dão{" "}
+                {pageCount === 1 ? "uma página" : `${pageCount} páginas`}.
+              </p>
+              <p>
+                <ProgressLink
+                  href={pageHref(pageCount - 1)}
+                  className="text-ink-900 font-semibold underline"
+                >
+                  Ir para a última página
+                </ProgressLink>
+              </p>
+            </>
+          ) : (
+            <p>Sem registos para estes filtros.</p>
+          )}
+        </div>
       ) : (
         <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
           <table className="w-full text-sm">
@@ -227,29 +243,73 @@ export default async function HistoricoPage(props: {
         </div>
       )}
 
-      {(safePage > 0 || hasMore) && (
-        <nav aria-label="Paginação" className="flex justify-between">
-          {safePage > 0 ? (
-            <ProgressLink
-              href={pageHref(safePage - 1)}
-              className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
-            >
-              ← Anteriores
-            </ProgressLink>
-          ) : (
-            <span />
-          )}
-          {hasMore && (
-            <ProgressLink
-              href={pageHref(safePage + 1)}
-              className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
-            >
-              Seguintes →
-            </ProgressLink>
+      {total > 0 && !foraDeAlcance && (
+        <nav
+          aria-label="Paginação"
+          className="flex flex-wrap items-center justify-between gap-3"
+        >
+          {/* A contagem vem primeiro: é ela que diz se vale a pena percorrer
+              as páginas ou se é melhor apertar os filtros. */}
+          <p className="text-ink-700 text-sm">
+            {primeiro}–{ultimo} de {total} {total === 1 ? "registo" : "registos"}
+            {pageCount > 1 && (
+              <span>
+                {" "}
+                · página {safePage + 1} de {pageCount}
+              </span>
+            )}
+          </p>
+
+          {pageCount > 1 && (
+            <div className="flex gap-2">
+              <PageLink href={pageHref(safePage - 1)} disponivel={temAnterior}>
+                ← Anteriores
+              </PageLink>
+              <PageLink href={pageHref(safePage + 1)} disponivel={temSeguinte}>
+                Seguintes →
+              </PageLink>
+            </div>
           )}
         </nav>
       )}
     </div>
+  );
+}
+
+/**
+ * Ligação de página.
+ *
+ * Nos extremos o botão fica lá, apagado e fora da ordem de tabulação, em vez
+ * de desaparecer: um controlo que some faz os outros saltarem de sítio entre
+ * páginas, e a primeira e a última são precisamente onde isso acontece.
+ */
+function PageLink({
+  href,
+  disponivel,
+  children,
+}: {
+  href: string;
+  disponivel: boolean;
+  children: React.ReactNode;
+}) {
+  const base =
+    "ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1 transition duration-100 select-none";
+
+  if (!disponivel) {
+    return (
+      <span aria-hidden="true" className={`${base} text-ink-500 opacity-60`}>
+        {children}
+      </span>
+    );
+  }
+
+  return (
+    <ProgressLink
+      href={href}
+      className={`${base} text-ink-900 hover:bg-ink-50 active:bg-ink-100 touch-manipulation active:scale-[0.97] motion-reduce:active:scale-100`}
+    >
+      {children}
+    </ProgressLink>
   );
 }
 
