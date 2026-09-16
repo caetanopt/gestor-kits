@@ -48,7 +48,12 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";
 
-  if (!user && !isLogin) {
+  // As rotas de API nunca são redirecionadas: um redirecionamento devolveria
+  // HTML a quem espera JSON. O route handler trata do caso sem sessão com
+  // requireApiUser(), que produz um 401 com o envelope de erro normal.
+  const isApi = pathname.startsWith("/api/");
+
+  if (!user && !isLogin && !isApi) {
     const target = request.nextUrl.clone();
     target.pathname = "/login";
     target.searchParams.set("seguinte", pathname);

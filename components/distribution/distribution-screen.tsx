@@ -19,14 +19,33 @@ type ApiEnvelope<T> =
   { success: true; data: T } | { success: false; code: string; message: string };
 
 async function callApi<T>(input: string, init?: RequestInit): Promise<ApiEnvelope<T>> {
+  let response: Response;
   try {
-    const response = await fetch(input, init);
-    return (await response.json()) as ApiEnvelope<T>;
+    response = await fetch(input, init);
   } catch {
     return {
       success: false,
       code: "NETWORK_ERROR",
       message: "Sem ligação ao servidor. Verifique a rede e tente novamente.",
+    };
+  }
+
+  try {
+    return (await response.json()) as ApiEnvelope<T>;
+  } catch {
+    // Chegou algo que não é o nosso envelope JSON — tipicamente uma página de
+    // erro do servidor. Não o confundir com falta de rede.
+    if (response.status === 401 || response.status === 403) {
+      return {
+        success: false,
+        code: "UNAUTHENTICATED",
+        message: "A sessão expirou. Volte a iniciar sessão.",
+      };
+    }
+    return {
+      success: false,
+      code: "INTERNAL_ERROR",
+      message: `O servidor respondeu de forma inesperada (${response.status}).`,
     };
   }
 }
