@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/dal";
+import { DistributionScreen } from "@/components/distribution/distribution-screen";
 
 export const metadata: Metadata = { title: "Distribuição · Kits" };
 
 export default async function DistribuicaoPage() {
-  const user = await requireUser();
+  // Verificação no servidor: o layout já a faz, mas a página não deve
+  // depender disso para se proteger.
+  await requireUser();
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-ink-900 text-xl font-semibold">Distribuição</h1>
-      <p className="text-ink-500 text-sm">
-        Sessão iniciada como {user.name}. O ecrã de pesquisa e entrega é implementado na
-        etapa seguinte.
-      </p>
+    <div className="space-y-6">
+      <h1 className="text-ink-600 text-center text-lg font-semibold tracking-wide uppercase">
+        Distribuição de Kits
+      </h1>
+      <DistributionScreen />
     </div>
   );
 }
