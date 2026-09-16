@@ -103,8 +103,13 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Tudo exceto ficheiros estáticos e o endpoint de saúde.
+     * Tudo exceto ficheiros estáticos, o endpoint de saúde e os ficheiros
+     * que os rastreadores e o browser vão buscar à raiz.
+     *
+     * O robots.txt tem de ficar de fora: redirecionado para o login, um
+     * rastreador receberia HTML em vez das diretivas, e a aplicação ficaria
+     * sem a instrução de não indexar que é suposto dar.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

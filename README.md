@@ -211,6 +211,24 @@ podia enumerar toda a base de pessoas pela API do Supabase. A pesquisa do
 ecrã de distribuição passa por uma função que exige correspondência exata
 do número e devolve no máximo uma linha.
 
+## Indexação por motores de busca
+
+A aplicação declara `noindex` de três formas, porque cada uma cobre o que as
+outras não cobrem:
+
+| Onde                      | Cobre                                      |
+| ------------------------- | ------------------------------------------ |
+| Meta `robots` no `<head>` | Páginas HTML                               |
+| Cabeçalho `X-Robots-Tag`  | Tudo, incluindo imagens e respostas de API |
+| `robots.txt`              | Instruções de rastreio                     |
+
+O `robots.txt` **não** tem `Disallow: /`, e é deliberado. O robots.txt
+controla o rastreio, não a indexação: com `Disallow: /` o motor de busca nunca
+chega a buscar as páginas e por isso nunca lê o `noindex` — e um URL
+descoberto a partir de uma ligação externa pode acabar listado nos resultados
+mesmo assim. Permitindo o rastreio, a diretiva é lida e as páginas ficam
+efetivamente de fora.
+
 ## Utilizadores
 
 A área **Utilizadores**, só para administradores, lista as contas e permite

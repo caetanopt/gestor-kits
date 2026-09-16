@@ -21,6 +21,15 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Distribuição de Kits · Caetano",
   description: "Gestão da distribuição de kits durante um evento.",
+  // Aplicação interna com dados de colaboradores: não deve aparecer em
+  // motores de busca. Reforçado pelo cabeçalho X-Robots-Tag em
+  // next.config.ts, que também cobre respostas que não são HTML.
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false, noimageindex: true },
+  },
 };
 
 export const viewport: Viewport = {

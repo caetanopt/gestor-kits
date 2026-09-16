@@ -23,6 +23,13 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   },
+  // Aplicação interna: nunca deve ser indexada. Como cabeçalho, aplica-se
+  // também a respostas que não são HTML — imagens, ficheiros, respostas de
+  // API — onde uma meta tag não chegaria.
+  {
+    key: "X-Robots-Tag",
+    value: "noindex, nofollow, noarchive, nosnippet, noimageindex",
+  },
 ];
 
 const nextConfig: NextConfig = {
