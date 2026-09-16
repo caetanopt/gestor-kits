@@ -42,14 +42,21 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Preencha `.env.local` com os valores do seu projeto Supabase
+Preencha `.env.local` com os dois valores do seu projeto Supabase
 (**Project Settings → API**):
 
-| Variável                        | Onde encontrar                                                                     |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Project URL                                                                        |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave `anon` / publishable                                                         |
-| `SUPABASE_SERVICE_ROLE_KEY`     | Chave `service_role` — **nunca** a exponha ao browser nem a coloque no repositório |
+| Variável                        | Onde encontrar               |
+| ------------------------------- | ---------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Project URL                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave `anon` / `publishable` |
+
+Não é preciso mais nada. Em particular, **a chave `service_role` não é
+usada** e não deve ser configurada: toda a autorização assenta nas políticas
+RLS e em funções `SECURITY DEFINER` invocadas com a sessão do próprio
+utilizador. Não existe nenhum caminho de código que contorne o RLS.
+
+Ambas as variáveis acima são públicas por natureza — a aplicação envia-as
+para o browser. A segurança está na base de dados, não em escondê-las.
 
 ## Base de dados
 

@@ -3,17 +3,15 @@ import { z } from "zod";
 /**
  * Validação de variáveis de ambiente.
  *
- * As variáveis do servidor são validadas de forma preguiçosa (na primeira
- * utilização) para que `next build` não falhe em ambientes onde os segredos
- * só existem em runtime. A mensagem de erro identifica sempre a variável em
- * falta pelo nome.
+ * A aplicação só precisa das duas variáveis públicas do Supabase. Não existe
+ * nenhum segredo de servidor: toda a autorização é feita pelo RLS e por
+ * funções SECURITY DEFINER, invocadas com a sessão do próprio utilizador.
+ * Não há, por isso, nenhuma utilização da chave service_role.
+ *
+ * A validação é preguiçosa (na primeira utilização) para que `next build` não
+ * falhe em ambientes onde a configuração só existe em runtime. A mensagem de
+ * erro identifica sempre a variável em falta pelo nome.
  */
-
-const serverSchema = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z
-    .string()
-    .min(1, "SUPABASE_SERVICE_ROLE_KEY é obrigatória no servidor."),
-});
 
 const clientSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z
@@ -24,31 +22,10 @@ const clientSchema = z.object({
     .min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY é obrigatória."),
 });
 
-export type ServerEnv = z.infer<typeof serverSchema>;
 export type ClientEnv = z.infer<typeof clientSchema>;
 
 function format(error: z.ZodError): string {
   return error.issues.map((issue) => `  - ${issue.message}`).join("\n");
-}
-
-let cachedServerEnv: ServerEnv | null = null;
-
-/** Variáveis exclusivas do servidor. Nunca chamar a partir do browser. */
-export function serverEnv(): ServerEnv {
-  if (cachedServerEnv) return cachedServerEnv;
-
-  const parsed = serverSchema.safeParse({
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  });
-
-  if (!parsed.success) {
-    throw new Error(
-      `Configuração de ambiente inválida (servidor):\n${format(parsed.error)}`,
-    );
-  }
-
-  cachedServerEnv = parsed.data;
-  return cachedServerEnv;
 }
 
 let cachedClientEnv: ClientEnv | null = null;
