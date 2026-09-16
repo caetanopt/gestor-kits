@@ -32,11 +32,11 @@ export default async function AdminPage() {
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Kits atribuídos" value={totals.allocated} />
-        <Stat label="Kits entregues" value={totals.delivered} tone="delivered" />
+        <Stat label="Kits entregues" value={totals.delivered} tone="entregue" />
         <Stat
           label="Kits disponíveis"
           value={totals.available}
-          tone={totals.available === 0 ? "blocked" : undefined}
+          tone={totals.available === 0 ? "bloqueado" : "disponivel"}
         />
         <Stat label="Colaboradores" value={totals.employees} />
       </dl>
@@ -82,10 +82,10 @@ export default async function AdminPage() {
                 return (
                   <tr key={company.id} className="border-ink-100 border-b last:border-0">
                     <td className="text-ink-900 px-4 py-2.5 font-medium">
+                      {/* O código só interessa a quem prepara ficheiros de
+                          importação, e esses vivem na página Empresas. Aqui é
+                          ruído. */}
                       {company.name}
-                      <span className="text-ink-700 ms-2 text-xs font-normal">
-                        {company.code}
-                      </span>
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {company.allocated}
@@ -140,23 +140,19 @@ export default async function AdminPage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "delivered" | "blocked";
-}) {
+/** Cores da barra de cada métrica, segundo os papéis de estado da marca. */
+type Tone = "disponivel" | "entregue" | "bloqueado";
+
+const BARRAS: Record<Tone, string> = {
+  disponivel: "bg-cyan-500",
+  entregue: "bg-eco-500",
+  bloqueado: "bg-laranja-500",
+};
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: Tone }) {
   // A cor identifica a métrica através de uma barra, não do número: sobre
   // branco, as cores secundárias da marca não têm contraste para texto.
-  const bar =
-    tone === "delivered"
-      ? "bg-eco-500"
-      : tone === "blocked"
-        ? "bg-laranja-500"
-        : "bg-ink-300";
+  const bar = tone ? BARRAS[tone] : "bg-ink-300";
 
   return (
     <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
