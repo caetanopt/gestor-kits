@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyStock } from "@/server/use-cases/companies";
@@ -127,12 +128,7 @@ export default async function HistoricoPage(props: {
         </Filter>
 
         <div className="flex items-end gap-2 sm:col-span-5">
-          <button
-            type="submit"
-            className="rounded-lg bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            Filtrar
-          </button>
+          <Button type="submit">Filtrar</Button>
           <ProgressLink
             href="/admin/historico"
             className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"

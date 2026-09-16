@@ -1,5 +1,6 @@
 import { ProgressLink, RouteProgress } from "@/components/ui/route-progress";
 import { signOut } from "@/app/login/actions";
+import { Button } from "@/components/ui/button";
 import { isAuthBypassEnabled } from "@/lib/auth/bypass";
 import { CaetanoLogo } from "@/components/brand/caetano-logo";
 import type { CurrentUser } from "@/lib/auth/dal";
@@ -68,7 +69,7 @@ export function AppShell({
               <ProgressLink
                 key={item.href}
                 href={item.href}
-                className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 rounded-lg px-3 py-2 text-sm font-medium"
+                className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 has-[[data-navegacao-pendente]]:bg-ink-100 has-[[data-navegacao-pendente]]:text-ink-900 touch-manipulation rounded-lg px-3 py-2 text-sm font-medium transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
               >
                 {item.label}
               </ProgressLink>
@@ -88,12 +89,9 @@ export function AppShell({
                 voltaria a iniciar sessão no pedido seguinte. */}
             {!isAuthBypassEnabled() && (
               <form action={signOut}>
-                <button
-                  type="submit"
-                  className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 rounded-lg px-3 py-2 text-sm font-medium"
-                >
+                <Button type="submit" variant="ghost">
                   Sair
-                </button>
+                </Button>
               </form>
             )}
           </div>

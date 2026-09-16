@@ -16,13 +16,33 @@ type Size = "md" | "lg" | "xl";
  */
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "bg-azul-900 text-white hover:bg-azul-700 disabled:bg-ink-200 disabled:text-ink-700",
+    "bg-azul-900 text-white hover:bg-azul-700 active:bg-azul-700 disabled:bg-ink-200 disabled:text-ink-700",
   secondary:
-    "bg-white text-ink-900 ring-1 ring-ink-300 hover:bg-ink-50 disabled:text-ink-700",
+    "bg-white text-ink-900 ring-1 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 disabled:text-ink-700",
   danger:
-    "bg-laranja-500 text-ink-800 hover:bg-laranja-300 disabled:bg-ink-200 disabled:text-ink-700",
-  ghost: "text-ink-700 hover:bg-ink-100 disabled:text-ink-700",
+    "bg-laranja-500 text-ink-800 hover:bg-laranja-300 active:bg-laranja-300 disabled:bg-ink-200 disabled:text-ink-700",
+  ghost: "text-ink-700 hover:bg-ink-100 active:bg-ink-200 disabled:text-ink-700",
 };
+
+/**
+ * Resposta ao toque.
+ *
+ * O evento corre em tablet, onde não existe hover: sem um estado `active`, um
+ * botão tocado não muda absolutamente nada até a ação terminar, e quem o
+ * tocou volta a tocá-lo. Cada variante escurece, e todas encolhem — a escala
+ * é o sinal que se vê mesmo com o dedo a tapar o botão.
+ *
+ * `touch-manipulation` dispensa a espera pelo duplo toque para ampliar, que
+ * em alguns browsers atrasa o clique o suficiente para parecer perdido.
+ * `select-none` evita que arrastar um pouco durante o toque selecione o
+ * rótulo em vez de premir.
+ *
+ * A duração é curta de propósito: 150 ms num estado de pressão já se nota
+ * como atraso. Quem pediu menos movimento mantém a cor e perde a escala.
+ */
+const TOQUE =
+  "transition duration-100 touch-manipulation select-none " +
+  "active:scale-[0.97] active:brightness-95 motion-reduce:active:scale-100";
 
 const SIZES: Record<Size, string> = {
   md: "px-4 py-2.5 text-sm rounded-lg",
@@ -44,7 +64,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-semibold transition disabled:cursor-not-allowed ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-semibold disabled:cursor-not-allowed ${TOQUE} ${VARIANTS[variant]} ${SIZES[size]} ${className}`}
       {...props}
     />
   );

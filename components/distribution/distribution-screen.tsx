@@ -339,10 +339,10 @@ export function DistributionScreen() {
               role="tab"
               aria-selected={mode === valor}
               onClick={() => changeMode(valor)}
-              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+              className={`flex-1 touch-manipulation rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100 ${
                 mode === valor
                   ? "text-azul-900 bg-white shadow-sm"
-                  : "text-ink-700 hover:text-ink-900"
+                  : "text-ink-700 hover:text-ink-900 active:bg-ink-200"
               }`}
             >
               {rotulo}

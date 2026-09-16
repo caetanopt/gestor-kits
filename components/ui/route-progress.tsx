@@ -137,6 +137,18 @@ export function ProgressLink(props: ComponentProps<typeof Link>) {
   );
 }
 
+/**
+ * Marca a ligação como em navegação, de duas maneiras.
+ *
+ * Alimenta a barra do topo, e deixa no DOM um elemento vazio que a própria
+ * ligação pode observar com `has-[[data-navegacao-pendente]]:` para se manter
+ * realçada até a página chegar.
+ *
+ * O realce vai por aqui e não por uma classe passada de fora porque
+ * `useLinkStatus` só funciona dentro do Link, e o elemento a pintar é o
+ * próprio Link — o pai. É o `:has()` que resolve essa inversão sem embrulhar
+ * o conteúdo num elemento que estragaria a disposição de quem usa flex.
+ */
 function SinalDeNavegacao() {
   const { pending } = useLinkStatus();
 
@@ -145,5 +157,6 @@ function SinalDeNavegacao() {
     return abrirNavegacao();
   }, [pending]);
 
-  return null;
+  if (!pending) return null;
+  return <span hidden data-navegacao-pendente />;
 }
