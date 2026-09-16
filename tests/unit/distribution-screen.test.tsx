@@ -310,18 +310,47 @@ describe("pesquisa por nome ou email", () => {
     expect(new URL(url, "http://t").searchParams.get("q")).toBe("Miguel ");
   });
 
-  it("pergunta ao servidor para um email completo, sem espaço", async () => {
+  it("um email exato abre o cartão diretamente, sem lista", async () => {
     const user = userEvent.setup();
-    mockFetch(() => ({
-      success: true,
-      data: { ...RESULTADOS, results: [{ ...RESULTADOS.results[0]!, email: "a@b.pt" }] },
-    }));
+    mockFetch((url) =>
+      url.startsWith("/api/employees/search")
+        ? {
+            success: true,
+            data: {
+              ...RESULTADOS,
+              results: [{ ...RESULTADOS.results[0]!, email: "joao.silva@empresa.pt" }],
+            },
+          }
+        : { success: true, data: LOOKUP },
+    );
 
     render(<DistributionScreen />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "joao.silva@empresa.pt");
 
-    expect(await screen.findByText("João Silva")).toBeInTheDocument();
+    // O cartão, não a lista: o cabeçalho "1 resultado" não chega a aparecer.
+    expect(await screen.findByText("KIT AINDA NÃO ENTREGUE")).toBeInTheDocument();
+    expect(screen.queryByText("1 resultado")).not.toBeInTheDocument();
+    // E o campo fica vazio, como depois de uma pesquisa por número.
+    expect(campo).toHaveValue("");
+  });
+
+  it("um nome com um só resultado continua a mostrar a lista", async () => {
+    // A diferença não é o número de resultados, é ter sido o email a
+    // corresponder: quem pesquisa por nome pode ter-se enganado na pessoa.
+    const user = userEvent.setup();
+    mockFetch((url) =>
+      url.startsWith("/api/employees/search")
+        ? { success: true, data: RESULTADOS }
+        : { success: true, data: LOOKUP },
+    );
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "João ");
+
+    expect(await screen.findByText("1 resultado")).toBeInTheDocument();
+    expect(screen.queryByText("KIT AINDA NÃO ENTREGUE")).not.toBeInTheDocument();
   });
 
   it("escolher um resultado abre o cartão e o Enter seguinte entrega", async () => {

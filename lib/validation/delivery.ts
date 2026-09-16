@@ -130,3 +130,24 @@ export const employeeSearchSchema = z.object({
 
 export type EmployeeMatch = z.infer<typeof employeeMatchSchema>;
 export type EmployeeSearch = z.infer<typeof employeeSearchSchema>;
+
+/**
+ * A pesquisa identificou uma pessoa única pelo email?
+ *
+ * O email é um identificador: quem o escreve já sabe de quem se trata, e uma
+ * lista de um elemento só acrescenta um clique. Nesse caso abrimos o cartão
+ * diretamente, como se tivesse sido pesquisado o número.
+ *
+ * O sinal é o campo `email`: `search_employees_for_delivery` só o preenche
+ * quando foi o email que correspondeu — numa pesquisa por nome vem sempre
+ * `null`, mesmo que dê um único resultado. É por isso que um nome com uma só
+ * correspondência continua a mostrar a lista: quem pesquisou por nome pode
+ * ter-se enganado na pessoa, quem escreveu o email não.
+ */
+export function correspondenciaUnicaPorEmail(
+  search: EmployeeSearch,
+): EmployeeMatch | null {
+  if (search.total !== 1 || search.results.length !== 1) return null;
+  const unico = search.results[0];
+  return unico && unico.email !== null ? unico : null;
+}

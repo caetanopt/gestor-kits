@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deveSugerir } from "@/lib/validation/delivery";
+import { correspondenciaUnicaPorEmail, deveSugerir } from "@/lib/validation/delivery";
 
 /**
  * Estas regras espelham `public.search_employees_for_delivery`. Se divergirem,
@@ -34,5 +34,52 @@ describe("deveSugerir", () => {
     for (const termo of ["ana", "ana@", "ana@empresa", "@empresa.pt"]) {
       expect(deveSugerir(termo), termo).toBe(false);
     }
+  });
+});
+
+describe("correspondenciaUnicaPorEmail", () => {
+  const match = {
+    id: "3f2504e0-4f89-41d3-9a0c-0305e82c3310",
+    employeeNumber: "12345",
+    name: "João Silva",
+    companyName: "Empresa A",
+    kitDelivered: false,
+    email: null as string | null,
+  };
+
+  it("um só resultado com email é correspondência única", () => {
+    const search = {
+      results: [{ ...match, email: "joao@empresa.pt" }],
+      total: 1,
+      truncated: false,
+    };
+    expect(correspondenciaUnicaPorEmail(search)?.employeeNumber).toBe("12345");
+  });
+
+  it("um só resultado sem email não é: a pesquisa foi por nome", () => {
+    const search = { results: [match], total: 1, truncated: false };
+    expect(correspondenciaUnicaPorEmail(search)).toBeNull();
+  });
+
+  it("dois colaboradores com o mesmo email mostram a lista", () => {
+    const search = {
+      results: [
+        { ...match, email: "geral@empresa.pt" },
+        {
+          ...match,
+          id: "3f2504e0-4f89-41d3-9a0c-0305e82c3311",
+          email: "geral@empresa.pt",
+        },
+      ],
+      total: 2,
+      truncated: false,
+    };
+    expect(correspondenciaUnicaPorEmail(search)).toBeNull();
+  });
+
+  it("nenhum resultado não é correspondência", () => {
+    expect(
+      correspondenciaUnicaPorEmail({ results: [], total: 0, truncated: false }),
+    ).toBeNull();
   });
 });

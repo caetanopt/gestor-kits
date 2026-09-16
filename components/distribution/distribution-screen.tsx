@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { deveSugerir } from "@/lib/validation/delivery";
+import { correspondenciaUnicaPorEmail, deveSugerir } from "@/lib/validation/delivery";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { StockPanel } from "./stock-panel";
@@ -138,51 +138,6 @@ export function DistributionScreen() {
     [focusSearch],
   );
 
-  /**
-   * Pesquisa por nome ou email.
-   *
-   * `silencioso` distingue as sugestões que aparecem enquanto se escreve, que
-   * não devem mostrar "a pesquisar" nem erros a cada tecla, de uma pesquisa
-   * pedida explicitamente com Enter ou pelo botão.
-   */
-  const searchByName = useCallback(async (rawTerm: string, silencioso = false) => {
-    if (!rawTerm.trim()) {
-      if (!silencioso) setScreen({ kind: "idle" });
-      return;
-    }
-
-    if (!deveSugerir(rawTerm)) {
-      // Ainda não há nome próprio completo nem email inteiro: não vale a
-      // pena perguntar ao servidor, que responderia vazio.
-      setScreen({ kind: "aguarda" });
-      return;
-    }
-
-    if (!silencioso) setScreen({ kind: "busy", label: "A pesquisar…" });
-
-    // O termo vai POR APARAR, de propósito. A regra do primeiro espaço vive
-    // em `public.search_employees_for_delivery` e distingue "Miguel " de
-    // "Miguel"; aparar aqui apagava essa diferença e o servidor respondia
-    // sempre "ainda falta escrever". É o SQL que apara para pesquisar.
-    const result = await callApi<EmployeeSearch>(
-      `/api/employees/search?q=${encodeURIComponent(rawTerm)}`,
-    );
-
-    // O texto mudou entretanto: esta resposta já não é a que interessa.
-    // Comparação exata, pela mesma razão: o espaço final faz parte do termo.
-    if (queryRef.current !== rawTerm) return;
-
-    if (!result.success) {
-      setScreen({ kind: "error", message: result.message });
-    } else if (result.data.aguarda) {
-      setScreen({ kind: "aguarda" });
-    } else if (result.data.results.length === 0) {
-      setScreen({ kind: "error", message: "Nenhum colaborador corresponde." });
-    } else {
-      setScreen({ kind: "matches", search: result.data });
-    }
-  }, []);
-
   /** Carrega o cartão de um resultado da lista, como se tivesse sido pesquisado. */
   const openMatch = useCallback(
     (match: EmployeeMatch) => {
@@ -193,6 +148,67 @@ export function DistributionScreen() {
       void searchByNumber(match.employeeNumber);
     },
     [searchByNumber],
+  );
+
+  /**
+   * Pesquisa por nome ou email.
+   *
+   * `silencioso` distingue as sugestões que aparecem enquanto se escreve, que
+   * não devem mostrar "a pesquisar" nem erros a cada tecla, de uma pesquisa
+   * pedida explicitamente com Enter ou pelo botão.
+   */
+  const searchByName = useCallback(
+    async (rawTerm: string, silencioso = false) => {
+      if (!rawTerm.trim()) {
+        if (!silencioso) setScreen({ kind: "idle" });
+        return;
+      }
+
+      if (!deveSugerir(rawTerm)) {
+        // Ainda não há nome próprio completo nem email inteiro: não vale a
+        // pena perguntar ao servidor, que responderia vazio.
+        setScreen({ kind: "aguarda" });
+        return;
+      }
+
+      if (!silencioso) setScreen({ kind: "busy", label: "A pesquisar…" });
+
+      // O termo vai POR APARAR, de propósito. A regra do primeiro espaço vive
+      // em `public.search_employees_for_delivery` e distingue "Miguel " de
+      // "Miguel"; aparar aqui apagava essa diferença e o servidor respondia
+      // sempre "ainda falta escrever". É o SQL que apara para pesquisar.
+      const result = await callApi<EmployeeSearch>(
+        `/api/employees/search?q=${encodeURIComponent(rawTerm)}`,
+      );
+
+      // O texto mudou entretanto: esta resposta já não é a que interessa.
+      // Comparação exata, pela mesma razão: o espaço final faz parte do termo.
+      if (queryRef.current !== rawTerm) return;
+
+      if (!result.success) {
+        setScreen({ kind: "error", message: result.message });
+        return;
+      }
+      if (result.data.aguarda) {
+        setScreen({ kind: "aguarda" });
+        return;
+      }
+      if (result.data.results.length === 0) {
+        setScreen({ kind: "error", message: "Nenhum colaborador corresponde." });
+        return;
+      }
+
+      // Um email exato identifica uma pessoa: uma lista de um elemento só
+      // acrescentaria um clique. Abre o cartão como se fosse um número.
+      const porEmail = correspondenciaUnicaPorEmail(result.data);
+      if (porEmail) {
+        openMatch(porEmail);
+        return;
+      }
+
+      setScreen({ kind: "matches", search: result.data });
+    },
+    [openMatch],
   );
 
   const deliver = useCallback(
