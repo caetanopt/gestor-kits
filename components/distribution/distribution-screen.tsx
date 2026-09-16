@@ -146,9 +146,7 @@ export function DistributionScreen() {
    * pedida explicitamente com Enter ou pelo botão.
    */
   const searchByName = useCallback(async (rawTerm: string, silencioso = false) => {
-    const termo = rawTerm.trim();
-
-    if (!termo) {
+    if (!rawTerm.trim()) {
       if (!silencioso) setScreen({ kind: "idle" });
       return;
     }
@@ -162,12 +160,17 @@ export function DistributionScreen() {
 
     if (!silencioso) setScreen({ kind: "busy", label: "A pesquisar…" });
 
+    // O termo vai POR APARAR, de propósito. A regra do primeiro espaço vive
+    // em `public.search_employees_for_delivery` e distingue "Miguel " de
+    // "Miguel"; aparar aqui apagava essa diferença e o servidor respondia
+    // sempre "ainda falta escrever". É o SQL que apara para pesquisar.
     const result = await callApi<EmployeeSearch>(
-      `/api/employees/search?q=${encodeURIComponent(termo)}`,
+      `/api/employees/search?q=${encodeURIComponent(rawTerm)}`,
     );
 
     // O texto mudou entretanto: esta resposta já não é a que interessa.
-    if (queryRef.current.trim() !== termo) return;
+    // Comparação exata, pela mesma razão: o espaço final faz parte do termo.
+    if (queryRef.current !== rawTerm) return;
 
     if (!result.success) {
       setScreen({ kind: "error", message: result.message });
@@ -352,7 +355,12 @@ export function DistributionScreen() {
           onBlur={() => {
             // Mantém o cursor no campo: num tablet, tocar fora não deve
             // obrigar o operador a voltar a tocar no campo.
-            if (!busy) requestAnimationFrame(focusSearch);
+            //
+            // Aqui é focus() e não focusSearch(): devolver o foco não pode
+            // selecionar o que já está escrito. Nos outros pontos de chamada o
+            // campo está vazio e a seleção é indiferente; neste pode ter texto
+            // a meio, e selecioná-lo faria a tecla seguinte apagá-lo.
+            if (!busy) requestAnimationFrame(() => inputRef.current?.focus());
           }}
           className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 py-5 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
             mode === "numero" ? "text-4xl tracking-wider tabular-nums" : "text-2xl"

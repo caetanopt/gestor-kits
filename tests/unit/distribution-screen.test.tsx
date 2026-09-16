@@ -294,6 +294,22 @@ describe("pesquisa por nome ou email", () => {
     expect(searches().length).toBeGreaterThan(0);
   });
 
+  it("envia o termo POR APARAR, para o servidor ver o espaço", async () => {
+    // Regressão: o cliente aparava o termo antes de o enviar, por isso o
+    // servidor recebia "Miguel" onde o operador tinha escrito "Miguel " e a
+    // regra do primeiro espaço respondia sempre "ainda falta escrever".
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: RESULTADOS }));
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "Miguel ");
+
+    await waitFor(() => expect(searches().length).toBeGreaterThan(0));
+    const url = searches().at(-1)!.url;
+    expect(new URL(url, "http://t").searchParams.get("q")).toBe("Miguel ");
+  });
+
   it("pergunta ao servidor para um email completo, sem espaço", async () => {
     const user = userEvent.setup();
     mockFetch(() => ({
