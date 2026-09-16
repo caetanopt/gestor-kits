@@ -1,36 +1,239 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Distribuição de Kits
 
-## Getting Started
+Aplicação web para gerir a distribuição de kits num evento: o operador
+pesquisa o colaborador pelo número, confirma os dados e entrega o kit. O
+stock de cada empresa é descontado automaticamente e nunca pode ficar
+negativo nem haver entregas duplicadas, mesmo com vários operadores em
+simultâneo.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router) + React 19 + TypeScript estrito
+- Tailwind CSS 4
+- Supabase (PostgreSQL, Auth)
+- Vitest + Testing Library
+
+## Como as regras críticas são garantidas
+
+As regras que não podem falhar vivem no PostgreSQL, não em TypeScript.
+Verificar na aplicação "há stock? então entrega" é uma condição de corrida:
+dois operadores leem 119/120 ao mesmo tempo e ambos entregam.
+
+Três defesas independentes:
+
+| Defesa                                                                      | Impede                                    |
+| --------------------------------------------------------------------------- | ----------------------------------------- |
+| Índice único parcial em `deliveries(employee_id) where reversed_at is null` | Duas entregas ativas ao mesmo colaborador |
+| `SELECT ... FOR UPDATE` na empresa antes de contar o stock                  | Stock negativo                            |
+| `idempotency_key` única por pesquisa                                        | Duplo clique e retries de rede            |
+
+Detalhes em [`docs/decisions/0001-atomicidade-da-entrega.md`](docs/decisions/0001-atomicidade-da-entrega.md).
+
+## Pré-requisitos
+
+- Node.js 20.9 ou superior
+- pnpm 10 ou superior
+- Um projeto Supabase (ou a CLI do Supabase para correr localmente)
+
+## Instalação
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Preencha `.env.local` com os valores do seu projeto Supabase
+(**Project Settings → API**):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variável                        | Onde encontrar                                                                     |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Project URL                                                                        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave `anon` / publishable                                                         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Chave `service_role` — **nunca** a exponha ao browser nem a coloque no repositório |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Base de dados
 
-## Learn More
+### Supabase alojado
 
-To learn more about Next.js, take a look at the following resources:
+Aplique as migrações por ordem, no **SQL Editor** do painel Supabase:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+supabase/migrations/0001_initial_schema.sql
+supabase/migrations/0002_auth_and_rls.sql
+supabase/migrations/0003_delivery_functions.sql
+supabase/migrations/0004_import_employees.sql
+supabase/migrations/0005_history_view.sql
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ou, se tiver a CLI ligada ao projeto:
 
-## Deploy on Vercel
+```bash
+pnpm exec supabase db push
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Supabase local
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm db:start     # precisa de Docker
+pnpm db:reset     # aplica migrações + supabase/seed.sql
+```
+
+## Criar o primeiro administrador
+
+O registo automático atribui sempre o perfil `operator`. Isto é
+deliberado: promover automaticamente o primeiro utilizador seria uma via
+de escalada de privilégios se o registo estiver aberto.
+
+1. Crie o utilizador em **Authentication → Users → Add user** no painel
+   Supabase (ou pelo registo normal).
+2. Promova-o a administrador no **SQL Editor**:
+
+```sql
+update public.profiles
+   set role = 'admin'
+ where email = 'o-seu@email.pt';
+```
+
+Os operadores do evento são criados da mesma forma, ficando com o perfil
+`operator` por omissão.
+
+> Recomenda-se desligar o registo público em
+> **Authentication → Providers → Email → Allow new users to sign up**
+> assim que as contas do evento estiverem criadas.
+
+## Desenvolvimento
+
+```bash
+pnpm dev          # http://localhost:3000
+```
+
+## Preparar um evento
+
+1. **Empresas** — criar cada empresa com o respetivo limite de kits.
+2. **Importar** — carregar o ficheiro de colaboradores (CSV ou Excel).
+   O ficheiro é analisado primeiro; nada é escrito até confirmar.
+3. **Distribuição** — os operadores entram e trabalham só neste ecrã.
+
+### Formato do ficheiro de colaboradores
+
+```csv
+employee_number,name,company
+12345,João Silva,Empresa A
+12346,Ana Costa,Empresa A
+98989,Rui Sousa,Empresa B
+```
+
+São aceites também:
+
+- cabeçalhos em português: `número`, `nome`, `empresa`, `código`;
+- as colunas por qualquer ordem, e colunas extra são ignoradas;
+- separador `;` (o predefinido do Excel português) e BOM UTF-8;
+- ficheiros `.xlsx` (lê a primeira folha);
+- a empresa identificada por nome **ou** por código, sem distinguir
+  acentos nem maiúsculas.
+
+Regras da importação:
+
+- a empresa tem de existir — linhas com empresas desconhecidas são
+  rejeitadas, nunca criam a empresa em silêncio;
+- números repetidos no ficheiro e colaboradores já existentes são
+  reportados com o número da linha e ignorados;
+- uma linha inválida não impede as restantes de serem importadas.
+
+> **Zeros à esquerda:** se a coluna do número estiver formatada como
+> número numa folha de Excel, o `012345` é guardado como `12345` e os
+> zeros perdem-se antes de o ficheiro chegar à aplicação. Formate a
+> coluna como **texto**, ou exporte em CSV.
+
+## Fluxo do operador
+
+```
+número → Enter → confirmar → Enter → próximo
+```
+
+O foco fica sempre no campo de pesquisa e o Enter tem dois significados:
+
+- **campo com texto** → pesquisa;
+- **campo vazio** → entrega o kit do cartão visível.
+
+Isto é deliberado. Os leitores de crachá escrevem os dígitos e terminam
+com Enter; se o foco estivesse no botão, ler o crachá seguinte entregaria
+um kit à pessoa errada. Ver
+[`docs/decisions/0002-enter-nao-entrega-por-acidente.md`](docs/decisions/0002-enter-nao-entrega-por-acidente.md).
+
+Atalhos: `Enter` pesquisa/entrega · `Esc` limpa.
+
+## Perfis
+
+|                                      | Operador | Administrador |
+| ------------------------------------ | :------: | :-----------: |
+| Pesquisar colaborador e entregar kit |    ✓     |       ✓       |
+| Ver stock das empresas               |    ✓     |       ✓       |
+| Listar colaboradores                 |    ✗     |       ✓       |
+| Criar e editar empresas e limites    |    ✗     |       ✓       |
+| Importar colaboradores               |    ✗     |       ✓       |
+| Anular entregas                      |    ✗     |       ✓       |
+| Consultar histórico                  |    ✗     |       ✓       |
+
+O operador não consegue ler a tabela de colaboradores: se conseguisse,
+podia enumerar toda a base de pessoas pela API do Supabase. A pesquisa do
+ecrã de distribuição passa por uma função que exige correspondência exata
+do número e devolve no máximo uma linha.
+
+## Testes
+
+```bash
+pnpm check              # lint + typecheck + formatação + testes unitários
+pnpm test               # apenas os testes unitários
+```
+
+As regras críticas são testadas contra um PostgreSQL verdadeiro, não
+contra mocks:
+
+```bash
+PGHOST_DIR=/caminho/para/socket pnpm test:sql          # regras de negócio e RLS
+PGHOST_DIR=/caminho/para/socket pnpm test:concurrency  # concorrência real
+```
+
+Os testes de concorrência lançam processos `psql` em paralelo e verificam,
+entre outros casos, que 60 tentativas simultâneas sobre 10 kits entregam
+exatamente 10.
+
+Para levantar um PostgreSQL descartável sem Docker:
+
+```bash
+initdb -D /tmp/pgkits -U postgres --auth=trust
+pg_ctl -D /tmp/pgkits -o "-k /tmp/pgkits -c listen_addresses=''" start
+PGHOST_DIR=/tmp/pgkits pnpm test:sql
+```
+
+## Fora do âmbito desta versão
+
+Exportação para CSV/Excel, gestão de utilizadores pela interface, edição
+individual de colaboradores e modo offline não fazem parte deste MVP.
+
+## Estrutura
+
+```
+app/
+  (app)/                 área autenticada
+    distribuicao/        ecrã do operador
+    admin/               dashboard, empresas, importar, histórico
+  api/                   route handlers
+components/
+  distribution/          ecrã de entrega
+  admin/                 gestão e histórico
+  ui/                    componentes base
+lib/
+  auth/                  sessão e guardas
+  supabase/              clientes browser / servidor / admin
+  import/                leitura e validação de ficheiros
+  validation/            esquemas Zod
+  api/                   envelope de resposta e códigos de erro
+server/use-cases/        lógica aplicacional
+supabase/migrations/     esquema versionado
+tests/
+  unit/                  Vitest
+  sql/                   regras de negócio e concorrência
+docs/decisions/          decisões de arquitetura
+```

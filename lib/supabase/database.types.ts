@@ -111,6 +111,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      delivery_history: {
+        Row: {
+          id: number;
+          action: AuditAction;
+          performed_at: string;
+          notes: string | null;
+          metadata: Json;
+          employee_id: string | null;
+          employee_number: string | null;
+          employee_name: string | null;
+          company_id: string | null;
+          company_name: string | null;
+          company_code: string | null;
+          delivery_id: string | null;
+          reversed_at: string | null;
+          is_active_delivery: boolean | null;
+          performed_by: string | null;
+          performed_by_name: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       find_employee_for_delivery: { Args: { p_employee_number: string }; Returns: Json };
