@@ -55,8 +55,9 @@ usada** e não deve ser configurada: toda a autorização assenta nas políticas
 RLS e em funções `SECURITY DEFINER` invocadas com a sessão do próprio
 utilizador. Não existe nenhum caminho de código que contorne o RLS.
 
-Ambas as variáveis acima são públicas por natureza — a aplicação envia-as
-para o browser. A segurança está na base de dados, não em escondê-las.
+Nenhuma das duas é um segredo, e nesta aplicação nem sequer chegam ao
+browser: todo o acesso ao Supabase acontece no servidor. A segurança está nas
+políticas RLS da base de dados.
 
 ## Base de dados
 
