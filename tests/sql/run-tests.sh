@@ -132,11 +132,33 @@ r=$(q "select count(*) from public.delivery_logs where action = 'COMPANY_LIMIT_U
 check "alteração de limite fica auditada" "1" "$r"
 
 echo
+echo "═══ Secção 19: importação ═══"
+ROWS='[{"employeeNumber":"55501","name":"Novo Um","companyId":"00000000-0000-0000-0000-0000000000c1"},{"employeeNumber":"55502","name":"Novo Dois","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
+r=$(as_user "$OPER" "select import_employees('$ROWS'::jsonb);")
+check "operador não pode importar" "FORBIDDEN" "$r"
+r=$(as_user "$ADMIN" "select import_employees('$ROWS'::jsonb) ->> 'inserted';")
+check "administrador importa duas linhas" "2" "$r"
+r=$(as_user "$ADMIN" "select import_employees('$ROWS'::jsonb) ->> 'skipped';")
+check "reimportar o mesmo ficheiro não duplica" "2" "$r"
+r=$(q "select count(*) from public.employees where employee_number in ('55501','55502');")
+check "existe exatamente um de cada" "2" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEES_IMPORTED';")
+check "importação fica auditada" "2" "$r"
+DUP='[{"employeeNumber":"12345","name":"Colisao","companyId":"00000000-0000-0000-0000-0000000000c2"}]'
+r=$(as_user "$ADMIN" "select import_employees('$DUP'::jsonb) ->> 'skipped';")
+check "número já existente noutra empresa é ignorado" "1" "$r"
+BAD='[{"employeeNumber":"55503","name":"Sem Empresa","companyId":"00000000-0000-0000-0000-0000000000ff"}]'
+r=$(as_user "$ADMIN" "select import_employees('$BAD'::jsonb);")
+check "empresa inexistente aborta a importação inteira" "violates foreign key" "$r"
+r=$(q "select count(*) from public.employees where employee_number = '55503';")
+check "nada foi escrito na importação abortada" "0" "$r"
+
+echo
 echo "═══ RLS ═══"
 r=$(as_user "$OPER" "select count(*) from public.employees;")
 check "operador não consegue enumerar colaboradores" "0" "$r"
 r=$(as_user "$ADMIN" "select count(*) from public.employees;")
-check "administrador consegue listar colaboradores" "5" "$r"
+check "administrador consegue listar colaboradores" "7" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
 r=$(as_user "$OPER" "select count(*) from public.company_stock;")

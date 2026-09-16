@@ -122,6 +122,7 @@ export type Database = {
         Args: { p_delivery_id: string; p_reason: string | null };
         Returns: Json;
       };
+      import_employees: { Args: { p_rows: Json }; Returns: Json };
       save_company: {
         Args: {
           p_id: string | null;
