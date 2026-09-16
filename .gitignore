@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...mas o modelo sem segredos tem de ir para o repositório: é o primeiro
+# passo da instalação no README.
+!.env.example
 
 # vercel
 .vercel
@@ -39,10 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Ambiente local
-.env
-.env.local
 
 # Supabase
 supabase/.temp
