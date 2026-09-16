@@ -62,8 +62,12 @@ export function GET() {
     },
     problemas,
     avisos,
+    // Dois sinalizadores operacionais que enfraquecem a segurança e são
+    // invisíveis no painel de quem só olha para a aplicação. Expostos aqui
+    // para que se possa confirmar que ficaram desligados.
     autenticacaoDesativada: Boolean(
       process.env.AUTH_BYPASS_EMAIL && process.env.AUTH_BYPASS_PASSWORD,
     ),
+    diagnosticoDeLoginAtivo: process.env.LOGIN_DIAGNOSTICS === "1",
   });
 }

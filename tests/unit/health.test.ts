@@ -22,6 +22,7 @@ type HealthBody = {
     problemas: string[];
     avisos: string[];
     autenticacaoDesativada: boolean;
+    diagnosticoDeLoginAtivo: boolean;
   };
 };
 
@@ -92,5 +93,15 @@ describe("/api/health", () => {
     process.env.AUTH_BYPASS_PASSWORD = "x";
 
     expect((await body()).data.autenticacaoDesativada).toBe(true);
+  });
+
+  it("revela quando o diagnóstico de login está ligado", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://abcdefghijklm.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "chave";
+
+    expect((await body()).data.diagnosticoDeLoginAtivo).toBe(false);
+
+    process.env.LOGIN_DIAGNOSTICS = "1";
+    expect((await body()).data.diagnosticoDeLoginAtivo).toBe(true);
   });
 });
