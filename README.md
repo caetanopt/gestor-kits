@@ -186,6 +186,25 @@ um kit à pessoa errada. Ver
 
 Atalhos: `Enter` pesquisa/entrega · `Esc` limpa.
 
+### Pesquisar por nome ou email
+
+O separador **Nome ou email** existe para quem chega sem saber o número. As
+regras são diferentes das da pesquisa por número, e deliberadamente
+restritivas:
+
+- **email** — correspondência exata. Um email é um identificador: quem o
+  escreve já o sabe, e a pesquisa parcial só serviria para descobrir moradas
+  alheias;
+- **nome** — parcial, mas só depois do primeiro espaço. Escrever `Ana` não
+  sugere nada; `Ana ` já sugere. Exigir um nome próprio inteiro antes de
+  listar seja quem for mantém a pesquisa útil sem a transformar num diretório
+  de pessoas;
+- no máximo 10 resultados, com o total real indicado;
+- o email só aparece na lista quando foi ele que correspondeu.
+
+As sugestões aparecem enquanto se escreve. Escolher um resultado abre o mesmo
+cartão da pesquisa por número, e o `Enter` seguinte entrega o kit.
+
 ## Perfis
 
 |                                      | Distribuidor | Administrador |

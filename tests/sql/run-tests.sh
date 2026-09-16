@@ -109,6 +109,62 @@ r=$(as_user "$OPER" "select find_employee_for_delivery('12348')::text ~ 'privado
 check "a pesquisa NÃO devolve o email do colaborador" "f" "$r"
 
 echo
+echo "═══ Pesquisa por nome ou email ═══"
+q "update public.employees set email = 'joao.silva@empresa.pt' where employee_number = '12345';" >/dev/null
+q "update public.employees set email = 'ana.costa@empresa.pt' where employee_number = '12346';" >/dev/null
+
+echo "    — email: correspondência exata —"
+r=$(as_user "$OPER" "select search_employees_for_delivery('ana.costa@empresa.pt') -> 'results' -> 0 ->> 'name';")
+check "encontra pelo email completo" "Ana Costa" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('ANA.COSTA@EMPRESA.PT') -> 'results' -> 0 ->> 'name';")
+check "não distingue maiúsculas" "Ana Costa" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('  ana.costa@empresa.pt  ') -> 'results' -> 0 ->> 'name';")
+check "ignora espaços à volta" "Ana Costa" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('ana.costa') -> 'results';")
+check "email parcial NÃO devolve nada" "[]" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('@empresa.pt') -> 'results';")
+check "o domínio sozinho não lista toda a gente" "[]" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('ana.costa@empresa.pt') -> 'results' -> 0 ->> 'email';")
+check "devolve o email quando foi ele que correspondeu" "ana.costa@empresa.pt" "$r"
+
+echo "    — nome: só depois do primeiro espaço —"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana') ->> 'aguarda';")
+check "sem espaço, ainda não sugere" "true" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana') -> 'results';")
+check "e não devolve resultados" "[]" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ') -> 'results' -> 0 ->> 'name';")
+check "com o espaço, já sugere" "Ana Costa" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana Costa') -> 'results' -> 0 ->> 'name';")
+check "o nome completo restringe" "Ana Costa" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('joão silva') -> 'results' -> 0 ->> 'employeeNumber';")
+check "não distingue maiúsculas no nome" "12345" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ') -> 'results' -> 0 ->> 'email';")
+check "NÃO devolve o email quando a correspondência foi pelo nome" "" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery(' ') -> 'results';")
+check "só espaços não devolve nada" "[]" "$r"
+
+echo "    — curingas e limites —"
+r=$(as_user "$OPER" "select search_employees_for_delivery('% %') -> 'results';")
+check "os curingas do ILIKE não devolvem toda a base de dados" "[]" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('_ _') -> 'results';")
+check "o underscore também é escapado" "[]" "$r"
+q "insert into public.employees (employee_number, name, email, company_id)
+   select 'LIM' || i, 'Homonimo Teste ' || i, 'h' || i || '\@exemplo.pt',
+          '00000000-0000-0000-0000-0000000000c1'
+     from generate_series(1, 12) i;" >/dev/null
+r=$(as_user "$OPER" "select jsonb_array_length(search_employees_for_delivery('Homonimo ') -> 'results');")
+check "os resultados são limitados a 10" "10" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'total';")
+check "o total real é reportado" "12" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'truncated';")
+check "e assinala que há mais" "true" "$r"
+
+echo "    — conteúdo dos resultados —"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ') -> 'results' -> 0 ->> 'kitDelivered';")
+check "traz o estado da entrega" "true" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ') -> 'results' -> 0 ->> 'companyName';")
+check "traz a empresa" "Empresa A" "$r"
+
 echo "═══ Secção 20: anulação administrativa ═══"
 DID=$(q "select id from public.deliveries where employee_id = '00000000-0000-0000-0000-0000000000e1';")
 r=$(as_user "$OPER" "select reverse_delivery('$DID', 'engano');")
@@ -280,8 +336,10 @@ echo
 echo "═══ RLS ═══"
 r=$(as_user "$OPER" "select count(*) from public.employees;")
 check "operador não consegue enumerar colaboradores" "0" "$r"
-r=$(as_user "$ADMIN" "select count(*) from public.employees;")
-check "administrador consegue listar colaboradores" "10" "$r"
+# O que interessa é o contraste com o distribuidor, não o total exato — que
+# muda sempre que um teste novo cria colaboradores.
+r=$(as_user "$ADMIN" "select (count(*) > 0) from public.employees;")
+check "administrador consegue listar colaboradores" "t" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
 r=$(as_user "$OPER" "select count(*) from public.company_stock;")

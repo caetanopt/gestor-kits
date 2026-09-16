@@ -6,9 +6,11 @@ import { mapPostgrestError } from "@/lib/api/rpc";
 import {
   deliveryResultSchema,
   employeeLookupSchema,
+  employeeSearchSchema,
   reverseResultSchema,
   type DeliveryResult,
   type EmployeeLookup,
+  type EmployeeSearch,
   type ReverseResult,
 } from "@/lib/validation/delivery";
 
@@ -40,6 +42,24 @@ export async function findEmployeeForDelivery(
 
   if (error) throw mapPostgrestError(error);
   return parseRpc(employeeLookupSchema, data, "find_employee_for_delivery");
+}
+
+/**
+ * Pesquisa por nome ou email.
+ *
+ * Ao contrário da pesquisa por número, esta é parcial. Os limites — mínimo de
+ * caracteres, número de resultados e o email só quando foi ele que
+ * correspondeu — estão na função SQL, que é quem os tem de garantir.
+ */
+export async function searchEmployeesForDelivery(query: string): Promise<EmployeeSearch> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc("search_employees_for_delivery", {
+    p_query: query,
+  });
+
+  if (error) throw mapPostgrestError(error);
+  return parseRpc(employeeSearchSchema, data, "search_employees_for_delivery");
 }
 
 /**

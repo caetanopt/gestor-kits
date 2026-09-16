@@ -167,6 +167,7 @@ export type Database = {
     };
     Functions: {
       find_employee_for_delivery: { Args: { p_employee_number: string }; Returns: Json };
+      search_employees_for_delivery: { Args: { p_query: string }; Returns: Json };
       deliver_kit: {
         Args: { p_employee_number: string; p_idempotency_key: string };
         Returns: Json;

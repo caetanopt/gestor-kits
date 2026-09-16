@@ -20,6 +20,8 @@ export const ERROR_CODES = {
   NO_STOCK: "A empresa já atingiu o limite de kits.",
   INVALID_COMPANY: "Erro de configuração: colaborador sem empresa válida.",
 
+  SEARCH_TOO_SHORT: "Escreva pelo menos 3 caracteres para pesquisar por nome ou email.",
+
   // Anulação
   DELIVERY_NOT_FOUND: "Entrega não encontrada.",
   ALREADY_REVERSED: "Esta entrega já tinha sido anulada.",
@@ -92,6 +94,7 @@ function defaultStatusFor(code: ErrorCode): number {
     case "DUPLICATE_USER_EMAIL":
       return 409;
     case "VALIDATION_ERROR":
+    case "SEARCH_TOO_SHORT":
     case "INVALID_FILE":
     case "INVALID_COMPANY":
     case "EMPLOYEE_EMAIL_REQUIRED":

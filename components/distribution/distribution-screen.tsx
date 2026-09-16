@@ -1,19 +1,36 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { deveSugerir } from "@/lib/validation/delivery";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { StockPanel } from "./stock-panel";
 import { StatusBadge } from "./status-badge";
 import { formatDateTime } from "@/lib/format/date";
-import type { DeliveryResult, EmployeeLookup } from "@/lib/validation/delivery";
+import type {
+  DeliveryResult,
+  EmployeeLookup,
+  EmployeeMatch,
+  EmployeeSearch,
+} from "@/lib/validation/delivery";
 
 type Screen =
   | { kind: "idle" }
   | { kind: "busy"; label: string }
+  | { kind: "aguarda" }
+  | { kind: "matches"; search: EmployeeSearch }
   | { kind: "found"; lookup: EmployeeLookup; idempotencyKey: string }
   | { kind: "delivered"; result: DeliveryResult }
   | { kind: "error"; message: string };
+
+/**
+ * Modo de pesquisa.
+ *
+ * O número é o predefinido: é o fluxo rápido do evento. O nome ou email
+ * existe para quem chega sem saber o número, e devolve uma lista em vez de
+ * um resultado único.
+ */
+type Mode = "numero" | "nome";
 
 type ApiEnvelope<T> =
   { success: true; data: T } | { success: false; code: string; message: string };
@@ -77,14 +94,22 @@ async function callApi<T>(input: string, init?: RequestInit): Promise<ApiEnvelop
 export function DistributionScreen() {
   const [screen, setScreen] = useState<Screen>({ kind: "idle" });
   const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<Mode>("numero");
   const inputRef = useRef<HTMLInputElement>(null);
+  // Guarda o texto atual para descartar respostas que cheguem fora de ordem.
+  // Escrever numa ref durante a renderização é uma violação do React, daí o
+  // efeito.
+  const queryRef = useRef("");
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
 
   const focusSearch = useCallback(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
   }, []);
 
-  const search = useCallback(
+  const searchByNumber = useCallback(
     async (rawNumber: string) => {
       const employeeNumber = rawNumber.trim();
       if (!employeeNumber) return;
@@ -111,6 +136,60 @@ export function DistributionScreen() {
       focusSearch();
     },
     [focusSearch],
+  );
+
+  /**
+   * Pesquisa por nome ou email.
+   *
+   * `silencioso` distingue as sugestões que aparecem enquanto se escreve, que
+   * não devem mostrar "a pesquisar" nem erros a cada tecla, de uma pesquisa
+   * pedida explicitamente com Enter ou pelo botão.
+   */
+  const searchByName = useCallback(async (rawTerm: string, silencioso = false) => {
+    const termo = rawTerm.trim();
+
+    if (!termo) {
+      if (!silencioso) setScreen({ kind: "idle" });
+      return;
+    }
+
+    if (!deveSugerir(rawTerm)) {
+      // Ainda não há nome próprio completo nem email inteiro: não vale a
+      // pena perguntar ao servidor, que responderia vazio.
+      setScreen({ kind: "aguarda" });
+      return;
+    }
+
+    if (!silencioso) setScreen({ kind: "busy", label: "A pesquisar…" });
+
+    const result = await callApi<EmployeeSearch>(
+      `/api/employees/search?q=${encodeURIComponent(termo)}`,
+    );
+
+    // O texto mudou entretanto: esta resposta já não é a que interessa.
+    if (queryRef.current.trim() !== termo) return;
+
+    if (!result.success) {
+      setScreen({ kind: "error", message: result.message });
+    } else if (result.data.aguarda) {
+      setScreen({ kind: "aguarda" });
+    } else if (result.data.results.length === 0) {
+      setScreen({ kind: "error", message: "Nenhum colaborador corresponde." });
+    } else {
+      setScreen({ kind: "matches", search: result.data });
+    }
+  }, []);
+
+  /** Carrega o cartão de um resultado da lista, como se tivesse sido pesquisado. */
+  const openMatch = useCallback(
+    (match: EmployeeMatch) => {
+      // O campo fica vazio de propósito: o Enter seguinte entrega o kit, tal
+      // como depois de uma pesquisa por número.
+      setQuery("");
+      queryRef.current = "";
+      void searchByNumber(match.employeeNumber);
+    },
+    [searchByNumber],
   );
 
   const deliver = useCallback(
@@ -146,9 +225,48 @@ export function DistributionScreen() {
     focusSearch();
   }, [focusSearch]);
 
+  const changeMode = useCallback(
+    (next: Mode) => {
+      setMode(next);
+      setScreen({ kind: "idle" });
+      setQuery("");
+      focusSearch();
+    },
+    [focusSearch],
+  );
+
   useEffect(() => {
     focusSearch();
   }, [focusSearch]);
+
+  /**
+   * Devolve o foco ao campo sempre que um cartão aparece.
+   *
+   * As funções de pesquisa já pedem o foco, mas fazem-no antes de o React
+   * voltar a renderizar, e o clique num resultado tira-o do campo. Sem isto, o
+   * foco ficava por vezes no botão que acabou de desaparecer e o Enter
+   * seguinte não entregava nada.
+   */
+  useEffect(() => {
+    if (screen.kind === "found" || screen.kind === "delivered") focusSearch();
+  }, [screen.kind, focusSearch]);
+
+  /**
+   * Sugestões enquanto se escreve.
+   *
+   * O atraso de 250 ms evita um pedido por tecla; combinado com a regra do
+   * primeiro espaço, a maioria das teclas nem chega a provocar um pedido.
+   */
+  useEffect(() => {
+    if (mode !== "nome") return;
+
+    const termo = query;
+    const temporizador = setTimeout(() => {
+      void searchByName(termo, true);
+    }, 250);
+
+    return () => clearTimeout(temporizador);
+  }, [query, mode, searchByName]);
 
   const canDeliver =
     screen.kind === "found" &&
@@ -166,7 +284,8 @@ export function DistributionScreen() {
     event.preventDefault();
 
     if (query.trim()) {
-      void search(query);
+      if (mode === "numero") void searchByNumber(query);
+      else void searchByName(query);
     } else if (canDeliver && screen.kind === "found") {
       void deliver(screen.lookup, screen.idempotencyKey);
     }
@@ -178,11 +297,41 @@ export function DistributionScreen() {
     <div className="mx-auto w-full max-w-2xl space-y-6">
       {/* Pesquisa ------------------------------------------------------- */}
       <div className="ring-ink-200 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
+        {/* Separadores. O modo por número fica primeiro por ser o fluxo
+            rápido do evento. */}
+        <div
+          role="tablist"
+          aria-label="Modo de pesquisa"
+          className="bg-ink-100 mb-4 flex gap-1 rounded-xl p-1"
+        >
+          {(
+            [
+              ["numero", "N.º colaborador"],
+              ["nome", "Nome ou email"],
+            ] as const
+          ).map(([valor, rotulo]) => (
+            <button
+              key={valor}
+              type="button"
+              role="tab"
+              aria-selected={mode === valor}
+              onClick={() => changeMode(valor)}
+              className={`flex-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                mode === valor
+                  ? "text-azul-900 bg-white shadow-sm"
+                  : "text-ink-700 hover:text-ink-900"
+              }`}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </div>
+
         <label
           htmlFor="employee-number"
           className="text-ink-700 block text-center text-sm font-medium"
         >
-          Número de colaborador
+          {mode === "numero" ? "Número de colaborador" : "Nome ou email"}
         </label>
 
         <input
@@ -190,7 +339,7 @@ export function DistributionScreen() {
           id="employee-number"
           name="employee-number"
           type="text"
-          inputMode="numeric"
+          inputMode={mode === "numero" ? "numeric" : "text"}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="none"
@@ -205,8 +354,10 @@ export function DistributionScreen() {
             // obrigar o operador a voltar a tocar no campo.
             if (!busy) requestAnimationFrame(focusSearch);
           }}
-          className="bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 py-5 text-center text-4xl font-semibold tracking-wider tabular-nums ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60"
-          placeholder="—"
+          className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 py-5 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
+            mode === "numero" ? "text-4xl tracking-wider tabular-nums" : "text-2xl"
+          }`}
+          placeholder={mode === "numero" ? "—" : "Nome completo ou email"}
         />
 
         <div className="mt-3 flex items-center justify-center gap-3">
@@ -215,7 +366,10 @@ export function DistributionScreen() {
             size="lg"
             variant="secondary"
             disabled={busy || !query.trim()}
-            onClick={() => void search(query)}
+            onClick={() => {
+              if (mode === "numero") void searchByNumber(query);
+              else void searchByName(query);
+            }}
           >
             Pesquisar
           </Button>
@@ -238,6 +392,17 @@ export function DistributionScreen() {
 
         {screen.kind === "error" && <Alert tone="error">{screen.message}</Alert>}
 
+        {screen.kind === "aguarda" && (
+          <p className="text-ink-700 text-center text-sm">
+            Escreva o nome próprio seguido de um espaço para ver sugestões, ou o email
+            completo.
+          </p>
+        )}
+
+        {screen.kind === "matches" && (
+          <MatchList search={screen.search} onOpen={openMatch} />
+        )}
+
         {screen.kind === "found" && (
           <FoundCard
             lookup={screen.lookup}
@@ -253,6 +418,62 @@ export function DistributionScreen() {
 }
 
 /* ------------------------------------------------------------------------ */
+
+/**
+ * Resultados da pesquisa por nome ou email.
+ *
+ * Mostra apenas o necessário para identificar a pessoa: nome, número e
+ * empresa. O email só aparece quando foi ele que correspondeu — quem
+ * pesquisou por nome não precisa de ver as moradas de toda a gente.
+ */
+function MatchList({
+  search,
+  onOpen,
+}: {
+  search: EmployeeSearch;
+  onOpen: (match: EmployeeMatch) => void;
+}) {
+  return (
+    <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
+      <p className="text-ink-700 border-ink-100 border-b px-5 py-3 text-sm">
+        {search.total} {search.total === 1 ? "resultado" : "resultados"}
+        {search.truncated && " · a mostrar os primeiros 10; refine a pesquisa"}
+      </p>
+
+      <ul>
+        {search.results.map((match) => (
+          <li key={match.id} className="border-ink-100 border-b last:border-0">
+            <button
+              type="button"
+              onClick={() => onOpen(match)}
+              className="hover:bg-ink-50 flex w-full items-center gap-3 px-5 py-4 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="text-ink-900 block font-semibold">{match.name}</span>
+                <span className="text-ink-700 block text-sm">
+                  N.º {match.employeeNumber} · {match.companyName}
+                </span>
+                {match.email && (
+                  <span className="text-ink-700 block text-sm">{match.email}</span>
+                )}
+              </span>
+
+              {match.kitDelivered ? (
+                <span className="bg-laranja-500 text-ink-800 shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold">
+                  Já entregue
+                </span>
+              ) : (
+                <span className="text-ink-800 shrink-0 rounded-md bg-cyan-500 px-2 py-0.5 text-xs font-semibold">
+                  Por entregar
+                </span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function FoundCard({
   lookup,

@@ -58,6 +58,22 @@ afterEach(() => {
 });
 
 const deliveries = () => calls.filter((c) => c.url === "/api/deliveries");
+const searches = () => calls.filter((c) => c.url.startsWith("/api/employees/search"));
+
+const RESULTADOS = {
+  results: [
+    {
+      id: "3f2504e0-4f89-41d3-9a0c-0305e82c3310",
+      employeeNumber: "12345",
+      name: "João Silva",
+      companyName: "Empresa A",
+      kitDelivered: false,
+      email: null,
+    },
+  ],
+  total: 1,
+  truncated: false,
+};
 
 describe("ecrã de distribuição", () => {
   it("pesquisa com Enter e mostra o colaborador", async () => {
@@ -241,5 +257,125 @@ describe("ecrã de distribuição", () => {
 
     const parsed = JSON.parse(bodies[0] ?? "{}") as { idempotencyKey?: string };
     expect(parsed.idempotencyKey).toBe("3f2504e0-4f89-41d3-9a0c-0305e82c3399");
+  });
+});
+
+describe("pesquisa por nome ou email", () => {
+  async function abrirSeparador(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("tab", { name: "Nome ou email" }));
+    return screen.getByLabelText("Nome ou email");
+  }
+
+  it("não pergunta ao servidor antes do primeiro espaço", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: RESULTADOS }));
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "Ana");
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Escreva o nome próprio seguido de um espaço/),
+      ).toBeInTheDocument();
+    });
+    expect(searches()).toHaveLength(0);
+  });
+
+  it("sugere assim que aparece o espaço", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: RESULTADOS }));
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "João ");
+
+    expect(await screen.findByText("João Silva")).toBeInTheDocument();
+    expect(searches().length).toBeGreaterThan(0);
+  });
+
+  it("pergunta ao servidor para um email completo, sem espaço", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({
+      success: true,
+      data: { ...RESULTADOS, results: [{ ...RESULTADOS.results[0]!, email: "a@b.pt" }] },
+    }));
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "joao.silva@empresa.pt");
+
+    expect(await screen.findByText("João Silva")).toBeInTheDocument();
+  });
+
+  it("escolher um resultado abre o cartão e o Enter seguinte entrega", async () => {
+    const user = userEvent.setup();
+    mockFetch((url) => {
+      if (url.startsWith("/api/employees/search")) {
+        return { success: true, data: RESULTADOS };
+      }
+      if (url === "/api/deliveries") {
+        return {
+          success: true,
+          data: {
+            delivery: {
+              id: "3f2504e0-4f89-41d3-9a0c-0305e82c3305",
+              deliveredAt: "2026-09-16T11:00:00.000Z",
+              deliveredBy: { id: "3f2504e0-4f89-41d3-9a0c-0305e82c3304", name: "B" },
+              reversedAt: null,
+            },
+            employee: LOOKUP.employee,
+            company: LOOKUP.company,
+            stock: { allocated: 120, delivered: 48, available: 72 },
+            repeated: false,
+          },
+        };
+      }
+      return { success: true, data: LOOKUP };
+    });
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "João ");
+
+    await user.click(await screen.findByText("João Silva"));
+    await screen.findByText("KIT AINDA NÃO ENTREGUE");
+
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("Kit entregue com sucesso.")).toBeInTheDocument();
+  });
+
+  it("uma leitura de crachá no separador de nome NUNCA entrega", async () => {
+    const user = userEvent.setup();
+    mockFetch((url) =>
+      url.startsWith("/api/employees/search")
+        ? { success: true, data: RESULTADOS }
+        : { success: true, data: LOOKUP },
+    );
+
+    render(<DistributionScreen />);
+    const campo = await abrirSeparador(user);
+    await user.type(campo, "João ");
+    await user.click(await screen.findByText("João Silva"));
+    await screen.findByText("KIT AINDA NÃO ENTREGUE");
+
+    // O crachá seguinte: dígitos e Enter, sem clique pelo meio.
+    await user.keyboard("12346{Enter}");
+    expect(deliveries()).toHaveLength(0);
+  });
+
+  it("mudar de separador limpa o que estava no ecrã", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: LOOKUP }));
+
+    render(<DistributionScreen />);
+    await user.keyboard("12345{Enter}");
+    await screen.findByText("João Silva");
+
+    await abrirSeparador(user);
+
+    await waitFor(() => {
+      expect(screen.queryByText("KIT AINDA NÃO ENTREGUE")).not.toBeInTheDocument();
+    });
   });
 });
