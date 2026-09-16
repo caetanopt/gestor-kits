@@ -121,6 +121,27 @@ body {
     outline: 3px solid var(--color-cyan-500);
     outline-offset: 2px;
   }
+
+  /**
+   * Cursor de mão nos botões.
+   *
+   * O `<button>` nativo tem `cursor: default` — era o Tailwind que lhe punha
+   * a mão, e a versão 4 deixou de o fazer para seguir o browser. O efeito é
+   * um botão que não parece clicável, o contrário do que se quer numa
+   * aplicação usada à pressa.
+   *
+   * Fica aqui e não no componente Button porque nem todos os botões passam
+   * por ele: os separadores da distribuição e as linhas da lista de
+   * resultados são `<button>` em bruto, e os que vierem a seguir também não
+   * se devem lembrar disto.
+   *
+   * O `:not(:disabled)` evita convidar ao clique um botão que não responde.
+   */
+  button:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @layer components {

@@ -210,7 +210,7 @@ function IssueList({
 
   return (
     <details className="ring-ink-200 rounded-2xl bg-white p-4 shadow-sm ring-1">
-      <summary className="text-ink-800 cursor-pointer text-sm font-medium">
+      <summary className="text-ink-800 text-sm font-medium">
         {title} ({issues.length})
       </summary>
       <ul className="mt-3 space-y-1.5 text-sm">
