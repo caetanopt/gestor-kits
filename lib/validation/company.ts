@@ -59,3 +59,20 @@ export const companyStockRowSchema = z.object({
 export type CompanyInput = z.infer<typeof companyInputSchema>;
 export type CompanyResult = z.infer<typeof companyResultSchema>;
 export type CompanyStockRow = z.infer<typeof companyStockRowSchema>;
+
+/**
+ * Pré-visualização do código que o servidor vai gerar a partir do nome.
+ *
+ * Espelha `public.derive_company_code`. Serve apenas para mostrar o valor no
+ * campo como sugestão — quem decide é sempre o SQL, que é também quem garante
+ * a unicidade.
+ */
+export function deriveCode(name: string): string {
+  const semAcentos = name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+
+  return semAcentos.slice(0, 12) || "EMPRESA";
+}

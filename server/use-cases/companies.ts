@@ -57,7 +57,28 @@ export async function saveCompany(
     p_allocated_kits: input.allocatedKits,
   });
 
-  if (error) throw mapPostgrestError(error);
+  if (error) {
+    const mapeado = mapPostgrestError(error);
+
+    // O nome e o número de kits já foram validados aqui antes da chamada, por
+    // isso um VALIDATION_ERROR vindo do SQL sem código indicado significa
+    // quase de certeza que a base de dados ainda tem a versão de
+    // `save_company` anterior à migração 0006, que exigia o código.
+    //
+    // Sem esta mensagem, o sintoma é "os dados enviados são inválidos" num
+    // formulário cujos dados estão visivelmente corretos.
+    if (mapeado.code === "VALIDATION_ERROR" && !input.code) {
+      throw new AppError("VALIDATION_ERROR", {
+        details: [
+          "Indique um código para a empresa. Para o deixar vazio e ser gerado " +
+            "automaticamente, aplique a migração 0006_codigo_automatico.sql na " +
+            "base de dados.",
+        ],
+      });
+    }
+
+    throw mapeado;
+  }
 
   const parsed = companyResultSchema.safeParse(data);
   if (!parsed.success) {

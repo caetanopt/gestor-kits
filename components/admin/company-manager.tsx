@@ -5,11 +5,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
-import type { CompanyStockRow } from "@/lib/validation/company";
+import { deriveCode, type CompanyStockRow } from "@/lib/validation/company";
 
-type Draft = { id?: string; name: string; allocatedKits: string };
+type Draft = { id?: string; name: string; code: string; allocatedKits: string };
 
-const EMPTY: Draft = { name: "", allocatedKits: "0" };
+const EMPTY: Draft = { name: "", code: "", allocatedKits: "0" };
 
 type ApiEnvelope =
   | { success: true; data: unknown }
@@ -42,8 +42,13 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
       {
         method: draft.id ? "PUT" : "POST",
         headers: { "content-type": "application/json" },
-        // Sem código: é derivado do nome ao criar, e preservado ao editar.
-        body: JSON.stringify({ name: draft.name, allocatedKits }),
+        // Código vazio: o servidor deriva-o do nome ao criar e preserva o
+        // existente ao editar.
+        body: JSON.stringify({
+          name: draft.name,
+          code: draft.code.trim() || undefined,
+          allocatedKits,
+        }),
       },
     ).catch(() => null);
 
@@ -90,7 +95,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
 
           {error && <Alert tone="error">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Nome" htmlFor="company-name">
               <Input
                 id="company-name"
@@ -98,6 +103,20 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                 required
                 maxLength={120}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              />
+            </Field>
+
+            <Field
+              label="Código"
+              htmlFor="company-code"
+              hint="Opcional. Vazio gera a partir do nome."
+            >
+              <Input
+                id="company-code"
+                value={draft.code}
+                maxLength={40}
+                placeholder={draft.name ? deriveCode(draft.name) : "—"}
+                onChange={(e) => setDraft({ ...draft, code: e.target.value })}
               />
             </Field>
 
@@ -205,6 +224,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                         setDraft({
                           id: company.id,
                           name: company.name,
+                          code: company.code,
                           allocatedKits: String(company.allocated),
                         });
                         setError(null);
