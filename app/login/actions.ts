@@ -43,6 +43,20 @@ export async function signIn(
       reason: error?.message,
     });
 
+    // Modo de diagnóstico: com LOGIN_DIAGNOSTICS=1 o motivo real aparece no
+    // ecrã. Serve para resolver um login que falha sem se perceber porquê,
+    // sem obrigar a procurar nos logs do servidor.
+    //
+    // Desligado por omissão porque revela se uma conta existe. Voltar a
+    // desligar assim que o problema estiver resolvido.
+    if (process.env.LOGIN_DIAGNOSTICS === "1") {
+      return {
+        error: `[diagnóstico] ${error?.code ?? "sem utilizador"} · ${
+          error?.status ?? "?"
+        } · ${error?.message ?? "sem detalhe"}`,
+      };
+    }
+
     return { error: "Email ou palavra-passe incorretos." };
   }
 
