@@ -91,7 +91,7 @@ setup $((CONC * 2))
 succeeded=$(storm "$(seq 1 $((CONC * 2)))")
 check "todas as entregas passam" "$((CONC * 2))" "$succeeded"
 check "uma linha por colaborador, sem duplicados" "$((CONC * 2))" "$(q "select count(*) from public.deliveries where reversed_at is null;")"
-check "a vista conta o mesmo" "$((CONC * 2))" "$(q "select delivered from public.company_totals where code='EMPA';")"
+check "os totais contam o mesmo" "$((CONC * 2))" "$(psql -h "$PGH" -U postgres -d "$DB" -tAX -c "set role authenticated; set request.jwt.claim.sub = '$OPER'; select delivered from public.company_totals_list() where code='EMPA';" 2>&1 | tail -1)"
 
 echo
 echo "═══ Mesma chave de idempotência em simultâneo ═══"

@@ -10,9 +10,18 @@
 --
 -- Executar no SQL Editor do Supabase, no projeto da aplicação.
 -- =============================================================================
-select 'Vista company_totals existe' as verificacao,
-       coalesce(to_regclass('public.company_totals')::text, '—') as valor,
-       case when to_regclass('public.company_totals') is not null then '✓' else '✗ FALTA' end as estado
+-- A vista company_totals, criada pela 0011, foi substituída pela função
+-- company_totals_list na 0014. O que a 0011 introduziu — totais por empresa
+-- sem limite — continua a ter de existir; mudou o sítio.
+select 'Totais por empresa existem' as verificacao,
+       coalesce((select 'company_totals_list' from pg_proc p
+                   join pg_namespace n on n.oid = p.pronamespace
+                  where n.nspname='public' and p.proname='company_totals_list'
+                  limit 1), '—') as valor,
+       case when exists (select 1 from pg_proc p
+                           join pg_namespace n on n.oid = p.pronamespace
+                          where n.nspname='public' and p.proname='company_totals_list')
+            then '✓' else '✗ FALTA' end as estado
 union all
 select 'Vista company_stock removida',
        coalesce(to_regclass('public.company_stock')::text, 'removida'),

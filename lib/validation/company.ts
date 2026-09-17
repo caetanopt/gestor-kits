@@ -37,7 +37,7 @@ export const companyResultSchema = z.object({
   totals: totalsSchema,
 });
 
-/** Linha da vista `company_totals`, já em camelCase. */
+/** Linha de `company_totals_list()`, já em camelCase. */
 export const companyTotalsRowSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),

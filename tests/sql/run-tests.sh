@@ -83,8 +83,8 @@ echo "═══ Sem limite por empresa (migração 0011) ═══"
 as_user "$OPER" "select deliver_kit('12347', gen_random_uuid());" >/dev/null
 r=$(as_user "$OPER" "select deliver_kit('12348', gen_random_uuid()) -> 'totals' ->> 'delivered';")
 check "entrega acima do antigo limite é aceite" "4" "$r"
-r=$(q "select delivered from public.company_totals where code = 'EMPA';")
-check "a vista conta o que foi entregue" "4" "$r"
+r=$(as_user "$ADMIN" "select delivered from public.company_totals_list() where code = 'EMPA';")
+check "os totais contam o que foi entregue" "4" "$r"
 r=$(q "select count(*) from public.deliveries d join public.companies c on c.id = d.company_id where c.code = 'EMPA' and d.reversed_at is null;")
 check "todas as entregas ficam registadas" "4" "$r"
 
@@ -358,8 +358,25 @@ r=$(as_user "$ADMIN" "select (count(*) > 0) from public.employees;")
 check "administrador consegue listar colaboradores" "t" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
-r=$(as_user "$OPER" "select count(*) from public.company_totals;")
+r=$(as_user "$OPER" "select count(*) from public.company_totals_list();")
 check "operador vê os totais das empresas" "4" "$r"
+# O dashboard mostrava "Colaboradores 0" a um distribuidor porque a antiga
+# vista era security_invoker e o RLS de employees corta-lhe a tabela. Os
+# totais têm de ser os mesmos para os dois perfis — sem que o distribuidor
+# passe a ver uma única linha de colaboradores (verificado acima).
+# Contagens relativas, não absolutas: os testes acima criam colaboradores, e
+# fixar um número aqui só garantia que este bloco parte na próxima vez que
+# alguém acrescentar um caso.
+oper_conta=$(as_user "$OPER" "select employee_count from public.company_totals_list() where code = 'EMPA';" | tail -1)
+admin_conta=$(as_user "$ADMIN" "select employee_count from public.company_totals_list() where code = 'EMPA';" | tail -1)
+check "operador vê quantos colaboradores tem a empresa" "t" "$(q "select $oper_conta > 0;")"
+check "e vê exatamente o mesmo que o administrador" "$admin_conta" "$oper_conta"
+# Empresa por empresa, e não só a EMPA: uma diferença numa qualquer delas é
+# o mesmo defeito. (Uma empresa sem colaboradores conta zero legitimamente —
+# o que não pode é contar zero para um perfil e outra coisa para o outro.)
+RETRATO="select string_agg(code || '=' || employee_count || '/' || delivered, ',' order by code) from public.company_totals_list();"
+check "os números são iguais para os dois perfis, empresa a empresa" \
+  "$(as_user "$ADMIN" "$RETRATO" | tail -1)" "$(as_user "$OPER" "$RETRATO" | tail -1)"
 r=$(as_user "$OPER" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$OPER', gen_random_uuid());")
 check "operador não pode inserir entregas diretamente" "denied for table deliveries" "$r"
 r=$(as_user "$ADMIN" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$ADMIN', gen_random_uuid());")
@@ -368,21 +385,17 @@ r=$(as_user "$OPER" "update public.profiles set role = 'admin' where id = '$OPER
 check "distribuidor não consegue promover-se a administrador" "denied for table profiles" "$r"
 
 echo
-echo "═══ Entregas na última hora (cartão do dashboard) ═══"
-# A consulta do dashboard tem duas condições e qualquer uma pode estar errada:
-# a janela de uma hora e a exclusão das anuladas.
+echo "═══ Números do dashboard ═══"
+# O dashboard mostra entregues e colaboradores por empresa, e ambos saem de
+# company_totals_list(). A condição que pode estar errada é a exclusão das
+# anuladas: sem ela, um kit devolvido continuava a contar como entregue.
 reset_db
 as_user "$OPER" "select deliver_kit('12345', gen_random_uuid());" >/dev/null
-CONTA="select count(*) from public.deliveries where reversed_at is null and delivered_at >= now() - interval '1 hour';"
-r=$(q "$CONTA")
+CONTA="select delivered from public.company_totals_list() where code = 'EMPA';"
+r=$(as_user "$OPER" "$CONTA" | tail -1)
 check "uma entrega acabada de fazer conta" "1" "$r"
-
-# A alteração da data é verificada: uma que falhasse em silêncio deixaria o
-# teste a passar pela razão errada.
-r=$(q "update public.deliveries set delivered_at = now() - interval '3 hours'; $CONTA")
-check "uma entrega de há três horas já não conta" "0" "$r"
-r=$(q "update public.deliveries set delivered_at = now(); $CONTA")
-check "reposta a hora, volta a contar" "1" "$r"
+r=$(as_user "$ADMIN" "$CONTA" | tail -1)
+check "e o administrador vê o mesmo" "1" "$r"
 
 echo "    — documento exportado —"
 # O documento leva toda a gente; o que distingue as duas metades é o
@@ -403,8 +416,8 @@ check "e a empresa" "Empresa A" "$r"
 # reversed_at e reversed_by andem juntos, e só a função os põe coerentes.
 DID=$(q "select id from public.deliveries limit 1;")
 as_user "$ADMIN" "select reverse_delivery('$DID', 'engano');" >/dev/null
-r=$(q "$CONTA")
-check "uma entrega anulada não conta, mesmo sendo recente" "0" "$r"
+r=$(as_user "$OPER" "$CONTA" | tail -1)
+check "uma entrega anulada deixa de contar nos totais" "0" "$r"
 r=$(as_user "$ADMIN" "select kit_delivered from public.employee_list where employee_number = '12345';")
 check "anulada deixa de contar como entregue" "f" "$r"
 r=$(as_user "$ADMIN" "select count(*) from public.employee_list where kit_delivered;")
