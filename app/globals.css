@@ -139,7 +139,31 @@ body {
    */
   button:not(:disabled),
   summary,
-  [role="button"]:not([aria-disabled="true"]) {
+  [role="button"]:not([aria-disabled="true"]),
+  /* Um seletor também abre ao clique. A regra do min-height, duas linhas
+     acima, já trata input e select como alvos de toque; deixar o cursor de
+     fora era uma incoerência. */
+  select:not(:disabled),
+  /* Controlos que abrem ou alternam ao clique. O seletor de ficheiro é o
+     caso mais visível: na página de importação está pintado para parecer um
+     botão secundário, e era o único que continuava sem mão. */
+  input[type="file"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  /* Clicar no texto de uma etiqueta alterna a caixa que ela envolve, por
+     isso a etiqueta inteira é clicável. Restringido a filho direto para não
+     apanhar etiquetas de campos de texto, onde a mão seria mentira. */
+  label:has(> input[type="checkbox"]:not(:disabled)),
+  label:has(> input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  /* O botão que o browser desenha dentro de um input de ficheiro é um
+     pseudo-elemento: não herda o cursor do input e precisa da sua própria
+     regra. */
+  input[type="file"]::file-selector-button {
     cursor: pointer;
   }
 }
