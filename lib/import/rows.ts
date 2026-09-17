@@ -69,7 +69,7 @@ export type ImportCandidate = {
   line: number;
   employeeNumber: string;
   name: string;
-  email: string;
+  email: string | null;
   companyId: string;
   companyName: string;
 };
@@ -106,13 +106,6 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     issues.push({
       line: 1,
       message: "Não foi encontrada a coluna do nome. Cabeçalhos aceites: name, nome.",
-    });
-  }
-  if (headerMap.email === undefined) {
-    issues.push({
-      line: 1,
-      message:
-        "Não foi encontrada a coluna do email, que é obrigatória. Cabeçalhos aceites: email, e-mail, correio.",
     });
   }
   if (headerMap.company === undefined && headerMap.companyCode === undefined) {
@@ -197,23 +190,21 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     }
     seen.set(key, line);
 
-    // O email é obrigatório: a linha sem email válido é rejeitada, como
-    // acontece com o nome ou com a empresa.
-    if (!rawEmail) {
-      issues.push({
-        line,
-        message: `Falta o email do colaborador ${number.data}.`,
-      });
-      continue;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) || rawEmail.length > 254) {
+    // O email é opcional: a linha sem email passa. O que continua a ser
+    // recusado é um email mal escrito — uma célula vazia é uma escolha, um
+    // "joao@empresa" é um erro que ninguém ia notar depois de importado.
+    if (
+      rawEmail &&
+      (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(rawEmail) || rawEmail.length > 254)
+    ) {
       issues.push({
         line,
         message: `Email inválido: "${rawEmail}" (colaborador ${number.data}).`,
       });
       continue;
     }
-    const email = rawEmail.toLowerCase();
+    // Sem email, a coluna fica a null e não a string vazia.
+    const email = rawEmail ? rawEmail.toLowerCase() : null;
 
     candidates.push({
       line,

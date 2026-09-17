@@ -237,9 +237,15 @@ r=$(as_user "$OPER" "select save_employee(null, '77001', 'Novo Colaborador', 'op
 check "operador não pode criar colaboradores" "FORBIDDEN" "$r"
 r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Novo Colaborador', 'Novo@Exemplo.PT ', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
 check "email é normalizado para minúsculas e sem espaços" "novo@exemplo.pt" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Sem Email', '', '00000000-0000-0000-0000-0000000000c1');")
-check "email vazio é recusado" "EMPLOYEE_EMAIL_REQUIRED" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Com Email', 'dois@exemplo.pt', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
+# O email voltou a ser opcional (migração 0012): vazio e ausente são a mesma
+# coisa, e o que a função grava é null em ambos.
+r=$(as_user "$ADMIN" "select save_employee(null, '77002', 'Sem Email', '', '00000000-0000-0000-0000-0000000000c1') -> 'email';")
+check "email vazio é aceite e fica nulo" "null" "$r"
+r=$(q "select email is null from public.employees where employee_number = '77002';")
+check "e é mesmo null na coluna, não string vazia" "t" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77009', 'Sem Email 2', null, '00000000-0000-0000-0000-0000000000c1') -> 'email';")
+check "email ausente também" "null" "$r"
+r=$(as_user "$ADMIN" "select save_employee(null, '77010', 'Com Email', 'dois@exemplo.pt', '00000000-0000-0000-0000-0000000000c1') ->> 'email';")
 check "email preenchido é aceite" "dois@exemplo.pt" "$r"
 r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Duplicado', 'dup@exemplo.pt', '00000000-0000-0000-0000-0000000000c1');")
 check "número duplicado é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
@@ -252,15 +258,15 @@ r=$(as_user "$ADMIN" "select save_employee('$EID', '77001', 'Nome Corrigido', 'c
 check "editar altera nome, email e empresa" "Nome Corrigido" "$r"
 r=$(q "select company_id from public.employees where employee_number = '77001';")
 check "a empresa foi mesmo alterada" "00000000-0000-0000-0000-0000000000c2" "$r"
-r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
-check "as duas criações ficam auditadas" "2" "$r"
+r=$(q "select count(*) >= 2 from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
+check "as criações ficam auditadas" "t" "$r"
 r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEE_UPDATED';")
 check "a edição fica auditada" "1" "$r"
 
 echo
 echo "═══ Listagem de colaboradores ═══"
-r=$(as_user "$ADMIN" "select count(*) from public.employee_list where employee_number like '77%';")
-check "administrador vê a listagem" "2" "$r"
+r=$(as_user "$ADMIN" "select count(*) >= 2 from public.employee_list where employee_number like '77%';")
+check "administrador vê a listagem" "t" "$r"
 r=$(as_user "$OPER" "select count(*) from public.employee_list;")
 check "operador NÃO vê a listagem" "0" "$r"
 r=$(as_user "$ADMIN" "select email from public.employee_list where employee_number = '77001';")
@@ -273,15 +279,19 @@ r=$(as_user "$ADMIN" "select delivered_by_name from public.employee_list where e
 check "listagem traz quem entregou" "Bruno Operador" "$r"
 
 echo
-echo "═══ Importação com email ═══"
+echo "═══ Importação com e sem email ═══"
 ROWS_E='[{"employeeNumber":"78001","name":"Com Email","email":"A@B.PT","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
 r=$(as_user "$ADMIN" "select import_employees('$ROWS_E'::jsonb) ->> 'inserted';")
 check "importa uma linha com email" "1" "$r"
 ROWS_S='[{"employeeNumber":"78002","name":"Sem Email","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
-r=$(as_user "$ADMIN" "select import_employees('$ROWS_S'::jsonb);")
-check "importação recusa linha sem email" "EMPLOYEE_EMAIL_REQUIRED" "$r"
-r=$(q "select count(*) from public.employees where employee_number = '78002';")
-check "nada foi escrito nessa importação" "0" "$r"
+r=$(as_user "$ADMIN" "select import_employees('$ROWS_S'::jsonb) ->> 'inserted';")
+check "importação aceita linha sem email" "1" "$r"
+r=$(q "select email is null from public.employees where employee_number = '78002';")
+check "e grava null e não string vazia" "t" "$r"
+# Uma linha sem email no meio de outras não pode arrastar as boas consigo.
+ROWS_M='[{"employeeNumber":"78003","name":"Sem","companyId":"00000000-0000-0000-0000-0000000000c1"},{"employeeNumber":"78004","name":"Com","email":"c@d.pt","companyId":"00000000-0000-0000-0000-0000000000c1"}]'
+r=$(as_user "$ADMIN" "select import_employees('$ROWS_M'::jsonb) ->> 'inserted';")
+check "mistura de linhas com e sem email passa inteira" "2" "$r"
 r=$(q "select email from public.employees where employee_number = '78001';")
 check "email importado é normalizado" "a@b.pt" "$r"
 

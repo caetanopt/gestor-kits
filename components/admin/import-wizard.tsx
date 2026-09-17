@@ -85,8 +85,9 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
             <code className="bg-ink-100 rounded px-1">employee_number</code>,{" "}
             <code className="bg-ink-100 rounded px-1">name</code>,{" "}
             <code className="bg-ink-100 rounded px-1">company</code> e{" "}
-            <code className="bg-ink-100 rounded px-1">email</code>. Todas obrigatórias.
-            São aceites cabeçalhos em português (número, nome, empresa) e o separador{" "}
+            <code className="bg-ink-100 rounded px-1">email</code>. O email é opcional; as
+            outras três são obrigatórias. São aceites cabeçalhos em português (número,
+            nome, empresa) e o separador{" "}
             <code className="bg-ink-100 rounded px-1">;</code> do Excel português.
           </p>
         </div>

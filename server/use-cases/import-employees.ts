@@ -15,7 +15,7 @@ export type ImportReport = {
   preview: {
     employeeNumber: string;
     name: string;
-    email: string;
+    email: string | null;
     companyName: string;
   }[];
   committed: boolean;

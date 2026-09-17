@@ -8,24 +8,33 @@ export const employeeNameSchema = z
   .max(160, "O nome é demasiado longo (máximo 160 caracteres).");
 
 /**
- * Email do colaborador. Obrigatório.
+ * Email do colaborador. Opcional.
  *
- * Também imposto em `public.save_employee` e `public.import_employees`: a
- * validação aqui dá mensagens úteis, mas a garantia está na base de dados,
- * que é o único caminho de escrita.
+ * Nem todas as empresas entregam listas com email, e exigi-lo obrigava a
+ * inventar valores ou a deixar pessoas de fora. O que continua a não ser
+ * aceite é um email mal escrito: um campo vazio é uma escolha, um
+ * "joao@empresa" é um erro por corrigir.
+ *
+ * O campo vazio chega aqui como string vazia (vem de um <input>), e sai como
+ * `null` — a coluna não distingue "não preenchido" de "vazio", e ter as duas
+ * formas na base de dados só daria falsos negativos no filtro "sem email".
  */
 export const employeeEmailSchema = z
-  .string({ message: "Indique o email do colaborador." })
+  .string()
   .trim()
-  .min(1, "Indique o email do colaborador.")
   .max(254, "O email é demasiado longo.")
-  .email("Email inválido.")
-  .transform((valor) => valor.toLowerCase());
+  .refine(
+    (valor) => valor === "" || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(valor),
+    "Email inválido.",
+  )
+  .transform((valor) => (valor === "" ? null : valor.toLowerCase()));
 
 export const employeeInputSchema = z.object({
   employeeNumber: employeeNumberSchema,
   name: employeeNameSchema,
-  email: employeeEmailSchema,
+  // `nullish` porque o campo pode vir ausente (importação sem coluna),
+  // a null (API) ou vazio (formulário). As três formas são a mesma coisa.
+  email: employeeEmailSchema.nullish().transform((valor) => valor ?? null),
   companyId: z.string().uuid("Selecione uma empresa."),
 });
 
@@ -42,8 +51,8 @@ export const employeeFilterSchema = z.object({
   q: z.string().trim().max(160).optional(),
   companyId: z.string().uuid().optional(),
   estado: z.enum(["entregue", "por-entregar"]).optional(),
-  // Colaboradores criados antes de o email passar a obrigatório. Sem forma de
-  // os encontrar, ficariam incompletos para sempre.
+  // O email é opcional, mas quem quiser completar a lista precisa de uma
+  // forma de encontrar quem ainda não o tem.
   semEmail: z.boolean().optional(),
 });
 

@@ -31,7 +31,6 @@ export const ERROR_CODES = {
 
   // Colaboradores
   DUPLICATE_EMPLOYEE_NUMBER: "Já existe um colaborador com este número.",
-  EMPLOYEE_EMAIL_REQUIRED: "O email do colaborador é obrigatório.",
 
   // Utilizadores
   USER_NOT_FOUND: "Utilizador não encontrado.",
@@ -93,7 +92,6 @@ function defaultStatusFor(code: ErrorCode): number {
     case "SEARCH_TOO_SHORT":
     case "INVALID_FILE":
     case "INVALID_COMPANY":
-    case "EMPLOYEE_EMAIL_REQUIRED":
       return 422;
     case "USER_CREATION_UNAVAILABLE":
       return 501;

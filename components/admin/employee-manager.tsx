@@ -153,12 +153,11 @@ export function EmployeeManager({
               />
             </Field>
 
-            <Field label="Email" htmlFor="emp-email">
+            <Field label="Email" htmlFor="emp-email" hint="Opcional.">
               <Input
                 id="emp-email"
                 type="email"
                 value={draft.email}
-                required
                 maxLength={254}
                 autoComplete="off"
                 autoCapitalize="none"
@@ -253,10 +252,11 @@ export function EmployeeManager({
                     {employee.email ? (
                       <span className="text-ink-700">{employee.email}</span>
                     ) : (
-                      // Registo anterior à obrigatoriedade do email. Editá-lo
-                      // obriga a preenchê-lo.
-                      <span className="bg-amarelo-500 text-ink-800 inline-block rounded-md px-2 py-0.5 text-xs font-semibold">
-                        Sem email
+                      // Um traço e não um crachá de aviso: o email é opcional, e
+                      // pintar de amarelo uma ausência normal era dar a entender
+                      // que havia ali alguma coisa por corrigir.
+                      <span className="text-ink-700" aria-label="sem email">
+                        —
                       </span>
                     )}
                   </td>

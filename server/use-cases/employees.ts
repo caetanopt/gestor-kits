@@ -80,7 +80,9 @@ export async function saveEmployee(
     p_id: input.id ?? null,
     p_employee_number: input.employeeNumber,
     p_name: input.name,
-    p_email: input.email,
+    // Campo por preencher e campo vazio são a mesma coisa para a base de
+    // dados: um colaborador sem email.
+    p_email: input.email ?? null,
     p_company_id: input.companyId,
   });
 

@@ -132,7 +132,9 @@ describe("analyseRows", () => {
   it("indica que faltam cabeçalhos em vez de processar lixo", () => {
     const result = analyse("coluna1,coluna2\n1,Ana");
     expect(result.candidates).toHaveLength(0);
-    expect(result.issues).toHaveLength(4);
+    // Três cabeçalhos em falta: número, nome e empresa. A análise pára aí e nem
+    // chega a olhar para as linhas. Eram 4 quando o email também era exigido.
+    expect(result.issues).toHaveLength(3);
     expect(result.issues.every((i) => i.line === 1)).toBe(true);
   });
 
@@ -164,16 +166,27 @@ describe("analyseRows", () => {
     }
   });
 
-  it("exige a coluna de email", () => {
+  it("aceita um ficheiro sem coluna de email", () => {
+    // Há empresas que só entregam número e nome.
     const result = analyse("numero,nome,empresa\n1,Ana,Empresa A");
-    expect(result.candidates).toHaveLength(0);
-    expect(result.issues.some((i) => i.message.includes("email"))).toBe(true);
+    expect(result.issues).toHaveLength(0);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.email).toBeNull();
   });
 
-  it("rejeita a linha sem email", () => {
+  it("aceita a linha com a célula de email vazia", () => {
     const result = analyse("numero,nome,empresa,email\n1,Ana,Empresa A,");
-    expect(result.candidates).toHaveLength(0);
-    expect(result.issues[0]?.message).toContain("Falta o email");
+    expect(result.issues).toHaveLength(0);
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.email).toBeNull();
+  });
+
+  it("uma linha sem email não contamina as outras", () => {
+    const result = analyse(
+      "numero,nome,empresa,email\n1,Ana,Empresa A,\n2,Rui,Empresa A,rui@a.pt",
+    );
+    expect(result.issues).toHaveLength(0);
+    expect(result.candidates.map((c) => c.email)).toEqual([null, "rui@a.pt"]);
   });
 
   it("rejeita a linha com email malformado", () => {

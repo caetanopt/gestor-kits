@@ -11,10 +11,22 @@ const base = {
 const completo = { ...base, email: "joao@empresa.pt" };
 
 describe("employeeInputSchema", () => {
-  it("exige email", () => {
-    expect(employeeInputSchema.safeParse(base).success).toBe(false);
-    expect(employeeInputSchema.safeParse({ ...base, email: "" }).success).toBe(false);
-    expect(employeeInputSchema.safeParse({ ...base, email: "   " }).success).toBe(false);
+  it("aceita um colaborador sem email", () => {
+    // O email voltou a ser opcional: nem todas as empresas entregam listas
+    // com email. Ausente, vazio e só espaços são a mesma coisa — null.
+    for (const entrada of [base, { ...base, email: "" }, { ...base, email: "   " }]) {
+      const r = employeeInputSchema.safeParse(entrada);
+      expect(r.success).toBe(true);
+      expect(r.success && r.data.email).toBeNull();
+    }
+  });
+
+  it("mas continua a recusar um email mal escrito", () => {
+    // Um campo vazio é uma escolha; um "joao@empresa" é um erro que ninguém
+    // ia notar depois de gravado.
+    for (const mau of ["joao@empresa", "joao", "@empresa.pt", "joao@.pt"]) {
+      expect(employeeInputSchema.safeParse({ ...base, email: mau }).success).toBe(false);
+    }
   });
 
   it("aceita um colaborador com email", () => {
