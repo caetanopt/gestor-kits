@@ -167,7 +167,12 @@ export type Database = {
       };
       import_employees: { Args: { p_rows: Json }; Returns: Json };
       create_employee_for_delivery: {
-        Args: { p_employee_number: string; p_name: string; p_company_id: string };
+        Args: {
+          p_employee_number: string;
+          p_name: string;
+          p_email: string | null;
+          p_company_id: string;
+        };
         Returns: Json;
       };
       company_totals_list: {

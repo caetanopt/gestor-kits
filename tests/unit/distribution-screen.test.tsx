@@ -275,8 +275,83 @@ describe("ecrã de distribuição", () => {
     expect(criacao[0]?.body).toEqual({
       employeeNumber: "9787",
       name: "Daniela Santos",
+      email: "",
       companyId: EMPRESAS[0]!.id,
     });
+  });
+
+  it("um email pesquisado cai no campo Email, não no campo Nome", async () => {
+    // Punha-o no Nome: criava-se uma pessoa chamada "daniela@caetano.pt", sem
+    // email nenhum, e a pesquisa seguinte pelo mesmo email não a encontrava.
+    const user = userEvent.setup();
+    mockFetch(() => ({
+      success: true,
+      data: { results: [], total: 0, truncated: false },
+    }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.click(screen.getByRole("tab", { name: "Nome ou email" }));
+    await user.keyboard("daniela@caetano.pt{Enter}");
+
+    await screen.findByText("Não está na lista");
+    expect(screen.getByLabelText("Email")).toHaveValue("daniela@caetano.pt");
+    expect(screen.getByLabelText("Nome")).toHaveValue("");
+  });
+
+  it("um nome pesquisado cai no campo Nome", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({
+      success: true,
+      data: { results: [], total: 0, truncated: false },
+    }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.click(screen.getByRole("tab", { name: "Nome ou email" }));
+    await user.keyboard("Daniela Espanhol{Enter}");
+
+    await screen.findByText("Não está na lista");
+    expect(screen.getByLabelText("Nome")).toHaveValue("Daniela Espanhol");
+    expect(screen.getByLabelText("Email")).toHaveValue("");
+  });
+
+  it("a lista de resultados tem saída para quem não está lá", async () => {
+    // Três Danielas e nenhuma é aquela: sem esta saída, a lista era um beco.
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: RESULTADOS }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.click(screen.getByRole("tab", { name: "Nome ou email" }));
+    await user.keyboard("João Silva{Enter}");
+
+    await screen.findByText("João Silva");
+    await user.click(
+      screen.getByRole("button", { name: "Nenhum destes? Acrescentar colaborador" }),
+    );
+
+    expect(await screen.findByText("Não está na lista")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toHaveValue("João Silva");
+  });
+
+  it("um nome de uma só palavra também tem saída", async () => {
+    // "Daniela" sem espaço não chega a pedir sugestões ao servidor, e antes
+    // ficava sem nada para fazer a seguir.
+    const user = userEvent.setup();
+    mockFetch(() => ({
+      success: true,
+      data: { results: [], total: 0, truncated: false },
+    }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.click(screen.getByRole("tab", { name: "Nome ou email" }));
+    await user.keyboard("Espanhol");
+
+    const saida = await screen.findByRole("button", {
+      name: "Não está na lista? Acrescentar",
+    });
+    await user.click(saida);
+
+    expect(await screen.findByText("Não está na lista")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome")).toHaveValue("Espanhol");
   });
 
   it("sem empresas criadas, explica em vez de mostrar um formulário inútil", () => {

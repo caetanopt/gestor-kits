@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { correspondenciaUnicaPorEmail, deveSugerir } from "@/lib/validation/delivery";
+import {
+  correspondenciaUnicaPorEmail,
+  deveSugerir,
+  pareceEmail,
+} from "@/lib/validation/delivery";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
@@ -24,7 +28,7 @@ type Screen =
   | { kind: "delivered"; result: DeliveryResult }
   // Ninguém com este número ou nome. Guarda o que foi escrito para o
   // formulário já vir preenchido — quem chegou aqui acabou de o escrever.
-  | { kind: "ausente"; employeeNumber: string; name: string }
+  | { kind: "ausente"; employeeNumber: string; name: string; email: string }
   | { kind: "error"; message: string };
 
 /**
@@ -35,6 +39,21 @@ type Screen =
  * um resultado único.
  */
 type Mode = "numero" | "nome";
+
+/**
+ * Abre o formulário com o termo no campo certo.
+ *
+ * Um email escrito na barra de pesquisa pertence ao campo Email; tudo o resto
+ * é nome. Pôr um email no campo Nome criava uma pessoa chamada
+ * "ana@empresa.pt" e sem email nenhum — e a pesquisa seguinte pelo mesmo
+ * email não a encontrava.
+ */
+function estadoAusente(termo: string): Screen {
+  const limpo = termo.trim();
+  return pareceEmail(limpo)
+    ? { kind: "ausente", employeeNumber: "", name: "", email: limpo }
+    : { kind: "ausente", employeeNumber: "", name: limpo, email: "" };
+}
 
 /** Empresa a que o colaborador novo pode ser associado. */
 export type CompanyOption = { id: string; name: string };
@@ -132,7 +151,7 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
         // Não é um erro, é um caso de trabalho: a pessoa está à frente do
         // balcão e não está na lista.
         if (result.code === "EMPLOYEE_NOT_FOUND") {
-          setScreen({ kind: "ausente", employeeNumber, name: "" });
+          setScreen({ kind: "ausente", employeeNumber, name: "", email: "" });
         } else {
           setScreen({ kind: "error", message: result.message });
         }
@@ -207,7 +226,7 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
         return;
       }
       if (result.data.results.length === 0) {
-        setScreen({ kind: "ausente", employeeNumber: "", name: rawTerm.trim() });
+        setScreen(estadoAusente(rawTerm));
         return;
       }
 
@@ -259,7 +278,12 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
    * não voltar ao princípio.
    */
   const criarColaborador = useCallback(
-    async (input: { employeeNumber: string; name: string; companyId: string }) => {
+    async (input: {
+      employeeNumber: string;
+      name: string;
+      email: string;
+      companyId: string;
+    }) => {
       setScreen({ kind: "busy", label: "A acrescentar…" });
 
       const result = await callApi<EmployeeLookup>("/api/employees", {
@@ -508,14 +532,31 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
         {screen.kind === "error" && <Alert tone="error">{screen.message}</Alert>}
 
         {screen.kind === "aguarda" && (
-          <p className="text-ink-700 text-center text-sm">
-            Escreva o nome próprio seguido de um espaço para ver sugestões, ou o email
-            completo.
-          </p>
+          <div className="space-y-3 text-center">
+            <p className="text-ink-700 text-sm">
+              Escreva o nome próprio seguido de um espaço para ver sugestões, ou o email
+              completo.
+            </p>
+            {/* Sem isto, quem escreve um nome de uma só palavra fica sem saída
+                nenhuma: não há sugestões e não há como acrescentar. */}
+            {query.trim() !== "" && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setScreen(estadoAusente(query))}
+              >
+                Não está na lista? Acrescentar
+              </Button>
+            )}
+          </div>
         )}
 
         {screen.kind === "matches" && (
-          <MatchList search={screen.search} onOpen={openMatch} />
+          <MatchList
+            search={screen.search}
+            onOpen={openMatch}
+            onAusente={() => setScreen(estadoAusente(query))}
+          />
         )}
 
         {screen.kind === "found" && (
@@ -528,9 +569,10 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
 
         {screen.kind === "ausente" && (
           <AusenteCard
-            key={`${screen.employeeNumber}|${screen.name}`}
+            key={`${screen.employeeNumber}|${screen.name}|${screen.email}`}
             employeeNumber={screen.employeeNumber}
             name={screen.name}
+            email={screen.email}
             companies={companies}
             onCancel={reset}
             onCreate={criarColaborador}
@@ -555,9 +597,11 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
 function MatchList({
   search,
   onOpen,
+  onAusente,
 }: {
   search: EmployeeSearch;
   onOpen: (match: EmployeeMatch) => void;
+  onAusente: () => void;
 }) {
   return (
     <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
@@ -599,6 +643,15 @@ function MatchList({
           </li>
         ))}
       </ul>
+
+      {/* Encontrar homónimos e não encontrar a pessoa é o caso mais comum de
+          todos: três Danielas e nenhuma é aquela. Sem esta saída, a lista era
+          um beco. */}
+      <div className="border-ink-100 border-t px-5 py-3">
+        <Button type="button" variant="secondary" onClick={onAusente}>
+          Nenhum destes? Acrescentar colaborador
+        </Button>
+      </div>
     </div>
   );
 }
@@ -617,18 +670,26 @@ function MatchList({
 function AusenteCard({
   employeeNumber,
   name,
+  email,
   companies,
   onCancel,
   onCreate,
 }: {
   employeeNumber: string;
   name: string;
+  email: string;
   companies: CompanyOption[];
   onCancel: () => void;
-  onCreate: (input: { employeeNumber: string; name: string; companyId: string }) => void;
+  onCreate: (input: {
+    employeeNumber: string;
+    name: string;
+    email: string;
+    companyId: string;
+  }) => void;
 }) {
   const [numero, setNumero] = useState(employeeNumber);
   const [nome, setNome] = useState(name);
+  const [mail, setMail] = useState(email);
   const [empresa, setEmpresa] = useState(companies.length === 1 ? companies[0]!.id : "");
 
   if (companies.length === 0) {
@@ -649,6 +710,7 @@ function AusenteCard({
         onCreate({
           employeeNumber: numero.trim(),
           name: nome.trim(),
+          email: mail.trim(),
           companyId: empresa,
         });
       }}
@@ -661,7 +723,7 @@ function AusenteCard({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="N.º colaborador" htmlFor="novo-numero">
           <Input
             id="novo-numero"
@@ -682,6 +744,18 @@ function AusenteCard({
             maxLength={160}
             autoComplete="off"
             onChange={(event) => setNome(event.target.value)}
+          />
+        </Field>
+
+        <Field label="Email" htmlFor="novo-email" hint="Opcional.">
+          <Input
+            id="novo-email"
+            type="email"
+            value={mail}
+            maxLength={254}
+            autoComplete="off"
+            autoCapitalize="none"
+            onChange={(event) => setMail(event.target.value)}
           />
         </Field>
 

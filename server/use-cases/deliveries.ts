@@ -60,6 +60,7 @@ export async function createEmployeeForDelivery(
   const { data, error } = await supabase.rpc("create_employee_for_delivery", {
     p_employee_number: input.employeeNumber,
     p_name: input.name,
+    p_email: input.email,
     p_company_id: input.companyId,
   });
 

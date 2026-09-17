@@ -114,6 +114,17 @@ export const searchTermSchema = z
  */
 export function deveSugerir(termo: string): boolean {
   if (/\S\s/.test(termo)) return true;
+  return pareceEmail(termo);
+}
+
+/**
+ * O que foi escrito é um email?
+ *
+ * Serve para decidir em que campo cai o termo de pesquisa quando a pessoa não
+ * está na lista e é preciso acrescentá-la: um email escrito na barra de
+ * pesquisa pertence ao campo Email, não ao campo Nome.
+ */
+export function pareceEmail(termo: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(termo.trim());
 }
 

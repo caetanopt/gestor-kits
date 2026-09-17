@@ -391,9 +391,9 @@ echo "═══ Colaborador acrescentado ao balcão ═══"
 # qualquer conta ativa — sem abrir a tabela a ninguém.
 reset_db
 EMPRESA=$(q "select id from public.companies where code = 'EMPA';")
-r=$(as_user "$OPER" "select create_employee_for_delivery('  9787 ', '  Daniela Santos  ', '$EMPRESA') -> 'employee' ->> 'name';" | tail -1)
+r=$(as_user "$OPER" "select create_employee_for_delivery('  9787 ', '  Daniela Santos  ', null, '$EMPRESA') -> 'employee' ->> 'name';" | tail -1)
 check "distribuidor acrescenta um colaborador" "Daniela Santos" "$r"
-r=$(as_user "$OPER" "select create_employee_for_delivery('9787', 'Daniela Santos', '$EMPRESA');")
+r=$(as_user "$OPER" "select create_employee_for_delivery('9787', 'Daniela Santos', null, '$EMPRESA');")
 check "número repetido é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
 r=$(q "select name from public.employees where employee_number = '9787';")
 check "e o que já existia fica intacto" "Daniela Santos" "$r"
@@ -403,10 +403,23 @@ r=$(as_user "$OPER" "select count(*) from public.employees;" | tail -1)
 check "acrescentar não lhe abre a tabela" "0" "$r"
 r=$(q "select metadata ->> 'origem' from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
 check "fica auditado com a origem" "distribuicao" "$r"
-r=$(as_user "$OPER" "select create_employee_for_delivery('9788', 'Sem empresa', '00000000-0000-0000-0000-0000000000ff');")
+r=$(as_user "$OPER" "select create_employee_for_delivery('9788', 'Sem empresa', null, '00000000-0000-0000-0000-0000000000ff');")
 check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
-r=$(as_user "$OPER" "select create_employee_for_delivery('', 'Sem número', '$EMPRESA');")
+r=$(as_user "$OPER" "select create_employee_for_delivery('', 'Sem número', null, '$EMPRESA');")
 check "número vazio é recusado" "VALIDATION_ERROR" "$r"
+
+# Quem pesquisa por email já o tem escrito; deitá-lo fora fazia com que a
+# pesquisa seguinte pelo mesmo email não encontrasse a pessoa acabada de criar.
+r=$(as_user "$OPER" "select create_employee_for_delivery('9790', 'Ana Vaz', '  ANA.VAZ@Caetano.PT ', '$EMPRESA') -> 'employee' ->> 'name';" | tail -1)
+check "o email pesquisado é guardado" "Ana Vaz" "$r"
+r=$(q "select email from public.employees where employee_number = '9790';")
+check "normalizado, sem espaços nem maiúsculas" "ana.vaz@caetano.pt" "$r"
+r=$(as_user "$OPER" "select jsonb_array_length(search_employees_for_delivery('ana.vaz@caetano.pt') -> 'results');" | tail -1)
+check "e encontra-se logo pela pesquisa por email" "1" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery('9791', 'Mal Escrito', 'ana@empresa', '$EMPRESA');")
+check "email mal escrito é recusado" "VALIDATION_ERROR" "$r"
+r=$(q "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'create_employee_for_delivery';")
+check "só existe uma versão da função, sem sobrecargas" "1" "$r"
 
 echo
 echo "═══ Números do dashboard ═══"

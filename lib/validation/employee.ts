@@ -41,13 +41,18 @@ export const employeeInputSchema = z.object({
 /**
  * Colaborador acrescentado ao balcão, no ecrã de distribuição.
  *
- * Sem email: ninguém o pede a quem está à espera do kit, e a coluna é
- * opcional desde a migração 0012. A empresa é obrigatória — é por ela que a
- * entrega é contabilizada.
+ * A empresa é obrigatória — é por ela que a entrega é contabilizada. O email
+ * não: ninguém o pede a quem está à espera do kit, mas quem pesquisou por
+ * email já o tem escrito e não se perde.
  */
 export const novoColaboradorSchema = z.object({
   employeeNumber: employeeNumberSchema,
   name: employeeNameSchema,
+  // Opcional, como em todo o resto da aplicação desde a migração 0012. Existe
+  // porque quem chegou aqui a pesquisar por email já o tem escrito, e deitá-lo
+  // fora fazia com que a pesquisa seguinte pelo mesmo email não encontrasse a
+  // pessoa que se acabou de acrescentar.
+  email: employeeEmailSchema.nullish().transform((valor) => valor ?? null),
   companyId: z.string().uuid("Selecione uma empresa."),
 });
 
