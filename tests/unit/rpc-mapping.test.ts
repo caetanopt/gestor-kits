@@ -54,9 +54,7 @@ describe("mapPostgrestError", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const mapped = mapPostgrestError(pgError("EMPLOYEE_EMAIL_REQUIRED"));
     expect(mapped.code).toBe("DB_OUT_OF_DATE");
-    expect(mapped.details).toEqual([
-      expect.stringContaining("EMPLOYEE_EMAIL_REQUIRED"),
-    ]);
+    expect(mapped.details).toEqual([expect.stringContaining("EMPLOYEE_EMAIL_REQUIRED")]);
   });
 
   it("uma mensagem livre da base de dados não passa por código de aplicação", () => {
