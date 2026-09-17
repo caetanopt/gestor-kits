@@ -47,12 +47,13 @@ export type Database = {
           name: string;
           code: string;
           code_key: string;
+          /** Adormecida desde a migração 0011. Nada a lê. */
           allocated_kits: number;
           created_at: string;
           updated_at: string;
         };
-        Insert: { name: string; code: string; allocated_kits: number };
-        Update: { name?: string; code?: string; allocated_kits?: number };
+        Insert: { name: string; code: string };
+        Update: { name?: string; code?: string };
         Relationships: [];
       };
       employees: {
@@ -114,14 +115,12 @@ export type Database = {
       };
     };
     Views: {
-      company_stock: {
+      company_totals: {
         Row: {
           id: string;
           name: string;
           code: string;
-          allocated: number;
           delivered: number;
-          available: number;
           employee_count: number;
         };
         Relationships: [];
@@ -197,7 +196,6 @@ export type Database = {
           p_id: string | null;
           p_name: string;
           p_code: string | null;
-          p_allocated_kits: number;
         };
         Returns: Json;
       };

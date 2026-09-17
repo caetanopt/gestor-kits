@@ -1,3 +1,10 @@
+> **Nota (migração 0011).** O limite de kits por empresa deixou de existir, e
+> com ele a verificação de stock e o `SELECT … FOR UPDATE` na empresa. O que
+> este documento explica sobre a entrega única por colaborador — o índice
+> único parcial e a chave de idempotência — mantém-se inteiro: era essa a
+> garantia que importava, e nunca dependeu do bloqueio. Ver
+> `0005-fim-do-limite-por-empresa.md`.
+
 # 0001 — Atomicidade da entrega de kits
 
 **Estado:** aceite · **Data:** 2026-09-15

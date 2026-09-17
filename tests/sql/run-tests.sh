@@ -52,8 +52,8 @@ reset_db() {
 echo
 echo "═══ Entrega: caminho feliz ═══"
 reset_db
-r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) -> 'stock';")
-check "entrega desconta 1 ao stock" '"available": 2' "$r"
+r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) -> 'totals' ->> 'delivered';")
+check "entrega soma 1 ao total da empresa" "1" "$r"
 r=$(q "select count(*) from public.deliveries where reversed_at is null;")
 check "cria exatamente uma linha de entrega" "1" "$r"
 r=$(q "select action from public.delivery_logs where action = 'DELIVERED';")
@@ -79,14 +79,14 @@ r=$(q "select count(*) from public.deliveries where employee_id = '00000000-0000
 check "apenas uma entrega foi criada" "1" "$r"
 
 echo
-echo "═══ Regra 8.2/8.3: limite por empresa ═══"
+echo "═══ Sem limite por empresa (migração 0011) ═══"
 as_user "$OPER" "select deliver_kit('12347', gen_random_uuid());" >/dev/null
-r=$(q "select available from public.company_stock where code = 'EMPA';")
-check "Empresa A esgotada (3 de 3)" "0" "$r"
-r=$(as_user "$OPER" "select deliver_kit('12348', gen_random_uuid());")
-check "entrega acima do limite é recusada" "NO_STOCK" "$r"
+r=$(as_user "$OPER" "select deliver_kit('12348', gen_random_uuid()) -> 'totals' ->> 'delivered';")
+check "entrega acima do antigo limite é aceite" "4" "$r"
+r=$(q "select delivered from public.company_totals where code = 'EMPA';")
+check "a vista conta o que foi entregue" "4" "$r"
 r=$(q "select count(*) from public.deliveries d join public.companies c on c.id = d.company_id where c.code = 'EMPA' and d.reversed_at is null;")
-check "stock nunca excede o atribuído" "3" "$r"
+check "todas as entregas ficam registadas" "4" "$r"
 
 echo
 echo "═══ Regra 8.4: colaborador inexistente ═══"
@@ -169,27 +169,27 @@ echo "═══ Secção 20: anulação administrativa ═══"
 DID=$(q "select id from public.deliveries where employee_id = '00000000-0000-0000-0000-0000000000e1';")
 r=$(as_user "$OPER" "select reverse_delivery('$DID', 'engano');")
 check "operador NÃO pode anular" "FORBIDDEN" "$r"
-r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'engano') -> 'stock' ->> 'available';")
-check "administrador anula e o kit volta ao stock" "1" "$r"
+r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'engano') -> 'totals' ->> 'delivered';")
+check "administrador anula e o total desce" "3" "$r"
 r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'outra vez');")
 check "anular duas vezes é recusado" "ALREADY_REVERSED" "$r"
 r=$(q "select count(*) from public.delivery_logs where action = 'DELIVERY_REVERSED';")
 check "anulação fica registada na auditoria" "1" "$r"
-r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) -> 'stock' ->> 'available';")
-check "colaborador anulado pode receber de novo" "0" "$r"
+r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) -> 'totals' ->> 'delivered';")
+check "colaborador anulado pode receber de novo" "4" "$r"
 
 echo
-echo "═══ Secção 17: limite não pode descer abaixo do entregue ═══"
-r=$(as_user "$ADMIN" "select save_company('00000000-0000-0000-0000-0000000000c1', 'Empresa A', 'EMPA', 2);")
-check "baixar limite abaixo do entregue é recusado" "LIMIT_BELOW_DELIVERED" "$r"
-r=$(as_user "$ADMIN" "select save_company('00000000-0000-0000-0000-0000000000c1', 'Empresa A', 'EMPA', 5) -> 'stock' ->> 'available';")
-check "aumentar limite é permitido" "2" "$r"
-r=$(as_user "$ADMIN" "select save_company(null, 'Empresa C', 'empa', 10);")
+echo "═══ Gravar empresa: nome e código ═══"
+r=$(as_user "$ADMIN" "select save_company('00000000-0000-0000-0000-0000000000c1', 'Empresa A', 'EMPA') -> 'totals' ->> 'delivered';")
+check "gravar devolve o que a empresa entregou" "4" "$r"
+r=$(q "select allocated_kits from public.companies where code = 'EMPA';")
+check "a coluna antiga fica intacta, apenas adormecida" "3" "$r"
+r=$(as_user "$ADMIN" "select save_company(null, 'Empresa C', 'empa');")
 check "código duplicado (mesmo com outra caixa) é recusado" "DUPLICATE_COMPANY_CODE" "$r"
-r=$(as_user "$OPER" "select save_company(null, 'Empresa X', 'EMPX', 10);")
+r=$(as_user "$OPER" "select save_company(null, 'Empresa X', 'EMPX');")
 check "operador não pode criar empresas" "FORBIDDEN" "$r"
-r=$(q "select count(*) from public.delivery_logs where action = 'COMPANY_LIMIT_UPDATED';")
-check "alteração de limite fica auditada" "1" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'COMPANY_UPDATED';")
+check "alteração fica auditada" "1" "$r"
 
 echo
 echo "═══ Código da empresa gerado automaticamente ═══"
@@ -199,12 +199,12 @@ r=$(q "select public.derive_company_code('José & Filhos, Lda.');")
 check "remove pontuação" "JOSEFILHOSLD" "$r"
 r=$(q "select public.derive_company_code('•••');")
 check "nome sem letras recorre a um código genérico" "EMPRESA" "$r"
-r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null, 10) ->> 'code';")
+r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null) ->> 'code';")
 check "criar sem código deriva do nome" "EMPRESANOVA" "$r"
-r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null, 10) ->> 'code';")
+r=$(as_user "$ADMIN" "select save_company(null, 'Empresa Nova', null) ->> 'code';")
 check "nome repetido recebe sufixo, sem colidir" "EMPRESANOV2" "$r"
 CID=$(q "select id from public.companies where name = 'Empresa Nova' limit 1;")
-r=$(as_user "$ADMIN" "select save_company('$CID', 'Outro Nome', null, 10) ->> 'code';")
+r=$(as_user "$ADMIN" "select save_company('$CID', 'Outro Nome', null) ->> 'code';")
 check "editar sem código preserva o código existente" "EMPRESANOVA" "$r"
 r=$(q "select count(*) from public.companies where code is null or btrim(code) = '';")
 check "nenhuma empresa fica sem código" "0" "$r"
@@ -348,8 +348,8 @@ r=$(as_user "$ADMIN" "select (count(*) > 0) from public.employees;")
 check "administrador consegue listar colaboradores" "t" "$r"
 r=$(as_user "$OPER" "select count(*) from public.delivery_logs;")
 check "operador não lê o histórico de auditoria" "0" "$r"
-r=$(as_user "$OPER" "select count(*) from public.company_stock;")
-check "operador vê o stock das empresas" "4" "$r"
+r=$(as_user "$OPER" "select count(*) from public.company_totals;")
+check "operador vê os totais das empresas" "4" "$r"
 r=$(as_user "$OPER" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$OPER', gen_random_uuid());")
 check "operador não pode inserir entregas diretamente" "denied for table deliveries" "$r"
 r=$(as_user "$ADMIN" "insert into public.deliveries (employee_id, company_id, delivered_by, idempotency_key) values ('00000000-0000-0000-0000-0000000000e4','00000000-0000-0000-0000-0000000000c1','$ADMIN', gen_random_uuid());")

@@ -17,7 +17,6 @@ export const ERROR_CODES = {
   // Fluxo de entrega
   EMPLOYEE_NOT_FOUND: "Colaborador não encontrado.",
   ALREADY_DELIVERED: "Este colaborador já recebeu um kit.",
-  NO_STOCK: "A empresa já atingiu o limite de kits.",
   INVALID_COMPANY: "Erro de configuração: colaborador sem empresa válida.",
 
   SEARCH_TOO_SHORT: "Escreva pelo menos 3 caracteres para pesquisar por nome ou email.",
@@ -29,7 +28,6 @@ export const ERROR_CODES = {
   // Empresas
   COMPANY_NOT_FOUND: "Empresa não encontrada.",
   DUPLICATE_COMPANY_CODE: "Já existe uma empresa com este código.",
-  LIMIT_BELOW_DELIVERED: "O limite não pode ser inferior ao número de kits já entregues.",
 
   // Colaboradores
   DUPLICATE_EMPLOYEE_NUMBER: "Já existe um colaborador com este número.",
@@ -86,10 +84,8 @@ function defaultStatusFor(code: ErrorCode): number {
       return 404;
     case "ALREADY_DELIVERED":
     case "ALREADY_REVERSED":
-    case "NO_STOCK":
     case "DUPLICATE_COMPANY_CODE":
     case "DUPLICATE_EMPLOYEE_NUMBER":
-    case "LIMIT_BELOW_DELIVERED":
     case "LAST_ADMIN":
     case "DUPLICATE_USER_EMAIL":
       return 409;

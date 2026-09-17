@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { correspondenciaUnicaPorEmail, deveSugerir } from "@/lib/validation/delivery";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { StockPanel } from "./stock-panel";
+import { TotalsPanel } from "./totals-panel";
 import { StatusBadge } from "./status-badge";
 import { formatDateTime } from "@/lib/format/date";
 import type {
@@ -291,10 +291,9 @@ export function DistributionScreen() {
     return () => clearTimeout(temporizador);
   }, [query, mode, searchByName]);
 
-  const canDeliver =
-    screen.kind === "found" &&
-    screen.lookup.delivery === null &&
-    screen.lookup.stock.available > 0;
+  // Só uma condição: não ter recebido ainda. Não há limite por empresa que
+  // possa recusar a entrega.
+  const canDeliver = screen.kind === "found" && screen.lookup.delivery === null;
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") {
@@ -512,9 +511,8 @@ function FoundCard({
   canDeliver: boolean;
   onDeliver: () => void;
 }) {
-  const { employee, company, stock, delivery } = lookup;
+  const { employee, company, totals, delivery } = lookup;
   const alreadyDelivered = delivery !== null;
-  const exhausted = !alreadyDelivered && stock.available === 0;
 
   return (
     <div className="ring-ink-200 space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
@@ -528,8 +526,6 @@ function FoundCard({
       <div>
         {alreadyDelivered ? (
           <StatusBadge state="bloqueado" label="JÁ ENTREGUE" />
-        ) : exhausted ? (
-          <StatusBadge state="bloqueado" label="STOCK ESGOTADO" />
         ) : (
           <StatusBadge state="disponivel" label="KIT AINDA NÃO ENTREGUE" />
         )}
@@ -544,13 +540,7 @@ function FoundCard({
         </Alert>
       )}
 
-      {exhausted && (
-        <Alert tone="error" title="A empresa atingiu o limite de kits.">
-          <p>Contacte um administrador para rever o limite atribuído.</p>
-        </Alert>
-      )}
-
-      <StockPanel company={company} stock={stock} />
+      <TotalsPanel company={company} totals={totals} />
 
       <Button
         type="button"
@@ -573,7 +563,7 @@ function FoundCard({
 }
 
 function DeliveredCard({ result }: { result: DeliveryResult }) {
-  const { employee, company, stock, repeated } = result;
+  const { employee, company, totals, repeated } = result;
 
   return (
     <div className="bg-eco-100 ring-eco-300 space-y-5 rounded-2xl p-5 ring-1 sm:p-6">
@@ -597,8 +587,9 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
       </div>
 
       <p className="text-ink-800 text-base font-medium">
-        {company.name}: {stock.available}{" "}
-        {stock.available === 1 ? "kit ainda disponível" : "kits ainda disponíveis"}.
+        {company.name}: {totals.delivered}{" "}
+        {totals.delivered === 1 ? "kit entregue" : "kits entregues"} em {totals.employees}{" "}
+        {totals.employees === 1 ? "colaborador" : "colaboradores"}.
       </p>
 
       <p className="text-ink-700 text-sm">Escreva o número seguinte para continuar.</p>

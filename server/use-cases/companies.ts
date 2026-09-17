@@ -6,21 +6,21 @@ import {
   companyResultSchema,
   type CompanyInput,
   type CompanyResult,
-  type CompanyStockRow,
+  type CompanyTotalsRow,
 } from "@/lib/validation/company";
 
 /**
- * Lista as empresas com o respetivo stock.
+ * Lista as empresas com o que cada uma entregou.
  *
- * Lê a vista `company_stock`, que deriva o stock das entregas ativas. Uma
- * única consulta para todas as empresas — sem N+1.
+ * Lê a vista `company_totals`, que conta as entregas ativas e os
+ * colaboradores. Uma única consulta para todas as empresas — sem N+1.
  */
-export async function listCompanyStock(): Promise<CompanyStockRow[]> {
+export async function listCompanyTotals(): Promise<CompanyTotalsRow[]> {
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
-    .from("company_stock")
-    .select("id, name, code, allocated, delivered, available, employee_count")
+    .from("company_totals")
+    .select("id, name, code, delivered, employee_count")
     .order("name", { ascending: true });
 
   if (error) throw mapPostgrestError(error);
@@ -29,20 +29,12 @@ export async function listCompanyStock(): Promise<CompanyStockRow[]> {
     id: row.id,
     name: row.name,
     code: row.code,
-    allocated: row.allocated,
     delivered: row.delivered,
-    available: row.available,
     employeeCount: row.employee_count,
   }));
 }
 
-/**
- * Cria ou atualiza uma empresa.
- *
- * A regra "o limite não pode descer abaixo do já entregue" é verificada
- * dentro da transação em `public.save_company`, com a linha da empresa
- * bloqueada — não aqui, onde seria uma condição de corrida.
- */
+/** Cria ou atualiza uma empresa. */
 export async function saveCompany(
   input: CompanyInput & { id?: string | undefined },
 ): Promise<CompanyResult> {
@@ -54,14 +46,13 @@ export async function saveCompany(
     p_id: input.id ?? null,
     p_name: input.name,
     p_code: input.code ?? null,
-    p_allocated_kits: input.allocatedKits,
   });
 
   if (error) {
     const mapeado = mapPostgrestError(error);
 
-    // O nome e o número de kits já foram validados aqui antes da chamada, por
-    // isso um VALIDATION_ERROR vindo do SQL sem código indicado significa
+    // O nome já foi validado aqui antes da chamada, por isso um
+    // VALIDATION_ERROR vindo do SQL sem código indicado significa
     // quase de certeza que a base de dados ainda tem a versão de
     // `save_company` anterior à migração 0006, que exigia o código.
     //

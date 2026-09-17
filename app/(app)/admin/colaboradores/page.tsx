@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listCompanyStock } from "@/server/use-cases/companies";
+import { listCompanyTotals } from "@/server/use-cases/companies";
 import { listEmployees } from "@/server/use-cases/employees";
 import { employeeFilterSchema } from "@/lib/validation/employee";
 import { EmployeeManager } from "@/components/admin/employee-manager";
@@ -37,7 +37,7 @@ export default async function ColaboradoresPage(props: {
 
   const [{ rows, hasMore }, companies] = await Promise.all([
     listEmployees(filter, page),
-    listCompanyStock(),
+    listCompanyTotals(),
   ]);
 
   const paginaHref = (destino: number) => {
@@ -112,12 +112,7 @@ export default async function ColaboradoresPage(props: {
           <label htmlFor="estado" className="text-ink-700 mb-1 block text-xs font-medium">
             Kit
           </label>
-          <Select
-            id="estado"
-            name="estado"
-            defaultValue={filter.estado ?? ""}
-            compact
-          >
+          <Select id="estado" name="estado" defaultValue={filter.estado ?? ""} compact>
             <option value="">Todos</option>
             <option value="por-entregar">Por entregar</option>
             <option value="entregue">Entregue</option>

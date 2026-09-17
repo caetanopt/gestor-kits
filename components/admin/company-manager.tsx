@@ -5,17 +5,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
-import { deriveCode, type CompanyStockRow } from "@/lib/validation/company";
+import { deriveCode, type CompanyTotalsRow } from "@/lib/validation/company";
 
-type Draft = { id?: string; name: string; code: string; allocatedKits: string };
+type Draft = { id?: string; name: string; code: string };
 
-const EMPTY: Draft = { name: "", code: "", allocatedKits: "0" };
+const EMPTY: Draft = { name: "", code: "" };
 
 type ApiEnvelope =
   | { success: true; data: unknown }
   | { success: false; code: string; message: string; details?: string[] };
 
-export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) {
+export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] }) {
   const router = useRouter();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,12 +27,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (!draft) return;
-
-    const allocatedKits = Number(draft.allocatedKits);
-    if (!Number.isInteger(allocatedKits) || allocatedKits < 0) {
-      setError("O número de kits tem de ser um inteiro igual ou superior a zero.");
-      return;
-    }
 
     setSaving(true);
     setError(null);
@@ -47,7 +41,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
         body: JSON.stringify({
           name: draft.name,
           code: draft.code.trim() || undefined,
-          allocatedKits,
         }),
       },
     ).catch(() => null);
@@ -119,23 +112,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
               />
             </Field>
-
-            <Field
-              label="Kits atribuídos"
-              htmlFor="company-kits"
-              hint={editing ? "Não pode ficar abaixo do já entregue." : undefined}
-            >
-              <Input
-                id="company-kits"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                value={draft.allocatedKits}
-                required
-                onChange={(e) => setDraft({ ...draft, allocatedKits: e.target.value })}
-              />
-            </Field>
           </div>
 
           <div className="flex gap-2">
@@ -164,7 +140,7 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
         <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
           <table className="w-full text-sm">
             <caption className="sr-only">
-              Empresas participantes e respetivo stock de kits
+              Empresas participantes e kits que cada uma entregou
             </caption>
             <thead>
               <tr className="border-ink-200 text-ink-700 border-b text-left">
@@ -175,16 +151,13 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                   Código
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Atribuídos
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
                   Entregues
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Disponíveis
+                  Colaboradores
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Colaboradores
+                  Por levantar
                 </th>
                 <th scope="col" className="px-4 py-3">
                   <span className="sr-only">Ações</span>
@@ -196,25 +169,14 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                 <tr key={company.id} className="border-ink-100 border-b last:border-0">
                   <td className="text-ink-900 px-4 py-3 font-medium">{company.name}</td>
                   <td className="text-ink-700 px-4 py-3">{company.code}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {company.allocated}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
+                  <td className="text-ink-900 px-4 py-3 text-right font-semibold tabular-nums">
                     {company.delivered}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {company.available === 0 ? (
-                      <span className="bg-laranja-500 text-ink-800 inline-block rounded-md px-2.5 py-1 font-bold tabular-nums">
-                        0<span className="sr-only"> — esgotado</span>
-                      </span>
-                    ) : (
-                      <span className="text-ink-900 font-semibold tabular-nums">
-                        {company.available}
-                      </span>
-                    )}
                   </td>
                   <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
                     {company.employeeCount}
+                  </td>
+                  <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
+                    {Math.max(company.employeeCount - company.delivered, 0)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
@@ -225,7 +187,6 @@ export function CompanyManager({ companies }: { companies: CompanyStockRow[] }) 
                           id: company.id,
                           name: company.name,
                           code: company.code,
-                          allocatedKits: String(company.allocated),
                         });
                         setError(null);
                         setNotice(null);

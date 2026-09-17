@@ -30,7 +30,7 @@ describe("deriveCode", () => {
 
 describe("companyInputSchema", () => {
   it("aceita a empresa sem código", () => {
-    const r = companyInputSchema.safeParse({ name: "Caetano Tec", allocatedKits: 80 });
+    const r = companyInputSchema.safeParse({ name: "Caetano Tec" });
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.code).toBeUndefined();
   });
@@ -39,14 +39,11 @@ describe("companyInputSchema", () => {
     const r = companyInputSchema.safeParse({
       name: "Caetano Tec",
       code: "CTEC",
-      allocatedKits: 80,
     });
     expect(r.success && r.data.code).toBe("CTEC");
   });
 
   it("continua a rejeitar um código com caracteres inválidos", () => {
-    expect(
-      companyInputSchema.safeParse({ name: "X", code: "A B", allocatedKits: 1 }).success,
-    ).toBe(false);
+    expect(companyInputSchema.safeParse({ name: "X", code: "A B" }).success).toBe(false);
   });
 });

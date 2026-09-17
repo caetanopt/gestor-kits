@@ -17,7 +17,7 @@ select 'Vistas',
        case when count(*) = 3 then '✓' else '✗ FALTAM' end
   from pg_views
  where schemaname = 'public'
-   and viewname in ('company_stock','delivery_history','employee_list')
+   and viewname in ('company_totals','delivery_history','employee_list')
 
 union all
 select 'Funções de negócio',
@@ -29,7 +29,7 @@ select 'Funções de negócio',
   from unnest(array[
          'deliver_kit','reverse_delivery','save_company','import_employees',
          'find_employee_for_delivery','is_admin','is_active_user',
-         'handle_new_user','stock_snapshot','delivery_payload','app_error',
+         'handle_new_user','totals_snapshot','delivery_payload','app_error',
          'touch_updated_at','derive_company_code','save_employee',
          'set_user_role','set_user_active','active_admin_count',
          'search_employees_for_delivery'

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { stockSchema } from "./delivery";
+import { totalsSchema } from "./delivery";
 
 export const companyNameSchema = z
   .string()
@@ -17,12 +17,6 @@ export const companyCodeSchema = z
     "O código só pode conter letras, números, ponto, hífen e underscore.",
   );
 
-export const allocatedKitsSchema = z
-  .number({ message: "Indique o número de kits atribuídos." })
-  .int("O número de kits tem de ser inteiro.")
-  .min(0, "O número de kits não pode ser negativo.")
-  .max(1_000_000, "O número de kits é implausível.");
-
 /**
  * O código é opcional.
  *
@@ -34,31 +28,27 @@ export const allocatedKitsSchema = z
 export const companyInputSchema = z.object({
   name: companyNameSchema,
   code: companyCodeSchema.optional(),
-  allocatedKits: allocatedKitsSchema,
 });
 
 export const companyResultSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   code: z.string(),
-  allocatedKits: z.number().int().nonnegative(),
-  stock: stockSchema,
+  totals: totalsSchema,
 });
 
-/** Linha da vista `company_stock`, já em camelCase. */
-export const companyStockRowSchema = z.object({
+/** Linha da vista `company_totals`, já em camelCase. */
+export const companyTotalsRowSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   code: z.string(),
-  allocated: z.number().int().nonnegative(),
   delivered: z.number().int().nonnegative(),
-  available: z.number().int().nonnegative(),
   employeeCount: z.number().int().nonnegative(),
 });
 
 export type CompanyInput = z.infer<typeof companyInputSchema>;
 export type CompanyResult = z.infer<typeof companyResultSchema>;
-export type CompanyStockRow = z.infer<typeof companyStockRowSchema>;
+export type CompanyTotalsRow = z.infer<typeof companyTotalsRowSchema>;
 
 /**
  * Pré-visualização do código que o servidor vai gerar a partir do nome.

@@ -65,7 +65,7 @@ describe("employeeLookupSchema", () => {
       name: "Empresa A",
       code: "EMPA",
     },
-    stock: { allocated: 120, delivered: 47, available: 73 },
+    totals: { delivered: 47, employees: 120 },
     delivery: null,
   };
 
@@ -73,10 +73,10 @@ describe("employeeLookupSchema", () => {
     expect(employeeLookupSchema.parse(valid).company.name).toBe("Empresa A");
   });
 
-  it("rejeita stock negativo vindo da base de dados", () => {
+  it("rejeita contagens negativas vindas da base de dados", () => {
     const corrupted = {
       ...valid,
-      stock: { allocated: 10, delivered: 11, available: -1 },
+      totals: { delivered: -1, employees: 10 },
     };
     expect(employeeLookupSchema.safeParse(corrupted).success).toBe(false);
   });

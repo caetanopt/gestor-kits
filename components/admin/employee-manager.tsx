@@ -7,7 +7,7 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { formatDateTime } from "@/lib/format/date";
 import type { EmployeeRow } from "@/lib/validation/employee";
-import type { CompanyStockRow } from "@/lib/validation/company";
+import type { CompanyTotalsRow } from "@/lib/validation/company";
 
 type Draft = {
   id?: string;
@@ -28,7 +28,7 @@ export function EmployeeManager({
   page,
 }: {
   employees: EmployeeRow[];
-  companies: CompanyStockRow[];
+  companies: CompanyTotalsRow[];
   hasMore: boolean;
   page: number;
 }) {

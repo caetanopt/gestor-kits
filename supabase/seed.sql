@@ -6,10 +6,10 @@
 --
 --   update public.profiles set role = 'admin' where email = 'o-seu@email.pt';
 
-insert into public.companies (name, code, allocated_kits) values
-  ('Empresa A', 'EMPA', 120),
-  ('Empresa B', 'EMPB', 80),
-  ('Empresa C', 'EMPC', 200)
+insert into public.companies (name, code) values
+  ('Empresa A', 'EMPA'),
+  ('Empresa B', 'EMPB'),
+  ('Empresa C', 'EMPC')
 on conflict do nothing;
 
 insert into public.employees (employee_number, name, company_id)

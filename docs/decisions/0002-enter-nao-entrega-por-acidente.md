@@ -49,7 +49,7 @@ generoso, para quem usa o ecrã tátil ou o rato.
   duplo Enter e retries de rede reutilizam a chave e recebem o resultado
   original em vez de uma segunda entrega ou de um erro confuso.
 - **Estado do botão.** Fica desativado quando o colaborador já recebeu ou
-  quando a empresa esgotou o stock, e o Enter respeita a mesma condição.
+  quando o colaborador já recebeu, e o Enter respeita a mesma condição.
 - **Servidor.** Nada disto é a defesa real — é ergonomia. A garantia está no
   índice único parcial da base de dados (ver decisão 0001).
 

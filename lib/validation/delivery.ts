@@ -33,10 +33,17 @@ export const reverseRequestSchema = z.object({
  * divergirem, falha aqui e não numa página em branco.
  * ---------------------------------------------------------------------- */
 
-export const stockSchema = z.object({
-  allocated: z.number().int().nonnegative(),
+/**
+ * Contagens de uma empresa.
+ *
+ * Deixou de haver stock: não há limite por empresa e a entrega nunca é
+ * recusada por falta de kits. O que se conta é o que foi entregue, e o total
+ * de colaboradores vai junto porque é ele que dá escala à contagem —
+ * "48 de 120" diz o que "48" não diz.
+ */
+export const totalsSchema = z.object({
   delivered: z.number().int().nonnegative(),
-  available: z.number().int().nonnegative(),
+  employees: z.number().int().nonnegative(),
 });
 
 export const employeeSummarySchema = z.object({
@@ -61,7 +68,7 @@ export const deliveryInfoSchema = z.object({
 export const employeeLookupSchema = z.object({
   employee: employeeSummarySchema,
   company: companySummarySchema,
-  stock: stockSchema,
+  totals: totalsSchema,
   delivery: deliveryInfoSchema.nullable(),
 });
 
@@ -69,17 +76,17 @@ export const deliveryResultSchema = z.object({
   delivery: deliveryInfoSchema,
   employee: employeeSummarySchema,
   company: companySummarySchema,
-  stock: stockSchema,
+  totals: totalsSchema,
   repeated: z.boolean(),
 });
 
 export const reverseResultSchema = z.object({
   deliveryId: z.string().uuid(),
   employeeId: z.string().uuid(),
-  stock: stockSchema,
+  totals: totalsSchema,
 });
 
-export type Stock = z.infer<typeof stockSchema>;
+export type Totals = z.infer<typeof totalsSchema>;
 export type EmployeeSummary = z.infer<typeof employeeSummarySchema>;
 export type CompanySummary = z.infer<typeof companySummarySchema>;
 export type DeliveryInfo = z.infer<typeof deliveryInfoSchema>;

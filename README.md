@@ -1,10 +1,10 @@
 # Distribuição de Kits
 
 Aplicação web para gerir a distribuição de kits num evento: o operador
-pesquisa o colaborador pelo número, confirma os dados e entrega o kit. O
-stock de cada empresa é descontado automaticamente e nunca pode ficar
-negativo nem haver entregas duplicadas, mesmo com vários operadores em
-simultâneo.
+pesquisa o colaborador pelo número, pelo nome ou pelo email, confirma os
+dados e entrega o kit. Não há limite por empresa: entrega-se sempre, e o que
+cada empresa distribuiu é contado. Um colaborador recebe um kit e um só,
+mesmo com vários operadores em simultâneo.
 
 ## Stack
 
@@ -15,19 +15,25 @@ simultâneo.
 
 ## Como as regras críticas são garantidas
 
-As regras que não podem falhar vivem no PostgreSQL, não em TypeScript.
-Verificar na aplicação "há stock? então entrega" é uma condição de corrida:
-dois operadores leem 119/120 ao mesmo tempo e ambos entregam.
+A regra que não pode falhar — **um colaborador, um kit** — vive no
+PostgreSQL, não em TypeScript. Verificar na aplicação "já recebeu? então
+recusa" é uma condição de corrida: dois operadores leem "ainda não" ao mesmo
+tempo e ambos entregam.
 
-Três defesas independentes:
+Duas defesas independentes:
 
 | Defesa                                                                      | Impede                                    |
 | --------------------------------------------------------------------------- | ----------------------------------------- |
 | Índice único parcial em `deliveries(employee_id) where reversed_at is null` | Duas entregas ativas ao mesmo colaborador |
-| `SELECT ... FOR UPDATE` na empresa antes de contar o stock                  | Stock negativo                            |
 | `idempotency_key` única por pesquisa                                        | Duplo clique e retries de rede            |
 
-Detalhes em [`docs/decisions/0001-atomicidade-da-entrega.md`](docs/decisions/0001-atomicidade-da-entrega.md).
+Provado com processos psql verdadeiramente paralelos em
+`tests/sql/run-concurrency.sh`: 30 operadores em simultâneo sobre o mesmo
+colaborador produzem exatamente uma entrega.
+
+Detalhes em [`docs/decisions/0001-atomicidade-da-entrega.md`](docs/decisions/0001-atomicidade-da-entrega.md)
+e, sobre o fim do limite por empresa, em
+[`docs/decisions/0005-fim-do-limite-por-empresa.md`](docs/decisions/0005-fim-do-limite-por-empresa.md).
 
 ## Pré-requisitos
 
@@ -124,7 +130,7 @@ pnpm dev          # http://localhost:3000
 
 ## Preparar um evento
 
-1. **Empresas** — criar cada empresa com o nome e o limite de kits. O código
+1. **Empresas** — criar cada empresa com o nome. O código
    é gerado a partir do nome e serve para identificar a empresa nos ficheiros
    de importação; não muda quando a empresa é renomeada.
 2. **Colaboradores** — adicionar um a um, ou importar um ficheiro (CSV ou

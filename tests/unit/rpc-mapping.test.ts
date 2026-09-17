@@ -25,8 +25,8 @@ describe("mapPostgrestError", () => {
     expect(mapped.message).toBe("Este colaborador já recebeu um kit.");
   });
 
-  it("reconhece NO_STOCK e EMPLOYEE_NOT_FOUND", () => {
-    expect(mapPostgrestError(pgError("NO_STOCK")).code).toBe("NO_STOCK");
+  it("reconhece INACTIVE_ACCOUNT e EMPLOYEE_NOT_FOUND", () => {
+    expect(mapPostgrestError(pgError("INACTIVE_ACCOUNT")).code).toBe("INACTIVE_ACCOUNT");
     expect(mapPostgrestError(pgError("EMPLOYEE_NOT_FOUND")).status).toBe(404);
   });
 

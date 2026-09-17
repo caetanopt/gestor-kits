@@ -28,7 +28,7 @@ check() {
 }
 
 setup() {
-  local allocated="$1" employees="$2"
+  local employees="$1"
   psql -h "$PGH" -U postgres -tAX -c "drop database if exists $DB with (force);" >/dev/null 2>&1
   psql -h "$PGH" -U postgres -tAX -c "create database $DB;" >/dev/null
   psql -h "$PGH" -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q -f tests/sql/00_supabase_stub.sql
@@ -38,8 +38,8 @@ setup() {
   psql -h "$PGH" -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q <<SQL
 insert into auth.users (id, email, raw_user_meta_data)
 values ('$OPER', 'operador@teste.pt', '{"full_name":"Bruno Operador"}');
-insert into public.companies (id, name, code, allocated_kits)
-values ('00000000-0000-0000-0000-0000000000c1', 'Empresa A', 'EMPA', $allocated);
+insert into public.companies (id, name, code)
+values ('00000000-0000-0000-0000-0000000000c1', 'Empresa A', 'EMPA');
 insert into public.employees (employee_number, name, company_id)
 select i::text, 'Colaborador ' || i, '00000000-0000-0000-0000-0000000000c1'
 from generate_series(1, $employees) i;
@@ -66,33 +66,51 @@ storm() {
   rm -rf "$outdir"
 }
 
-echo
-echo "═══ Corrida pelo último kit ═══"
-echo "    $CONC operadores em simultâneo, 1 kit disponível, colaboradores diferentes"
-setup 1 "$CONC"
-succeeded=$(storm "$(seq 1 "$CONC")")
-check "exatamente 1 entrega bem sucedida" "1" "$succeeded"
-check "stock disponível não fica negativo" "0" "$(q "select available from public.company_stock where code='EMPA';")"
-check "apenas 1 linha de entrega ativa" "1" "$(q "select count(*) from public.deliveries where reversed_at is null;")"
-check "auditoria tem exatamente 1 DELIVERED" "1" "$(q "select count(*) from public.delivery_logs where action='DELIVERED';")"
+# A migração 0011 acabou com o limite por empresa e, com ele, com o bloqueio
+# da linha da empresa em `deliver_kit`. A garantia que resta — e que sempre
+# foi a que interessava — é um colaborador, um kit. Nunca dependeu do
+# bloqueio: vem do índice único parcial. É isso que estes testes provam, com
+# processos psql verdadeiramente em paralelo.
 
 echo
 echo "═══ Corrida pelo MESMO colaborador ═══"
-echo "    $CONC operadores em simultâneo sobre o colaborador 1, stock de sobra"
-setup 500 1
+echo "    $CONC operadores em simultâneo sobre o colaborador 1"
+setup 1
 succeeded=$(storm "$(for _ in $(seq 1 "$CONC"); do echo 1; done)")
 check "exatamente 1 entrega bem sucedida" "1" "$succeeded"
 check "o colaborador tem exatamente 1 kit" "1" "$(q "select count(*) from public.deliveries where reversed_at is null;")"
+check "auditoria tem exatamente 1 DELIVERED" "1" "$(q "select count(*) from public.delivery_logs where action='DELIVERED';")"
 
 echo
-echo "═══ Stock parcial sob carga ═══"
-echo "    $((CONC * 2)) tentativas em simultâneo, 10 kits disponíveis"
-setup 10 $((CONC * 2))
+echo "═══ Colaboradores diferentes, sem limite a travar ═══"
+echo "    $((CONC * 2)) operadores em simultâneo, $((CONC * 2)) colaboradores"
+# Antes, 10 kits atribuídos travavam isto nos 10. Agora passam todos — e
+# passam sem se atropelarem: sem o bloqueio da empresa deixam de esperar uns
+# pelos outros, e mesmo assim não se perde nem se duplica nenhuma entrega.
+setup $((CONC * 2))
 succeeded=$(storm "$(seq 1 $((CONC * 2)))")
-check "entregou exatamente os 10 kits" "10" "$succeeded"
-check "stock esgotado, nunca negativo" "0" "$(q "select available from public.company_stock where code='EMPA';")"
-check "10 entregas registadas" "10" "$(q "select count(*) from public.deliveries where reversed_at is null;")"
-check "sem excesso sobre o limite" "t" "$(q "select (delivered <= allocated) from public.company_stock where code='EMPA';")"
+check "todas as entregas passam" "$((CONC * 2))" "$succeeded"
+check "uma linha por colaborador, sem duplicados" "$((CONC * 2))" "$(q "select count(*) from public.deliveries where reversed_at is null;")"
+check "a vista conta o mesmo" "$((CONC * 2))" "$(q "select delivered from public.company_totals where code='EMPA';")"
+
+echo
+echo "═══ Mesma chave de idempotência em simultâneo ═══"
+echo "    $CONC pedidos idênticos, como um duplo toque que se multiplicou"
+setup 1
+KEY=$(q "select gen_random_uuid();")
+outdir=$(mktemp -d)
+for i in $(seq 1 "$CONC"); do
+  (
+    psql -h "$PGH" -U postgres -d "$DB" -tAX \
+      -c "set role authenticated; set request.jwt.claim.sub = '$OPER';
+          select deliver_kit('1', '$KEY') ->> 'repeated';" \
+      >"$outdir/$i.out" 2>&1
+  ) &
+done
+wait
+rm -rf "$outdir"
+check "uma só entrega, apesar dos $CONC pedidos" "1" "$(q "select count(*) from public.deliveries;")"
+check "e um só registo de auditoria" "1" "$(q "select count(*) from public.delivery_logs where action='DELIVERED';")"
 
 echo
 echo "───────────────────────────────────"

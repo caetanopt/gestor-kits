@@ -15,7 +15,7 @@ const LOOKUP: EmployeeLookup = {
     name: "Empresa A",
     code: "EMPA",
   },
-  stock: { allocated: 120, delivered: 47, available: 73 },
+  totals: { delivered: 47, employees: 120 },
   delivery: null,
 };
 
@@ -106,7 +106,7 @@ describe("ecrã de distribuição", () => {
               },
               employee: LOOKUP.employee,
               company: LOOKUP.company,
-              stock: { allocated: 120, delivered: 48, available: 72 },
+              totals: { delivered: 48, employees: 120 },
               repeated: false,
             },
           }
@@ -120,7 +120,11 @@ describe("ecrã de distribuição", () => {
     await user.keyboard("{Enter}");
 
     expect(await screen.findByText("Kit entregue com sucesso.")).toBeInTheDocument();
-    expect(screen.getByText(/72 kits ainda disponíveis/)).toBeInTheDocument();
+    // O cartão de confirmação passa a dizer o que a empresa levou, não o
+    // que lhe resta: já não há resto.
+    expect(
+      screen.getByText(/48 kits entregues em 120 colaboradores/),
+    ).toBeInTheDocument();
     expect(deliveries()).toHaveLength(1);
   });
 
@@ -161,21 +165,42 @@ describe("ecrã de distribuição", () => {
     expect(deliveries()).toHaveLength(0);
   });
 
-  it("bloqueia a entrega quando a empresa esgotou o stock", async () => {
+  it("entrega mesmo com todos os colaboradores da empresa já servidos", async () => {
+    // Era aqui que aparecia "STOCK ESGOTADO". Já não há limite por empresa:
+    // a única razão para recusar é este colaborador já ter recebido.
     const user = userEvent.setup();
-    mockFetch(() => ({
-      success: true,
-      data: { ...LOOKUP, stock: { allocated: 120, delivered: 120, available: 0 } },
-    }));
+    mockFetch((url) =>
+      url === "/api/deliveries"
+        ? {
+            success: true,
+            data: {
+              delivery: {
+                id: "3f2504e0-4f89-41d3-9a0c-0305e82c3306",
+                deliveredAt: "2026-09-17T11:00:00.000Z",
+                deliveredBy: { id: "3f2504e0-4f89-41d3-9a0c-0305e82c3304", name: "B" },
+                reversedAt: null,
+              },
+              employee: LOOKUP.employee,
+              company: LOOKUP.company,
+              totals: { delivered: 121, employees: 120 },
+              repeated: false,
+            },
+          }
+        : {
+            success: true,
+            data: { ...LOOKUP, totals: { delivered: 120, employees: 120 } },
+          },
+    );
 
     render(<DistributionScreen />);
     await user.keyboard("12345{Enter}");
 
-    expect(await screen.findByText("STOCK ESGOTADO")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ENTREGAR KIT" })).toBeDisabled();
+    expect(await screen.findByText("KIT AINDA NÃO ENTREGUE")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "ENTREGAR KIT" })).toBeEnabled();
 
     await user.keyboard("{Enter}");
-    expect(deliveries()).toHaveLength(0);
+    expect(await screen.findByText("Kit entregue com sucesso.")).toBeInTheDocument();
+    expect(deliveries()).toHaveLength(1);
   });
 
   it("mostra a mensagem do servidor quando o colaborador não existe", async () => {
@@ -239,8 +264,8 @@ describe("ecrã de distribuição", () => {
               url === "/api/deliveries"
                 ? {
                     success: false,
-                    code: "NO_STOCK",
-                    message: "A empresa já atingiu o limite de kits.",
+                    code: "ALREADY_DELIVERED",
+                    message: "Este colaborador já recebeu um kit.",
                   }
                 : { success: true, data: LOOKUP },
             ),
@@ -371,7 +396,7 @@ describe("pesquisa por nome ou email", () => {
             },
             employee: LOOKUP.employee,
             company: LOOKUP.company,
-            stock: { allocated: 120, delivered: 48, available: 72 },
+            totals: { delivered: 48, employees: 120 },
             repeated: false,
           },
         };

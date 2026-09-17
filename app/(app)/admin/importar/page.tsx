@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listCompanyStock } from "@/server/use-cases/companies";
+import { listCompanyTotals } from "@/server/use-cases/companies";
 import { ImportWizard } from "@/components/admin/import-wizard";
 
 export const metadata: Metadata = { title: "Importar · Kits" };
 
 export default async function ImportarPage() {
   await requireAdmin();
-  const companies = await listCompanyStock();
+  const companies = await listCompanyTotals();
 
   return (
     <div className="space-y-6">

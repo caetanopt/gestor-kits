@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listCompanyStock } from "@/server/use-cases/companies";
+import { listCompanyTotals } from "@/server/use-cases/companies";
 import { CompanyManager } from "@/components/admin/company-manager";
 
 export const metadata: Metadata = { title: "Empresas · Kits" };
 
 export default async function EmpresasPage() {
   await requireAdmin();
-  const companies = await listCompanyStock();
+  const companies = await listCompanyTotals();
 
   return (
     <div className="space-y-6">

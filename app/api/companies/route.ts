@@ -3,13 +3,13 @@ import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
 import { requireApiAdmin, requireApiUser } from "@/lib/auth/dal";
 import { companyInputSchema } from "@/lib/validation/company";
-import { listCompanyStock, saveCompany } from "@/server/use-cases/companies";
+import { listCompanyTotals, saveCompany } from "@/server/use-cases/companies";
 
 /** GET /api/companies — lista com stock. Qualquer utilizador ativo. */
 export async function GET() {
   try {
     await requireApiUser();
-    return ok(await listCompanyStock());
+    return ok(await listCompanyTotals());
   } catch (error) {
     return toErrorResponse(error);
   }

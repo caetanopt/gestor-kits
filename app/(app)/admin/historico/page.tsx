@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
-import { listCompanyStock } from "@/server/use-cases/companies";
+import { listCompanyTotals } from "@/server/use-cases/companies";
 import { HISTORY_PAGE_SIZE, listHistory } from "@/server/use-cases/history";
 import { paginar } from "@/lib/ui/paginacao";
 import { historyFilterSchema, AUDIT_ACTION_LABELS } from "@/lib/validation/history";
@@ -40,7 +40,7 @@ export default async function HistoricoPage(props: {
 
   const [{ entries, total }, companies] = await Promise.all([
     listHistory(filter, safePage),
-    listCompanyStock(),
+    listCompanyTotals(),
   ]);
 
   const { pageCount, primeiro, ultimo, temAnterior, temSeguinte, foraDeAlcance } =

@@ -13,7 +13,7 @@ describe("AppError", () => {
 
   it("usa 409 para conflitos de estado", () => {
     expect(new AppError("ALREADY_DELIVERED").status).toBe(409);
-    expect(new AppError("NO_STOCK").status).toBe(409);
+    expect(new AppError("ALREADY_DELIVERED").status).toBe(409);
   });
 
   it("usa 404 quando o recurso não existe", () => {
@@ -30,10 +30,8 @@ describe("AppError", () => {
       DELIVERY_NOT_FOUND: 404,
       ALREADY_DELIVERED: 409,
       ALREADY_REVERSED: 409,
-      NO_STOCK: 409,
       DUPLICATE_COMPANY_CODE: 409,
       DUPLICATE_EMPLOYEE_NUMBER: 409,
-      LIMIT_BELOW_DELIVERED: 409,
       VALIDATION_ERROR: 422,
       SEARCH_TOO_SHORT: 422,
       INVALID_FILE: 422,
@@ -52,7 +50,7 @@ describe("AppError", () => {
   });
 
   it("permite sobrepor o estado", () => {
-    expect(new AppError("NO_STOCK", { status: 400 }).status).toBe(400);
+    expect(new AppError("ALREADY_DELIVERED", { status: 400 }).status).toBe(400);
   });
 
   it("expõe a mensagem em pt-PT", () => {
