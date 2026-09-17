@@ -328,10 +328,15 @@ export function DistributionScreen() {
     screen.kind === "found" || screen.kind === "delivered" || screen.kind === "matches";
 
   return (
-    // Em ecrã largo, pesquisa e resultado lado a lado: o conteúdo tinha
-    // 672px dentro de um espaço de 1152px, e o resultado ficava empurrado
-    // para baixo da dobra por 352px de vazio.
-    <div className="mx-auto w-full max-w-2xl space-y-6 lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+    // Uma coluna centrada, com a mesma largura em todos os ecrãs.
+    //
+    // Chegou a haver duas colunas em ecrã largo, para o resultado não cair
+    // abaixo da dobra. Custava o principal: com o cartão encostado à
+    // esquerda e metade do ecrã vazia à espera de um resultado, o operador
+    // não tinha para onde olhar. O cartão encolhe assim que há resultado
+    // (`compacto`), e é isso que mantém a entrega dentro da dobra numa só
+    // coluna.
+    <div className="mx-auto w-full max-w-[800px] space-y-6">
       {/* Pesquisa ------------------------------------------------------- */}
       <div className="ring-ink-200 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
         {/* Separadores. O modo por número fica primeiro por ser o fluxo
