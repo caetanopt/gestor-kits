@@ -31,13 +31,22 @@ const DELIVERED: EmployeeLookup = {
 };
 
 /** Regista as chamadas para podermos afirmar o que NÃO foi chamado. */
-let calls: { url: string; method: string }[] = [];
+const EMPRESAS = [
+  { id: "3f2504e0-4f89-41d3-9a0c-0305e82c3302", name: "Empresa A" },
+  { id: "3f2504e0-4f89-41d3-9a0c-0305e82c3320", name: "Empresa B" },
+];
+
+let calls: { url: string; method: string; body: unknown }[] = [];
 
 function mockFetch(handler: (url: string, init?: RequestInit) => unknown) {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string, init?: RequestInit) => {
-      calls.push({ url, method: init?.method ?? "GET" });
+      calls.push({
+        url,
+        method: init?.method ?? "GET",
+        body: init?.body ? JSON.parse(String(init.body)) : null,
+      });
       return Promise.resolve({
         json: () => Promise.resolve(handler(url, init)),
       } as Response);
@@ -80,7 +89,7 @@ describe("ecrã de distribuição", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: LOOKUP }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
 
     expect(await screen.findByText("João Silva")).toBeInTheDocument();
@@ -113,7 +122,7 @@ describe("ecrã de distribuição", () => {
         : { success: true, data: LOOKUP },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
     await screen.findByText("João Silva");
 
@@ -138,7 +147,7 @@ describe("ecrã de distribuição", () => {
         : { success: true, data: LOOKUP },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
     await screen.findByText("João Silva");
 
@@ -153,7 +162,7 @@ describe("ecrã de distribuição", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: DELIVERED }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12346{Enter}");
 
     expect(await screen.findByText("JÁ ENTREGUE")).toBeInTheDocument();
@@ -192,7 +201,7 @@ describe("ecrã de distribuição", () => {
           },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
 
     expect(await screen.findByText("KIT AINDA NÃO ENTREGUE")).toBeInTheDocument();
@@ -203,7 +212,9 @@ describe("ecrã de distribuição", () => {
     expect(deliveries()).toHaveLength(1);
   });
 
-  it("mostra a mensagem do servidor quando o colaborador não existe", async () => {
+  it("quem não está na lista abre o formulário, já com o número escrito", async () => {
+    // Não é um erro, é um caso de trabalho: a pessoa está à frente do balcão
+    // e não veio no ficheiro de importação.
     const user = userEvent.setup();
     mockFetch(() => ({
       success: false,
@@ -211,19 +222,74 @@ describe("ecrã de distribuição", () => {
       message: "Colaborador não encontrado.",
     }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("00000{Enter}");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Colaborador não encontrado.",
-    );
+    expect(await screen.findByText("Não está na lista")).toBeInTheDocument();
+    expect(screen.getByLabelText("N.º colaborador")).toHaveValue("00000");
+    expect(screen.getByLabelText("Nome")).toHaveValue("");
+  });
+
+  it("outro erro qualquer continua a ser um erro", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({
+      success: false,
+      code: "INACTIVE_ACCOUNT",
+      message: "A sua conta está desativada. Contacte um administrador.",
+    }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.keyboard("00000{Enter}");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("desativada");
+    expect(screen.queryByText("Não está na lista")).not.toBeInTheDocument();
+  });
+
+  it("acrescenta o colaborador e abre-lhe logo o cartão de entrega", async () => {
+    const user = userEvent.setup();
+    mockFetch((url, init) => {
+      if (url === "/api/employees" && init?.method === "POST") {
+        return { success: true, data: LOOKUP };
+      }
+      return {
+        success: false,
+        code: "EMPLOYEE_NOT_FOUND",
+        message: "Colaborador não encontrado.",
+      };
+    });
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.keyboard("9787{Enter}");
+    await screen.findByText("Não está na lista");
+
+    await user.type(screen.getByLabelText("Nome"), "  Daniela Santos  ");
+    await user.selectOptions(screen.getByLabelText("Empresa"), EMPRESAS[0]!.id);
+    await user.click(screen.getByRole("button", { name: "Acrescentar e abrir" }));
+
+    // Segue direto para o cartão: quem acabou de escrever o nome quer
+    // entregar o kit, não voltar ao princípio.
+    expect(await screen.findByRole("button", { name: /entregar kit/i })).toBeEnabled();
+
+    const criacao = calls.filter((c) => c.url === "/api/employees");
+    expect(criacao).toHaveLength(1);
+    expect(criacao[0]?.body).toEqual({
+      employeeNumber: "9787",
+      name: "Daniela Santos",
+      companyId: EMPRESAS[0]!.id,
+    });
+  });
+
+  it("sem empresas criadas, explica em vez de mostrar um formulário inútil", () => {
+    render(<DistributionScreen companies={[]} />);
+    // O formulário exige uma empresa; sem nenhuma, não há nada a submeter.
+    expect(screen.queryByLabelText("Empresa")).not.toBeInTheDocument();
   });
 
   it("limpa o campo e devolve o foco depois de cada pesquisa", async () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: LOOKUP }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const input = screen.getByLabelText("Número de colaborador");
 
     await user.keyboard("12345{Enter}");
@@ -239,7 +305,7 @@ describe("ecrã de distribuição", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: LOOKUP }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
     await screen.findByText("João Silva");
 
@@ -256,7 +322,11 @@ describe("ecrã de distribuição", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string, init?: RequestInit) => {
-        calls.push({ url, method: init?.method ?? "GET" });
+        calls.push({
+          url,
+          method: init?.method ?? "GET",
+          body: init?.body ? JSON.parse(String(init.body)) : null,
+        });
         if (init?.body) bodies.push(String(init.body));
         return Promise.resolve({
           json: () =>
@@ -273,7 +343,7 @@ describe("ecrã de distribuição", () => {
       }),
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
     await screen.findByText("João Silva");
 
@@ -295,7 +365,7 @@ describe("pesquisa por nome ou email", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: RESULTADOS }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "Ana");
 
@@ -311,7 +381,7 @@ describe("pesquisa por nome ou email", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: RESULTADOS }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "João ");
 
@@ -326,7 +396,7 @@ describe("pesquisa por nome ou email", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: RESULTADOS }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "Miguel ");
 
@@ -349,7 +419,7 @@ describe("pesquisa por nome ou email", () => {
         : { success: true, data: LOOKUP },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "joao.silva@empresa.pt");
 
@@ -370,7 +440,7 @@ describe("pesquisa por nome ou email", () => {
         : { success: true, data: LOOKUP },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "João ");
 
@@ -404,7 +474,7 @@ describe("pesquisa por nome ou email", () => {
       return { success: true, data: LOOKUP };
     });
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "João ");
 
@@ -423,7 +493,7 @@ describe("pesquisa por nome ou email", () => {
         : { success: true, data: LOOKUP },
     );
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     const campo = await abrirSeparador(user);
     await user.type(campo, "João ");
     await user.click(await screen.findByText("João Silva"));
@@ -438,7 +508,7 @@ describe("pesquisa por nome ou email", () => {
     const user = userEvent.setup();
     mockFetch(() => ({ success: true, data: LOOKUP }));
 
-    render(<DistributionScreen />);
+    render(<DistributionScreen companies={EMPRESAS} />);
     await user.keyboard("12345{Enter}");
     await screen.findByText("João Silva");
 

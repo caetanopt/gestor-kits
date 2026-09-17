@@ -43,7 +43,8 @@ select 'Funções de negócio',
          'handle_new_user','totals_snapshot','delivery_payload','app_error',
          'touch_updated_at','derive_company_code','save_employee',
          'set_user_role','set_user_active','active_admin_count','set_user_name',
-         'search_employees_for_delivery','company_totals_list'
+         'search_employees_for_delivery','company_totals_list',
+         'create_employee_for_delivery'
        ]) as esperada
   left join pg_proc p
     on p.proname = esperada

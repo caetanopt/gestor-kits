@@ -385,6 +385,30 @@ r=$(as_user "$OPER" "update public.profiles set role = 'admin' where id = '$OPER
 check "distribuidor não consegue promover-se a administrador" "denied for table profiles" "$r"
 
 echo
+echo "═══ Colaborador acrescentado ao balcão ═══"
+# O caso que aparece sempre num evento: alguém que a importação não trouxe.
+# Quem o encontra é quem está a distribuir, por isso a função é aberta a
+# qualquer conta ativa — sem abrir a tabela a ninguém.
+reset_db
+EMPRESA=$(q "select id from public.companies where code = 'EMPA';")
+r=$(as_user "$OPER" "select create_employee_for_delivery('  9787 ', '  Daniela Santos  ', '$EMPRESA') -> 'employee' ->> 'name';" | tail -1)
+check "distribuidor acrescenta um colaborador" "Daniela Santos" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery('9787', 'Daniela Santos', '$EMPRESA');")
+check "número repetido é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
+r=$(q "select name from public.employees where employee_number = '9787';")
+check "e o que já existia fica intacto" "Daniela Santos" "$r"
+r=$(as_user "$OPER" "select deliver_kit('9787', gen_random_uuid()) ->> 'repeated';" | tail -1)
+check "o kit pode ser entregue logo a seguir" "false" "$r"
+r=$(as_user "$OPER" "select count(*) from public.employees;" | tail -1)
+check "acrescentar não lhe abre a tabela" "0" "$r"
+r=$(q "select metadata ->> 'origem' from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
+check "fica auditado com a origem" "distribuicao" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery('9788', 'Sem empresa', '00000000-0000-0000-0000-0000000000ff');")
+check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery('', 'Sem número', '$EMPRESA');")
+check "número vazio é recusado" "VALIDATION_ERROR" "$r"
+
+echo
 echo "═══ Números do dashboard ═══"
 # O dashboard mostra entregues e colaboradores por empresa, e ambos saem de
 # company_totals_list(). A condição que pode estar errada é a exclusão das

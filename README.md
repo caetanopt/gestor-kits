@@ -231,7 +231,8 @@ cartão da pesquisa por número, e o `Enter` seguinte entrega o kit.
 | ------------------------------------ | :----------: | :-----------: |
 | Dashboard                            |      ✓       |       ✓       |
 | Pesquisar colaborador e entregar kit |      ✓       |       ✓       |
-| Listar, criar e editar colaboradores |      ✗       |       ✓       |
+| Acrescentar colaborador ao balcão    |      ✓       |       ✓       |
+| Listar e editar colaboradores        |      ✗       |       ✓       |
 | Criar e editar empresas e limites    |      ✗       |       ✓       |
 | Importar colaboradores               |      ✗       |       ✓       |
 | Anular entregas                      |      ✗       |       ✓       |
@@ -249,6 +250,13 @@ O distribuidor não consegue ler a tabela de colaboradores: se conseguisse,
 podia enumerar toda a base de pessoas pela API do Supabase. A pesquisa do
 ecrã de distribuição passa por uma função que exige correspondência exata
 do número e devolve no máximo uma linha.
+
+Acrescentar é outra coisa e é permitido. Num evento aparece sempre alguém que
+a importação não trouxe, e quem o encontra é quem está a distribuir: quando a
+pesquisa não dá resultado, o ecrã oferece um formulário com o número ou o nome
+já preenchido, e o colaborador fica criado e pronto a receber o kit. Só cria —
+um número repetido é recusado, nunca reescrito — fica registado na auditoria
+com origem `distribuicao`, e não abre a tabela a quem o usou.
 
 ## Indexação por motores de busca
 

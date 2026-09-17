@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { correspondenciaUnicaPorEmail, deveSugerir } from "@/lib/validation/delivery";
 import { Button } from "@/components/ui/button";
+import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
 import { TotalsPanel } from "./totals-panel";
 import { StatusBadge } from "./status-badge";
@@ -21,6 +22,9 @@ type Screen =
   | { kind: "matches"; search: EmployeeSearch }
   | { kind: "found"; lookup: EmployeeLookup; idempotencyKey: string }
   | { kind: "delivered"; result: DeliveryResult }
+  // Ninguém com este número ou nome. Guarda o que foi escrito para o
+  // formulário já vir preenchido — quem chegou aqui acabou de o escrever.
+  | { kind: "ausente"; employeeNumber: string; name: string }
   | { kind: "error"; message: string };
 
 /**
@@ -31,6 +35,9 @@ type Screen =
  * um resultado único.
  */
 type Mode = "numero" | "nome";
+
+/** Empresa a que o colaborador novo pode ser associado. */
+export type CompanyOption = { id: string; name: string };
 
 type ApiEnvelope<T> =
   { success: true; data: T } | { success: false; code: string; message: string };
@@ -91,7 +98,7 @@ async function callApi<T>(input: string, init?: RequestInit): Promise<ApiEnvelop
  * a ser  `número → Enter → Enter`, mas uma leitura inesperada nunca entrega
  * um kit: preenche o campo e faz uma pesquisa nova.
  */
-export function DistributionScreen() {
+export function DistributionScreen({ companies }: { companies: CompanyOption[] }) {
   const [screen, setScreen] = useState<Screen>({ kind: "idle" });
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>("numero");
@@ -122,7 +129,13 @@ export function DistributionScreen() {
       );
 
       if (!result.success) {
-        setScreen({ kind: "error", message: result.message });
+        // Não é um erro, é um caso de trabalho: a pessoa está à frente do
+        // balcão e não está na lista.
+        if (result.code === "EMPLOYEE_NOT_FOUND") {
+          setScreen({ kind: "ausente", employeeNumber, name: "" });
+        } else {
+          setScreen({ kind: "error", message: result.message });
+        }
       } else {
         setScreen({
           kind: "found",
@@ -194,7 +207,7 @@ export function DistributionScreen() {
         return;
       }
       if (result.data.results.length === 0) {
-        setScreen({ kind: "error", message: "Nenhum colaborador corresponde." });
+        setScreen({ kind: "ausente", employeeNumber: "", name: rawTerm.trim() });
         return;
       }
 
@@ -232,6 +245,39 @@ export function DistributionScreen() {
 
       // Campo limpo e focado imediatamente: o operador pode começar a
       // escrever o número seguinte enquanto lê a confirmação (secção 26).
+      setQuery("");
+      focusSearch();
+    },
+    [focusSearch],
+  );
+
+  /**
+   * Acrescenta o colaborador e abre-lhe o cartão.
+   *
+   * O ecrã segue direto para "found": a resposta traz o mesmo payload da
+   * pesquisa, e quem acabou de escrever o nome quer entregar o kit a seguir,
+   * não voltar ao princípio.
+   */
+  const criarColaborador = useCallback(
+    async (input: { employeeNumber: string; name: string; companyId: string }) => {
+      setScreen({ kind: "busy", label: "A acrescentar…" });
+
+      const result = await callApi<EmployeeLookup>("/api/employees", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+
+      if (!result.success) {
+        setScreen({ kind: "error", message: result.message });
+      } else {
+        setScreen({
+          kind: "found",
+          lookup: result.data,
+          idempotencyKey: crypto.randomUUID(),
+        });
+      }
+
       setQuery("");
       focusSearch();
     },
@@ -325,7 +371,10 @@ export function DistributionScreen() {
    * entrega dentro da dobra de um tablet.
    */
   const compacto =
-    screen.kind === "found" || screen.kind === "delivered" || screen.kind === "matches";
+    screen.kind === "found" ||
+    screen.kind === "delivered" ||
+    screen.kind === "matches" ||
+    screen.kind === "ausente";
 
   return (
     // Uma coluna centrada, com a mesma largura em todos os ecrãs.
@@ -395,11 +444,17 @@ export function DistributionScreen() {
             // Mantém o cursor no campo: num tablet, tocar fora não deve
             // obrigar o operador a voltar a tocar no campo.
             //
+            // Exceto quando há um formulário aberto — o de "não está na
+            // lista" tem campos próprios, e roubar-lhes o foco tornava-os
+            // impossíveis de preencher: cada tecla ia parar à pesquisa.
+            //
             // Aqui é focus() e não focusSearch(): devolver o foco não pode
             // selecionar o que já está escrito. Nos outros pontos de chamada o
             // campo está vazio e a seleção é indiferente; neste pode ter texto
             // a meio, e selecioná-lo faria a tecla seguinte apagá-lo.
-            if (!busy) requestAnimationFrame(() => inputRef.current?.focus());
+            if (!busy && screen.kind !== "ausente") {
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }
           }}
           className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
             compacto ? "py-2" : "py-5"
@@ -471,6 +526,17 @@ export function DistributionScreen() {
           />
         )}
 
+        {screen.kind === "ausente" && (
+          <AusenteCard
+            key={`${screen.employeeNumber}|${screen.name}`}
+            employeeNumber={screen.employeeNumber}
+            name={screen.name}
+            companies={companies}
+            onCancel={reset}
+            onCreate={criarColaborador}
+          />
+        )}
+
         {screen.kind === "delivered" && <DeliveredCard result={screen.result} />}
       </div>
     </div>
@@ -534,6 +600,117 @@ function MatchList({
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Ninguém com aquele número ou nome — e a pessoa está ali à frente.
+ *
+ * O formulário chega preenchido com o que acabou de ser escrito: quem
+ * pesquisou por número já o tem, quem pesquisou por nome já o escreveu. Falta
+ * sempre a empresa, que é por onde a entrega é contabilizada, e é por isso o
+ * único campo que não se consegue adivinhar.
+ *
+ * Só cria. Editar continua a ser matéria da área administrativa, e um número
+ * repetido é recusado pelo servidor em vez de reescrever quem já existe.
+ */
+function AusenteCard({
+  employeeNumber,
+  name,
+  companies,
+  onCancel,
+  onCreate,
+}: {
+  employeeNumber: string;
+  name: string;
+  companies: CompanyOption[];
+  onCancel: () => void;
+  onCreate: (input: { employeeNumber: string; name: string; companyId: string }) => void;
+}) {
+  const [numero, setNumero] = useState(employeeNumber);
+  const [nome, setNome] = useState(name);
+  const [empresa, setEmpresa] = useState(companies.length === 1 ? companies[0]!.id : "");
+
+  if (companies.length === 0) {
+    return (
+      <Alert tone="warning" title="Não existe nenhuma empresa.">
+        <p>
+          Um colaborador é sempre associado a uma empresa. Peça a um administrador que
+          crie a empresa primeiro.
+        </p>
+      </Alert>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onCreate({
+          employeeNumber: numero.trim(),
+          name: nome.trim(),
+          companyId: empresa,
+        });
+      }}
+      className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6"
+    >
+      <div>
+        <h2 className="text-ink-900 text-xl font-semibold">Não está na lista</h2>
+        <p className="text-ink-700 mt-1 text-sm">
+          Acrescente o colaborador para lhe poder entregar o kit.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="N.º colaborador" htmlFor="novo-numero">
+          <Input
+            id="novo-numero"
+            value={numero}
+            required
+            maxLength={40}
+            autoComplete="off"
+            autoCapitalize="characters"
+            onChange={(event) => setNumero(event.target.value)}
+          />
+        </Field>
+
+        <Field label="Nome" htmlFor="novo-nome">
+          <Input
+            id="novo-nome"
+            value={nome}
+            required
+            maxLength={160}
+            autoComplete="off"
+            onChange={(event) => setNome(event.target.value)}
+          />
+        </Field>
+
+        <Field label="Empresa" htmlFor="novo-empresa">
+          <Select
+            id="novo-empresa"
+            value={empresa}
+            required
+            onChange={(event) => setEmpresa(event.target.value)}
+          >
+            <option value="">Selecione…</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id}>
+                {company.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" size="lg">
+          Acrescentar e abrir
+        </Button>
+        <Button type="button" size="lg" variant="secondary" onClick={onCancel}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   );
 }
 

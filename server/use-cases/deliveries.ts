@@ -14,6 +14,7 @@ import {
   type EmployeeSearch,
   type ReverseResult,
 } from "@/lib/validation/delivery";
+import type { NovoColaborador } from "@/lib/validation/employee";
 
 /**
  * Valida a resposta de uma função PostgreSQL.
@@ -43,6 +44,27 @@ export async function findEmployeeForDelivery(
 
   if (error) throw mapPostgrestError(error);
   return parseRpc(employeeLookupSchema, data, "find_employee_for_delivery");
+}
+
+/**
+ * Cria um colaborador a partir do ecrã de distribuição.
+ *
+ * Devolve o mesmo payload de `findEmployeeForDelivery`: o ecrã segue direto
+ * para o cartão de entrega, sem uma segunda ida ao servidor.
+ */
+export async function createEmployeeForDelivery(
+  input: NovoColaborador,
+): Promise<EmployeeLookup> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase.rpc("create_employee_for_delivery", {
+    p_employee_number: input.employeeNumber,
+    p_name: input.name,
+    p_company_id: input.companyId,
+  });
+
+  if (error) throw mapPostgrestError(error);
+  return parseRpc(employeeLookupSchema, data, "create_employee_for_delivery");
 }
 
 /**

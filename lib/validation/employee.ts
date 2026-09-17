@@ -38,6 +38,21 @@ export const employeeInputSchema = z.object({
   companyId: z.string().uuid("Selecione uma empresa."),
 });
 
+/**
+ * Colaborador acrescentado ao balcão, no ecrã de distribuição.
+ *
+ * Sem email: ninguém o pede a quem está à espera do kit, e a coluna é
+ * opcional desde a migração 0012. A empresa é obrigatória — é por ela que a
+ * entrega é contabilizada.
+ */
+export const novoColaboradorSchema = z.object({
+  employeeNumber: employeeNumberSchema,
+  name: employeeNameSchema,
+  companyId: z.string().uuid("Selecione uma empresa."),
+});
+
+export type NovoColaborador = z.infer<typeof novoColaboradorSchema>;
+
 export const employeeResultSchema = z.object({
   id: z.string().uuid(),
   employeeNumber: z.string(),
