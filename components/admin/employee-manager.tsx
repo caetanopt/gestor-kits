@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
@@ -33,6 +33,21 @@ export function EmployeeManager({
   page: number;
 }) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /**
+   * Leva o ecrã ao formulário e põe o cursor no primeiro campo.
+   *
+   * O formulário abre no topo da página. Quem prime "Editar" na décima linha
+   * de uma lista não vê nada mudar — e num telemóvel, onde a lista é muito
+   * mais alta, nem sequer desconfia de que abriu.
+   */
+  const mostrarFormulario = () => {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      formRef.current?.querySelector<HTMLInputElement>("#emp-number")?.focus();
+    });
+  };
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -50,6 +65,7 @@ export function EmployeeManager({
     });
     setError(null);
     setNotice(null);
+    mostrarFormulario();
   }
 
   async function save(event: React.FormEvent) {
@@ -104,6 +120,7 @@ export function EmployeeManager({
         </Button>
       ) : (
         <form
+          ref={formRef}
           onSubmit={save}
           className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1"
         >
@@ -113,7 +130,7 @@ export function EmployeeManager({
 
           {error && <Alert tone="error">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Field label="N.º colaborador" htmlFor="emp-number">
               <Input
                 id="emp-number"
@@ -189,10 +206,15 @@ export function EmployeeManager({
           Nenhum colaborador corresponde a estes filtros.
         </p>
       ) : (
-        <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
+        // Mesma solução dos Utilizadores: abaixo de lg a tabela vira lista de
+        // cartões. Com seis colunas e emails compridos, a tabela media 919px
+        // dentro de um contentor de 358 a 390px — para ver o estado do kit era
+        // preciso arrastar até o nome sair do ecrã, e ficavam cinco botões
+        // "Editar" iguais sem se saber a quem pertenciam.
+        <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1 md:overflow-x-auto">
           <table className="w-full text-sm">
             <caption className="sr-only">Colaboradores</caption>
-            <thead>
+            <thead className="hidden md:table-header-group">
               <tr className="border-ink-200 text-ink-700 border-b text-left">
                 <th scope="col" className="px-4 py-3 font-medium">
                   N.º
@@ -214,14 +236,20 @@ export function EmployeeManager({
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block md:table-row-group">
               {employees.map((employee) => (
-                <tr key={employee.id} className="border-ink-100 border-b last:border-0">
-                  <td className="text-ink-900 px-4 py-3 font-medium tabular-nums">
+                <tr
+                  key={employee.id}
+                  className="border-ink-100 block border-b p-4 last:border-0 md:table-row md:p-0"
+                >
+                  <td className="text-ink-900 block px-0 py-1 font-medium tabular-nums md:table-cell md:px-4 md:py-3">
+                    <span className="text-ink-700 font-normal md:hidden">N.º </span>
                     {employee.employeeNumber}
                   </td>
-                  <td className="text-ink-800 px-4 py-3">{employee.name}</td>
-                  <td className="px-4 py-3">
+                  <td className="text-ink-800 block px-0 py-1 break-words md:table-cell md:px-4 md:py-3">
+                    {employee.name}
+                  </td>
+                  <td className="block px-0 py-1 break-all md:table-cell md:px-4 md:py-3">
                     {employee.email ? (
                       <span className="text-ink-700">{employee.email}</span>
                     ) : (
@@ -232,8 +260,10 @@ export function EmployeeManager({
                       </span>
                     )}
                   </td>
-                  <td className="text-ink-700 px-4 py-3">{employee.companyName}</td>
-                  <td className="px-4 py-3">
+                  <td className="text-ink-700 block px-0 py-1 break-words md:table-cell md:px-4 md:py-3">
+                    {employee.companyName}
+                  </td>
+                  <td className="block px-0 py-1 md:table-cell md:px-4 md:py-3">
                     {employee.kitDelivered ? (
                       <span className="bg-eco-500 text-ink-800 inline-block rounded-md px-2 py-0.5 text-xs font-semibold">
                         Entregue
@@ -252,10 +282,11 @@ export function EmployeeManager({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="block px-0 pt-3 pb-1 md:table-cell md:px-4 md:py-3 md:text-right">
                     <Button
                       type="button"
                       variant="secondary"
+                      className="w-full md:w-auto"
                       onClick={() => {
                         setDraft({
                           id: employee.id,
@@ -266,6 +297,7 @@ export function EmployeeManager({
                         });
                         setError(null);
                         setNotice(null);
+                        mostrarFormulario();
                       }}
                     >
                       Editar

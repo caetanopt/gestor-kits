@@ -11,7 +11,10 @@ export default async function DistribuicaoPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-ink-700 text-center text-lg font-semibold tracking-wide uppercase">
+      {/* Mais pequeno no telemóvel, onde cada pixel da dobra conta, mas
+          visível: o rótulo do cabeçalho também desaparece abaixo de sm, e sem
+          este o ecrã ficava sem nada a dizer onde se está. */}
+      <h1 className="text-ink-700 text-center text-sm font-semibold tracking-wide uppercase sm:text-lg">
         Distribuição de Kits
       </h1>
       <DistributionScreen />

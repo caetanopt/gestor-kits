@@ -315,8 +315,23 @@ export function DistributionScreen() {
 
   const busy = screen.kind === "busy";
 
+  /**
+   * Há alguma coisa no ecrã a competir com o cartão de pesquisa?
+   *
+   * Quando há, o cartão encolhe: o campo perde altura e os botões e a dica de
+   * teclado saem. Não se perde nada — o Enter e o Esc continuam a funcionar,
+   * e a dica só é útil a quem ainda não começou. O que se ganha são 116px
+   * dos 312 do cartão, que é o que põe o nome do colaborador e o botão de
+   * entrega dentro da dobra de um tablet.
+   */
+  const compacto =
+    screen.kind === "found" || screen.kind === "delivered" || screen.kind === "matches";
+
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
+    // Em ecrã largo, pesquisa e resultado lado a lado: o conteúdo tinha
+    // 672px dentro de um espaço de 1152px, e o resultado ficava empurrado
+    // para baixo da dobra por 352px de vazio.
+    <div className="mx-auto w-full max-w-2xl space-y-6 lg:grid lg:max-w-5xl lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
       {/* Pesquisa ------------------------------------------------------- */}
       <div className="ring-ink-200 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
         {/* Separadores. O modo por número fica primeiro por ser o fluxo
@@ -381,16 +396,20 @@ export function DistributionScreen() {
             // a meio, e selecioná-lo faria a tecla seguinte apagá-lo.
             if (!busy) requestAnimationFrame(() => inputRef.current?.focus());
           }}
-          className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 py-5 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
-            mode === "numero" ? "text-4xl tracking-wider tabular-nums" : "text-2xl"
-          }`}
+          className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
+            compacto ? "py-2" : "py-5"
+          } ${mode === "numero" ? "text-4xl tracking-wider tabular-nums" : "text-2xl"}`}
           placeholder={mode === "numero" ? "—" : "Nome completo ou email"}
         />
 
+        {/* Os botões ficam sempre, só encolhem: num tablet não há tecla Esc, e
+            sem o "Limpar" o operador ficaria sem forma nenhuma de abandonar
+            um cartão. A dica de teclado, essa, sai — só serve a quem ainda
+            não começou, e nessa altura o cartão está vazio. */}
         <div className="mt-3 flex items-center justify-center gap-3">
           <Button
             type="button"
-            size="lg"
+            size={compacto ? "md" : "lg"}
             variant="secondary"
             disabled={busy || !query.trim()}
             onClick={() => {
@@ -400,15 +419,24 @@ export function DistributionScreen() {
           >
             Pesquisar
           </Button>
-          <Button type="button" size="lg" variant="ghost" onClick={reset} disabled={busy}>
+          <Button
+            type="button"
+            size={compacto ? "md" : "lg"}
+            variant="ghost"
+            onClick={reset}
+            disabled={busy}
+          >
             Limpar
           </Button>
         </div>
 
-        <p className="text-ink-700 mt-3 text-center text-xs">
-          <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Enter</kbd> pesquisa
-          · <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Esc</kbd> limpa
-        </p>
+        {!compacto && (
+          <p className="text-ink-700 mt-3 text-center text-xs">
+            <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Enter</kbd>{" "}
+            pesquisa ·{" "}
+            <kbd className="bg-ink-100 rounded px-1.5 py-0.5 font-sans">Esc</kbd> limpa
+          </p>
+        )}
       </div>
 
       {/* Resultado ------------------------------------------------------- */}
@@ -473,15 +501,17 @@ function MatchList({
             <button
               type="button"
               onClick={() => onOpen(match)}
-              className="hover:bg-ink-50 flex w-full items-center gap-3 px-5 py-4 text-left"
+              className="hover:bg-ink-50 flex w-full flex-wrap items-start gap-x-3 gap-y-2 px-5 py-3 text-left sm:items-center sm:py-4"
             >
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 basis-full sm:basis-auto">
                 <span className="text-ink-900 block font-semibold">{match.name}</span>
                 <span className="text-ink-700 block text-sm">
                   N.º {match.employeeNumber} · {match.companyName}
                 </span>
                 {match.email && (
-                  <span className="text-ink-700 block text-sm">{match.email}</span>
+                  <span className="text-ink-700 block text-sm break-all">
+                    {match.email}
+                  </span>
                 )}
               </span>
 
@@ -531,17 +561,15 @@ function FoundCard({
         )}
       </div>
 
-      {alreadyDelivered && delivery && (
-        <Alert tone="error" title="Este colaborador já recebeu um kit.">
-          <p>
-            Entregue em {formatDateTime(delivery.deliveredAt)} por{" "}
-            {delivery.deliveredBy.name}.
-          </p>
-        </Alert>
-      )}
-
-      <TotalsPanel company={company} totals={totals} />
-
+      {/* O botão vem antes do detalhe, e não depois.
+          A primeira tentativa foi colá-lo ao fundo do cartão. Resolvia a
+          dobra e criava pior: medido num tablet deitado com o teclado aberto,
+          tapava 100% do aviso de "já entregue", 81% do painel de totais e
+          cortava o crachá de estado a meio das letras. Uma barra que esconde
+          a razão pela qual o botão está desativado é pior do que um botão
+          que obriga a rolar.
+          Pela ordem, o que decide a ação — nome, estado, botão — fica em
+          cima, e o detalhe que a explica fica logo abaixo. Nada tapa nada. */}
       <Button
         type="button"
         size="xl"
@@ -558,6 +586,17 @@ function FoundCard({
           com o campo de pesquisa vazio.
         </p>
       )}
+
+      {alreadyDelivered && delivery && (
+        <Alert tone="error" title="Este colaborador já recebeu um kit.">
+          <p>
+            Entregue em {formatDateTime(delivery.deliveredAt)} por{" "}
+            {delivery.deliveredBy.name}.
+          </p>
+        </Alert>
+      )}
+
+      <TotalsPanel company={company} totals={totals} />
     </div>
   );
 }

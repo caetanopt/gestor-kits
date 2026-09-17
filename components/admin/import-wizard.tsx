@@ -142,41 +142,46 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
       )}
 
       {report.preview.length > 0 && !report.committed && (
-        <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
-          <table className="w-full text-sm">
-            <caption className="text-ink-700 px-4 py-3 text-left text-sm font-medium">
-              Primeiros colaboradores a criar
-            </caption>
-            <thead>
-              <tr className="border-ink-200 text-ink-700 border-y text-left">
-                <th scope="col" className="px-4 py-2 font-medium">
-                  Número
-                </th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  Nome
-                </th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  Email
-                </th>
-                <th scope="col" className="px-4 py-2 font-medium">
-                  Empresa
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.preview.map((row) => (
-                <tr
-                  key={row.employeeNumber}
-                  className="border-ink-100 border-b last:border-0"
-                >
-                  <td className="px-4 py-2 tabular-nums">{row.employeeNumber}</td>
-                  <td className="px-4 py-2">{row.name}</td>
-                  <td className="text-ink-700 px-4 py-2">{row.email}</td>
-                  <td className="text-ink-700 px-4 py-2">{row.companyName}</td>
+        <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1">
+          <p className="text-ink-700 px-4 py-3 text-sm font-medium">
+            Primeiros colaboradores a criar
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">Primeiros colaboradores a criar</caption>
+              <thead>
+                <tr className="border-ink-200 text-ink-700 border-y text-left">
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Número
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Nome
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Email
+                  </th>
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Empresa
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {report.preview.map((row) => (
+                  <tr
+                    key={row.employeeNumber}
+                    className="border-ink-100 border-b last:border-0"
+                  >
+                    <td className="px-4 py-2 tabular-nums">{row.employeeNumber}</td>
+                    <td className="px-4 py-2">{row.name}</td>
+                    <td className="text-ink-700 px-4 py-2 break-all">{row.email}</td>
+                    <td className="text-ink-700 px-4 py-2 break-all">
+                      {row.companyName}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -210,7 +215,7 @@ function IssueList({
 
   return (
     <details className="ring-ink-200 rounded-2xl bg-white p-4 shadow-sm ring-1">
-      <summary className="text-ink-800 text-sm font-medium">
+      <summary className="text-ink-800 flex min-h-11 items-center text-sm font-medium">
         {title} ({issues.length})
       </summary>
       <ul className="mt-3 space-y-1.5 text-sm">
@@ -218,7 +223,9 @@ function IssueList({
           <li key={`${issue.line}-${index}`} className="flex gap-2">
             <span className="text-ink-700 shrink-0 tabular-nums">linha {issue.line}</span>
             <span
-              className={tone === "error" ? "text-ink-800 font-medium" : "text-ink-700"}
+              className={`min-w-0 break-words ${
+                tone === "error" ? "text-ink-800 font-medium" : "text-ink-700"
+              }`}
             >
               {issue.message}
             </span>

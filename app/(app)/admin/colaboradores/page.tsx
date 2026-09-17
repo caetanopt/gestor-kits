@@ -62,7 +62,7 @@ export default async function ColaboradoresPage(props: {
         </div>
         <ProgressLink
           href="/admin/importar"
-          className="ring-ink-300 text-ink-900 hover:bg-ink-50 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold ring-1"
+          className="ring-ink-300 text-ink-900 hover:bg-ink-50 inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold ring-1"
         >
           Importar ficheiro
         </ProgressLink>
@@ -70,7 +70,7 @@ export default async function ColaboradoresPage(props: {
 
       <form
         method="get"
-        className="ring-ink-200 grid gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-4"
+        className="ring-ink-200 grid gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-3 lg:grid-cols-4"
       >
         <div className="sm:col-span-2">
           <label htmlFor="q" className="text-ink-700 mb-1 block text-xs font-medium">
@@ -119,24 +119,24 @@ export default async function ColaboradoresPage(props: {
           </Select>
         </div>
 
-        <div className="flex items-end sm:col-span-4">
-          <label className="text-ink-800 flex items-center gap-2 text-sm">
+        <div className="flex items-end">
+          <label className="text-ink-800 flex min-h-11 items-center gap-2 py-2 text-sm">
             <input
               type="checkbox"
               name="sem-email"
               value="1"
               defaultChecked={filter.semEmail === true}
-              className="size-4 min-h-0"
+              className="size-5"
             />
             Apenas sem email
           </label>
         </div>
 
-        <div className="flex items-end gap-2 sm:col-span-4">
+        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
           <Button type="submit">Filtrar</Button>
           <ProgressLink
             href="/admin/colaboradores"
-            className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
+            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded-lg px-4 py-2.5 text-sm font-medium"
           >
             Limpar
           </ProgressLink>

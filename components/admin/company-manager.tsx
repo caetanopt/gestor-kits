@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
@@ -17,6 +17,21 @@ type ApiEnvelope =
 
 export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] }) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /**
+   * Leva o ecrã ao formulário e põe o cursor no primeiro campo.
+   *
+   * O formulário abre no topo da página. Quem prime "Editar" na décima linha
+   * de uma lista não vê nada mudar — e num telemóvel, onde a lista é muito
+   * mais alta, nem sequer desconfia de que abriu.
+   */
+  const mostrarFormulario = () => {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      formRef.current?.querySelector<HTMLInputElement>("#company-name")?.focus();
+    });
+  };
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -73,12 +88,14 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
             setDraft({ ...EMPTY });
             setError(null);
             setNotice(null);
+            mostrarFormulario();
           }}
         >
           Nova empresa
         </Button>
       ) : (
         <form
+          ref={formRef}
           onSubmit={save}
           className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1"
         >
@@ -88,7 +105,7 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
 
           {error && <Alert tone="error">{error}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
             <Field label="Nome" htmlFor="company-name">
               <Input
                 id="company-name"
@@ -137,7 +154,7 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
           Ainda não existem empresas. Crie a primeira para poder importar colaboradores.
         </p>
       ) : (
-        <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
+        <div className="ring-ink-200 relative overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
           <table className="w-full text-sm">
             <caption className="sr-only">
               Empresas participantes e kits que cada uma entregou
@@ -147,13 +164,18 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
                 <th scope="col" className="px-4 py-3 font-medium">
                   Empresa
                 </th>
-                <th scope="col" className="px-4 py-3 font-medium">
+                {/* O código só interessa a quem prepara ficheiros de
+                    importação, e esses não o fazem no telemóvel. */}
+                <th scope="col" className="hidden px-4 py-3 font-medium lg:table-cell">
                   Código
                 </th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">
                   Entregues
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
+                <th
+                  scope="col"
+                  className="hidden px-4 py-3 text-right font-medium sm:table-cell"
+                >
                   Colaboradores
                 </th>
                 <th scope="col" className="px-4 py-3">
@@ -165,11 +187,13 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
               {companies.map((company) => (
                 <tr key={company.id} className="border-ink-100 border-b last:border-0">
                   <td className="text-ink-900 px-4 py-3 font-medium">{company.name}</td>
-                  <td className="text-ink-700 px-4 py-3">{company.code}</td>
+                  <td className="text-ink-700 hidden px-4 py-3 lg:table-cell">
+                    {company.code}
+                  </td>
                   <td className="text-ink-900 px-4 py-3 text-right font-semibold tabular-nums">
                     {company.delivered}
                   </td>
-                  <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
+                  <td className="text-ink-700 hidden px-4 py-3 text-right tabular-nums sm:table-cell">
                     {company.employeeCount}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -184,6 +208,7 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
                         });
                         setError(null);
                         setNotice(null);
+                        mostrarFormulario();
                       }}
                     >
                       Editar

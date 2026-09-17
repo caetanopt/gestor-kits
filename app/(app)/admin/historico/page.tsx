@@ -68,7 +68,7 @@ export default async function HistoricoPage(props: {
 
       <form
         method="get"
-        className="ring-ink-200 grid gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-5"
+        className="ring-ink-200 grid grid-cols-2 gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-4 lg:grid-cols-6"
       >
         <Filter label="N.º colaborador" htmlFor="numero">
           <input
@@ -80,7 +80,7 @@ export default async function HistoricoPage(props: {
           />
         </Filter>
 
-        <Filter label="Empresa" htmlFor="empresa">
+        <Filter label="Empresa" htmlFor="empresa" wide>
           <Select
             id="empresa"
             name="empresa"
@@ -127,11 +127,11 @@ export default async function HistoricoPage(props: {
           />
         </Filter>
 
-        <div className="flex items-end gap-2 sm:col-span-5">
+        <div className="col-span-2 flex items-end gap-2 sm:col-span-4 lg:col-span-2">
           <Button type="submit">Filtrar</Button>
           <ProgressLink
             href="/admin/historico"
-            className="text-ink-700 hover:bg-ink-100 rounded-lg px-4 py-2.5 text-sm font-medium"
+            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded-lg px-4 py-2.5 text-sm font-medium"
           >
             Limpar
           </ProgressLink>
@@ -160,10 +160,14 @@ export default async function HistoricoPage(props: {
           )}
         </div>
       ) : (
-        <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
+        // Mesma solução das outras tabelas: abaixo de lg cada registo é um
+        // cartão. Com seis colunas, o botão Anular nunca estava no ecrã ao
+        // mesmo tempo que o nome de quem recebeu o kit — anular às cegas numa
+        // ação destrutiva é o pior sítio para o fazer.
+        <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1 md:overflow-x-auto">
           <table className="w-full text-sm">
             <caption className="sr-only">Registo de ações</caption>
-            <thead>
+            <thead className="hidden md:table-header-group">
               <tr className="border-ink-200 text-ink-700 border-b text-left">
                 <th scope="col" className="px-4 py-2 font-medium">
                   Data e hora
@@ -185,13 +189,16 @@ export default async function HistoricoPage(props: {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block md:table-row-group">
               {entries.map((entry) => (
-                <tr key={entry.id} className="border-ink-100 border-b last:border-0">
-                  <td className="text-ink-700 px-4 py-2.5 whitespace-nowrap tabular-nums">
+                <tr
+                  key={entry.id}
+                  className="border-ink-100 block border-b p-4 last:border-0 md:table-row md:p-0"
+                >
+                  <td className="text-ink-700 block px-0 py-1 tabular-nums md:table-cell md:px-4 md:py-2.5 md:whitespace-nowrap">
                     {formatDateTime(entry.performedAt)}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="block px-0 py-1 break-words md:table-cell md:px-4 md:py-2.5">
                     {/* A ação é distinguida por uma pastilha com fundo de cor
                         e texto antracite: as cores da marca não têm contraste
                         para servirem de cor de texto sobre branco. */}
@@ -210,7 +217,7 @@ export default async function HistoricoPage(props: {
                       <span className="text-ink-700 block text-xs">{entry.notes}</span>
                     )}
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="block px-0 py-1 break-words md:table-cell md:px-4 md:py-2.5">
                     {entry.employeeName ? (
                       <>
                         {entry.employeeName}
@@ -222,11 +229,15 @@ export default async function HistoricoPage(props: {
                       <span className="text-ink-700">—</span>
                     )}
                   </td>
-                  <td className="text-ink-700 px-4 py-2.5">
+                  <td className="text-ink-700 block px-0 py-1 break-words md:table-cell md:px-4 md:py-2.5">
+                    <span className="text-ink-700 md:hidden">Empresa: </span>
                     {entry.companyName ?? <span className="text-ink-700">—</span>}
                   </td>
-                  <td className="text-ink-700 px-4 py-2.5">{entry.performedByName}</td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="text-ink-700 block px-0 py-1 break-words md:table-cell md:px-4 md:py-2.5">
+                    <span className="text-ink-700 md:hidden">Operador: </span>
+                    {entry.performedByName}
+                  </td>
+                  <td className="block px-0 pt-2 pb-1 md:table-cell md:px-4 md:py-2.5 md:text-right">
                     {entry.action === "DELIVERED" &&
                       entry.isActiveDelivery &&
                       entry.deliveryId && (
@@ -293,7 +304,7 @@ function PageLink({
   children: React.ReactNode;
 }) {
   const base =
-    "ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1 transition duration-100 select-none";
+    "ring-ink-200 inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1 transition duration-100 select-none";
 
   if (!disponivel) {
     return (
@@ -316,14 +327,17 @@ function PageLink({
 function Filter({
   label,
   htmlFor,
+  wide = false,
   children,
 }: {
   label: string;
   htmlFor: string;
+  /** Ocupa duas colunas: um nome de empresa não cabe na largura de uma. */
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div>
+    <div className={wide ? "col-span-2" : undefined}>
       <label htmlFor={htmlFor} className="text-ink-700 mb-1 block text-xs font-medium">
         {label}
       </label>

@@ -64,12 +64,19 @@ export function AppShell({
             </span>
           </div>
 
-          <nav aria-label="Navegação principal" className="flex flex-wrap gap-1">
+          {/* `order-last w-full` abaixo de lg: com seis itens de menu, a
+              navegação não cabe na mesma fila que o logótipo e a conta, e sem
+              isto era o botão Sair que ia sozinho para uma terceira fila.
+              Medido a 768: cabeçalho de 149px para 125px. */}
+          <nav
+            aria-label="Navegação principal"
+            className="order-last flex w-full flex-wrap gap-x-1 gap-y-2 lg:order-none lg:w-auto"
+          >
             {nav.map((item) => (
               <ProgressLink
                 key={item.href}
                 href={item.href}
-                className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 has-[[data-navegacao-pendente]]:bg-ink-100 has-[[data-navegacao-pendente]]:text-ink-900 touch-manipulation rounded-lg px-3 py-2 text-sm font-medium transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+                className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 has-[[data-navegacao-pendente]]:bg-ink-100 has-[[data-navegacao-pendente]]:text-ink-900 inline-flex min-h-11 touch-manipulation items-center rounded-lg px-3 py-2 text-sm font-medium transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
               >
                 {item.label}
               </ProgressLink>
@@ -77,10 +84,10 @@ export function AppShell({
           </nav>
 
           <div className="ms-auto flex items-center gap-3">
-            <span className="text-ink-700 hidden text-sm sm:inline">
-              {user.name}
+            <span className="text-ink-700 text-sm">
+              <span className="hidden sm:inline">{user.name}</span>
               {user.role === "admin" && (
-                <span className="bg-amarelo-100 text-ink-800 ms-2 rounded-full px-2 py-0.5 text-xs font-medium">
+                <span className="bg-amarelo-100 text-ink-800 rounded-full px-2 py-0.5 text-xs font-medium sm:ms-2">
                   Administrador
                 </span>
               )}

@@ -69,27 +69,30 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">
                 Kits entregues e colaboradores por empresa
               </caption>
               <thead>
                 <tr className="border-ink-200 text-ink-700 border-y text-left">
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-2 py-2 font-medium sm:px-4">
                     Empresa
                   </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                  <th scope="col" className="px-2 py-2 text-right font-medium sm:px-4">
                     Entregues
                   </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                  <th
+                    scope="col"
+                    className="hidden px-2 py-2 text-right font-medium sm:table-cell sm:px-4"
+                  >
                     Colaboradores
                   </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                  <th scope="col" className="px-2 py-2 text-right font-medium sm:px-4">
                     % levantado
                   </th>
                   {user.role === "admin" && (
-                    <th scope="col" className="px-4 py-2">
+                    <th scope="col" className="hidden px-2 py-2 sm:table-cell sm:px-4">
                       <span className="sr-only">Exportar</span>
                     </th>
                   )}
@@ -103,19 +106,19 @@ export default async function DashboardPage() {
                       key={company.id}
                       className="border-ink-100 border-b last:border-0"
                     >
-                      <td className="text-ink-900 px-4 py-2.5 font-medium">
+                      <td className="text-ink-900 px-2 py-2.5 font-medium sm:px-4">
                         {/* O código só interessa a quem prepara ficheiros de
                           importação, e esses vivem na página Empresas. Aqui é
                           ruído. */}
                         {company.name}
                       </td>
-                      <td className="text-ink-900 px-4 py-2.5 text-right font-semibold tabular-nums">
+                      <td className="text-ink-900 px-2 py-2.5 text-right font-semibold tabular-nums sm:px-4">
                         {company.delivered}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
+                      <td className="hidden px-2 py-2.5 text-right tabular-nums sm:table-cell sm:px-4">
                         {company.employeeCount}
                       </td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="px-2 py-2.5 text-right sm:px-4">
                         <div className="flex items-center justify-end gap-2">
                           <div
                             className="bg-ink-200 h-1.5 w-16 overflow-hidden rounded-full"
@@ -130,11 +133,11 @@ export default async function DashboardPage() {
                         </div>
                       </td>
                       {user.role === "admin" && (
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="hidden px-2 py-2.5 text-right sm:table-cell sm:px-4">
                           {company.employeeCount > 0 && (
                             <a
                               href={`/api/colaboradores/exportar?empresa=${company.id}`}
-                              className="text-ink-700 hover:text-ink-900 text-xs font-semibold underline"
+                              className="text-ink-700 hover:text-ink-900 inline-flex min-h-11 min-w-11 items-center justify-end text-xs font-semibold underline"
                             >
                               CSV
                               {/* "CSV" sozinho, repetido em cada linha, não diz
@@ -153,19 +156,19 @@ export default async function DashboardPage() {
               </tbody>
               <tfoot>
                 <tr className="border-ink-200 border-t font-semibold">
-                  <th scope="row" className="px-4 py-2.5 text-left">
+                  <th scope="row" className="px-2 py-2.5 text-left sm:px-4">
                     Total
                   </th>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
+                  <td className="px-2 py-2.5 text-right tabular-nums sm:px-4">
                     {totals.delivered}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
+                  <td className="hidden px-2 py-2.5 text-right tabular-nums sm:table-cell sm:px-4">
                     {totals.employees}
                   </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
+                  <td className="px-2 py-2.5 text-right tabular-nums sm:px-4">
                     {percent(totals.delivered, totals.employees)}%
                   </td>
-                  {user.role === "admin" && <td />}
+                  {user.role === "admin" && <td className="hidden sm:table-cell" />}
                 </tr>
               </tfoot>
             </table>
@@ -186,7 +189,7 @@ function ExportLink({ href, children }: { href: string; children: React.ReactNod
   return (
     <a
       href={href}
-      className="text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 touch-manipulation rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+      className="inline-flex min-h-11 items-center text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 touch-manipulation rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
     >
       {children}
     </a>
