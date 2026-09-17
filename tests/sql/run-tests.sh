@@ -358,6 +358,22 @@ r=$(as_user "$OPER" "update public.profiles set role = 'admin' where id = '$OPER
 check "distribuidor não consegue promover-se a administrador" "denied for table profiles" "$r"
 
 echo
+echo "═══ Entregas na última hora (cartão do dashboard) ═══"
+# A consulta do dashboard tem duas condições e qualquer uma pode estar errada:
+# a janela de uma hora e a exclusão das anuladas.
+reset_db
+as_user "$OPER" "select deliver_kit('12345', gen_random_uuid());" >/dev/null
+CONTA="select count(*) from public.deliveries where reversed_at is null and delivered_at >= now() - interval '1 hour';"
+r=$(q "$CONTA")
+check "uma entrega acabada de fazer conta" "1" "$r"
+q "update public.deliveries set delivered_at = now() - interval '3 hours';" >/dev/null
+r=$(q "$CONTA")
+check "uma entrega de há três horas já não conta" "0" "$r"
+q "update public.deliveries set delivered_at = now(), reversed_at = now();" >/dev/null
+r=$(q "$CONTA")
+check "uma entrega anulada não conta, mesmo sendo recente" "0" "$r"
+
+echo
 echo "───────────────────────────────────"
 printf 'passaram: %d   falharam: %d\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

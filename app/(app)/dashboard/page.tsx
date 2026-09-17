@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireUser } from "@/lib/auth/dal";
 import { listCompanyTotals } from "@/server/use-cases/companies";
+import { countDeliveriesLastHour } from "@/server/use-cases/deliveries";
 
 export const metadata: Metadata = { title: "Dashboard · Kits" };
 
@@ -18,7 +19,10 @@ export default async function DashboardPage() {
   // fronteira de permissões coincide com a estrutura do URL, e /admin pode
   // ser inteiramente administrativo.
   await requireUser();
-  const companies = await listCompanyTotals();
+  const [companies, ultimaHora] = await Promise.all([
+    listCompanyTotals(),
+    countDeliveriesLastHour(),
+  ]);
 
   const totals = companies.reduce(
     (acc, company) => ({
@@ -28,17 +32,15 @@ export default async function DashboardPage() {
     { delivered: 0, employees: 0 },
   );
 
-  // Quem ainda não levantou. Não é um limite — é quanto falta para toda a
-  // gente ter passado pelo balcão.
-  const porLevantar = Math.max(totals.employees - totals.delivered, 0);
-
   return (
     <div className="space-y-6">
       <h1 className="text-ink-900 text-xl font-semibold">Dashboard</h1>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Kits entregues" value={totals.delivered} tone="entregue" />
-        <Stat label="Por levantar" value={porLevantar} tone="disponivel" />
+        {/* O total diz onde se chegou; este diz se ainda está a acontecer. É o
+            único número daqui sobre o qual dá para agir durante o evento. */}
+        <Stat label="Na última hora" value={ultimaHora} tone="disponivel" />
         <Stat label="Colaboradores" value={totals.employees} />
         <Stat label="Empresas" value={companies.length} />
       </dl>
@@ -71,9 +73,6 @@ export default async function DashboardPage() {
                   Colaboradores
                 </th>
                 <th scope="col" className="px-4 py-2 text-right font-medium">
-                  Por levantar
-                </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
                   % levantado
                 </th>
               </tr>
@@ -81,7 +80,6 @@ export default async function DashboardPage() {
             <tbody>
               {companies.map((company) => {
                 const pct = percent(company.delivered, company.employeeCount);
-                const falta = Math.max(company.employeeCount - company.delivered, 0);
                 return (
                   <tr key={company.id} className="border-ink-100 border-b last:border-0">
                     <td className="text-ink-900 px-4 py-2.5 font-medium">
@@ -96,7 +94,6 @@ export default async function DashboardPage() {
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       {company.employeeCount}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{falta}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <div
@@ -126,7 +123,6 @@ export default async function DashboardPage() {
                 <td className="px-4 py-2.5 text-right tabular-nums">
                   {totals.employees}
                 </td>
-                <td className="px-4 py-2.5 text-right tabular-nums">{porLevantar}</td>
                 <td className="px-4 py-2.5 text-right tabular-nums">
                   {percent(totals.delivered, totals.employees)}%
                 </td>

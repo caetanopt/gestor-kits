@@ -156,9 +156,6 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
                 <th scope="col" className="px-4 py-3 text-right font-medium">
                   Colaboradores
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">
-                  Por levantar
-                </th>
                 <th scope="col" className="px-4 py-3">
                   <span className="sr-only">Ações</span>
                 </th>
@@ -174,9 +171,6 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
                   </td>
                   <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
                     {company.employeeCount}
-                  </td>
-                  <td className="text-ink-700 px-4 py-3 text-right tabular-nums">
-                    {Math.max(company.employeeCount - company.delivered, 0)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
