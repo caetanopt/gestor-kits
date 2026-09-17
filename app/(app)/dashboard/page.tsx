@@ -62,9 +62,9 @@ export default async function DashboardPage() {
               descarregar em bloco. */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
             <p className="text-ink-700 font-medium">Distribuição por empresa</p>
-            {user.role === "admin" && totals.delivered > 0 && (
-              <ExportLink href="/api/entregas/exportar">
-                Exportar entregas (CSV)
+            {user.role === "admin" && totals.employees > 0 && (
+              <ExportLink href="/api/colaboradores/exportar">
+                Exportar lista (CSV)
               </ExportLink>
             )}
           </div>
@@ -131,9 +131,9 @@ export default async function DashboardPage() {
                       </td>
                       {user.role === "admin" && (
                         <td className="px-4 py-2.5 text-right">
-                          {company.delivered > 0 && (
+                          {company.employeeCount > 0 && (
                             <a
-                              href={`/api/entregas/exportar?empresa=${company.id}`}
+                              href={`/api/colaboradores/exportar?empresa=${company.id}`}
                               className="text-ink-700 hover:text-ink-900 text-xs font-semibold underline"
                             >
                               CSV
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
                                   a que empresa pertence. */}
                               <span className="sr-only">
                                 {" "}
-                                das entregas de {company.name}
+                                dos colaboradores de {company.name}
                               </span>
                             </a>
                           )}

@@ -159,12 +159,13 @@ export function correspondenciaUnicaPorEmail(
   return unico && unico.email !== null ? unico : null;
 }
 
-/** Uma pessoa que recebeu kit, tal como sai para o documento exportado. */
-export type DeliveredPerson = {
+/** Um colaborador, tal como sai para o documento exportado. */
+export type ExportedEmployee = {
   companyName: string;
   employeeNumber: string;
   name: string;
   email: string | null;
+  kitDelivered: boolean;
   deliveredAt: string | null;
   deliveredByName: string | null;
 };

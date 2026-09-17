@@ -139,11 +139,14 @@ pnpm dev          # http://localhost:3000
    e por estado do kit, e editar qualquer colaborador. O email é obrigatório;
    o filtro "apenas sem email" encontra registos criados antes dessa regra.
 3. **Distribuição** — os operadores entram e trabalham só neste ecrã.
-4. **Depois do evento** — no Dashboard, "Exportar entregas (CSV)" descarrega
-   quem recebeu kit: empresa, número, nome, email, data e operador. Cada linha
-   da tabela tem também um link "CSV" com as entregas só dessa empresa, para
-   enviar a cada uma a sua lista. Só administradores: o ficheiro leva nomes e
-   emails de toda a gente. Entregas anuladas não aparecem.
+4. **Depois do evento** — no Dashboard, "Exportar lista (CSV)" descarrega
+   **todos** os colaboradores com a coluna "Kit entregue" a Sim ou Não, mais a
+   data e o operador de quem recebeu. No fim do ficheiro, separado por uma
+   linha em branco, vai um resumo com o total de colaboradores, entregues e sem
+   entrega — por empresa e no conjunto. Cada linha da tabela tem também um link
+   "CSV" com os colaboradores só dessa empresa, para enviar a cada uma a sua
+   lista. Só administradores, no botão e na rota: o ficheiro leva nomes e
+   emails de toda a gente. Uma entrega anulada aparece como "Não".
 
 ### Formato do ficheiro de colaboradores
 

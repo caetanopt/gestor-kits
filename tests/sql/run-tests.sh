@@ -375,10 +375,15 @@ r=$(q "update public.deliveries set delivered_at = now(); $CONTA")
 check "reposta a hora, volta a contar" "1" "$r"
 
 echo "    — documento exportado —"
-# O documento das entregas sai de employee_list filtrada por kit_delivered.
-# É esta propriedade que mantém fora do ficheiro quem teve a entrega anulada.
+# O documento leva toda a gente; o que distingue as duas metades é o
+# kit_delivered de employee_list. Quem teve a entrega anulada passa para o
+# lado de quem não recebeu, que é o que passou a ser verdade.
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list;")
+check "o documento leva toda a gente" "5" "$r"
 r=$(as_user "$ADMIN" "select count(*) from public.employee_list where kit_delivered;")
-check "quem recebeu aparece no documento" "1" "$r"
+check "quem recebeu aparece como entregue" "1" "$r"
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list where not kit_delivered;")
+check "e quem não recebeu também lá está" "4" "$r"
 r=$(as_user "$ADMIN" "select name from public.employee_list where kit_delivered;")
 check "com o nome, que o documento leva" "João Silva" "$r"
 r=$(as_user "$ADMIN" "select company_name from public.employee_list where kit_delivered;")
@@ -393,7 +398,9 @@ check "uma entrega anulada não conta, mesmo sendo recente" "0" "$r"
 r=$(as_user "$ADMIN" "select kit_delivered from public.employee_list where employee_number = '12345';")
 check "anulada deixa de contar como entregue" "f" "$r"
 r=$(as_user "$ADMIN" "select count(*) from public.employee_list where kit_delivered;")
-check "e sai do documento" "0" "$r"
+check "e o documento deixa de a contar como entregue" "0" "$r"
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list;")
+check "sem deixar ninguém de fora da lista" "5" "$r"
 
 echo
 echo "───────────────────────────────────"

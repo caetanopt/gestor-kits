@@ -8,7 +8,7 @@ import {
   employeeLookupSchema,
   employeeSearchSchema,
   reverseResultSchema,
-  type DeliveredPerson,
+  type ExportedEmployee,
   type DeliveryResult,
   type EmployeeLookup,
   type EmployeeSearch,
@@ -67,24 +67,29 @@ export async function searchEmployeesForDelivery(query: string): Promise<Employe
 const EXPORT_MAX = 20_000;
 
 /**
- * Quem recebeu kit, para exportar.
+ * Todos os colaboradores, para exportar.
  *
  * Lê `employee_list`, cujo `kit_delivered` já exclui as entregas anuladas —
- * uma entrega anulada não é uma entrega, e o documento não a deve listar.
+ * quem teve a entrega anulada sai no documento como quem ainda não recebeu,
+ * que é o que passou a ser verdade.
+ *
+ * Vai tudo, recebido ou não: o documento serve para ver os dois lados, e um
+ * total só significa alguma coisa se as duas partes estiverem lá.
  *
  * O `range` explícito existe porque o PostgREST limita as respostas a mil
  * linhas por defeito. Sem ele, um evento grande exportaria um ficheiro
  * silenciosamente truncado, que é pior do que nenhum.
  */
-export async function listDeliveredPeople(
+export async function listEmployeesForExport(
   companyId?: string,
-): Promise<DeliveredPerson[]> {
+): Promise<ExportedEmployee[]> {
   const supabase = await createSupabaseServerClient();
 
   let query = supabase
     .from("employee_list")
-    .select("company_name, employee_number, name, email, delivered_at, delivered_by_name")
-    .eq("kit_delivered", true)
+    .select(
+      "company_name, employee_number, name, email, kit_delivered, delivered_at, delivered_by_name",
+    )
     .order("company_name", { ascending: true })
     .order("name", { ascending: true })
     .range(0, EXPORT_MAX - 1);
@@ -99,6 +104,7 @@ export async function listDeliveredPeople(
     employeeNumber: row.employee_number,
     name: row.name,
     email: row.email,
+    kitDelivered: row.kit_delivered,
     deliveredAt: row.delivered_at,
     deliveredByName: row.delivered_by_name,
   }));

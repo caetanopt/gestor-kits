@@ -2,14 +2,15 @@ import type { NextRequest } from "next/server";
 import { toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
 import { requireApiAdmin } from "@/lib/auth/dal";
-import { entregasParaCsv } from "@/lib/format/csv-export";
+import { colaboradoresParaCsv } from "@/lib/format/csv-export";
 import { formatDateTime } from "@/lib/format/date";
-import { listDeliveredPeople } from "@/server/use-cases/deliveries";
+import { listEmployeesForExport } from "@/server/use-cases/deliveries";
 
 /**
- * GET /api/entregas/exportar[?empresa=<uuid>]
+ * GET /api/colaboradores/exportar[?empresa=<uuid>]
  *
- * Documento com quem recebeu kit. Devolve CSV em vez do envelope JSON
+ * Documento com todos os colaboradores e o estado do kit de cada um, mais um
+ * resumo por empresa no fim. Devolve CSV em vez do envelope JSON
  * habitual — é um ficheiro para descarregar, não uma resposta para o cliente
  * interpretar. Os erros continuam a sair em JSON: um ficheiro com uma
  * mensagem de erro lá dentro seria pior do que um erro.
@@ -28,14 +29,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const pessoas = await listDeliveredPeople(empresa);
+    const pessoas = await listEmployeesForExport(empresa);
 
-    const csv = entregasParaCsv(pessoas, formatDateTime);
+    const csv = colaboradoresParaCsv(pessoas, formatDateTime);
 
     // O nome inclui a data para que dois ficheiros do mesmo evento não se
     // sobreponham na pasta de transferências.
     const hoje = new Date().toISOString().slice(0, 10);
-    const nome = `entregas-${hoje}.csv`;
+    const nome = `colaboradores-${hoje}.csv`;
 
     return new Response(csv, {
       headers: {
