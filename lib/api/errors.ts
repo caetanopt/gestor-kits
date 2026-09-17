@@ -42,6 +42,8 @@ export const ERROR_CODES = {
 
   // Inesperado
   INTERNAL_ERROR: "Ocorreu um erro inesperado. Tente novamente.",
+  DB_OUT_OF_DATE:
+    "A base de dados está desatualizada em relação à aplicação. Aplique as migrações em falta e tente novamente.",
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;
@@ -96,6 +98,7 @@ function defaultStatusFor(code: ErrorCode): number {
     case "USER_CREATION_UNAVAILABLE":
       return 501;
     case "INTERNAL_ERROR":
+    case "DB_OUT_OF_DATE":
       return 500;
   }
 }

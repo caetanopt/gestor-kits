@@ -27,6 +27,24 @@ export function mapPostgrestError(error: PostgrestError): AppError {
     return new AppError("UNAUTHENTICATED");
   }
 
+  // Migrações em falta.
+  //
+  // `public.app_error` levanta sempre P0001 com a mensagem igual ao código.
+  // Se o código tem a forma de um código nosso mas não está no catálogo, a
+  // base de dados está a correr uma versão anterior das funções — foi o que
+  // aconteceu quando o email deixou de ser obrigatório na aplicação antes de
+  // a migração 0012 ser aplicada. Dizê-lo é muito mais útil do que "erro
+  // inesperado", e a mensagem devolvida continua a ser nossa: só o código,
+  // com forma verificada, vem da base de dados.
+  if (error.code === "P0001" && /^[A-Z][A-Z0-9_]{2,63}$/.test(message)) {
+    console.error("[rpc] código desconhecido devolvido pela base de dados", { message });
+    return new AppError("DB_OUT_OF_DATE", {
+      details: [
+        `A base de dados respondeu "${message}", um código que esta versão da aplicação já não usa. Falta aplicar uma migração.`,
+      ],
+    });
+  }
+
   console.error("[rpc] erro inesperado da base de dados", {
     code: error.code,
     details: error.details,

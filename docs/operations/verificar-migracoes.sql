@@ -54,9 +54,19 @@ select 'Perfis de utilizador',
   from public.profiles
 
 union all
-select 'Email obrigatório em colaboradores',
-       count(*) || ' sem email',
-       case when count(*) = 0 then '✓' else '⚠ corrigir na página Colaboradores' end
+select 'Email opcional (migração 0012)',
+       case when count(*) = 0 then 'aplicada'
+            else 'FALTA APLICAR 0012_email_opcional.sql' end,
+       case when count(*) = 0 then '✓' else '✗ IMPORTAÇÃO VAI FALHAR' end
+  from pg_proc
+ where proname in ('import_employees', 'save_employee')
+   and pronamespace = 'public'::regnamespace
+   and prosrc like '%EMPLOYEE_EMAIL_REQUIRED%'
+
+union all
+select 'Colaboradores sem email',
+       count(*) || ' de ' || (select count(*) from public.employees),
+       '✓ (o email é opcional)'
   from public.employees where email is null
 
 union all

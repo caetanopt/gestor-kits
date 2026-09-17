@@ -46,6 +46,30 @@ describe("mapPostgrestError", () => {
     }
   });
 
+  it("um código que a aplicação já não conhece diz que falta uma migração", () => {
+    // Aconteceu a sério: o email deixou de ser obrigatório na aplicação, o
+    // código EMPLOYEE_EMAIL_REQUIRED saiu do catálogo e a base de dados
+    // ainda estava na versão anterior. A importação falhava com "Ocorreu um
+    // erro inesperado", que não diz a ninguém o que fazer a seguir.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const mapped = mapPostgrestError(pgError("EMPLOYEE_EMAIL_REQUIRED"));
+    expect(mapped.code).toBe("DB_OUT_OF_DATE");
+    expect(mapped.details).toEqual([
+      expect.stringContaining("EMPLOYEE_EMAIL_REQUIRED"),
+    ]);
+  });
+
+  it("uma mensagem livre da base de dados não passa por código de aplicação", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    for (const message of [
+      'relation "public.employees" does not exist',
+      "DEADLOCK detected while waiting",
+      "AB",
+    ]) {
+      expect(mapPostgrestError(pgError(message)).code).toBe("INTERNAL_ERROR");
+    }
+  });
+
   it("não expõe detalhes internos de erros inesperados", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const mapped = mapPostgrestError(

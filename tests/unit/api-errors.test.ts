@@ -41,6 +41,7 @@ describe("AppError", () => {
       DUPLICATE_USER_EMAIL: 409,
       USER_CREATION_UNAVAILABLE: 501,
       INTERNAL_ERROR: 500,
+      DB_OUT_OF_DATE: 500,
     };
 
     for (const [code, status] of Object.entries(esperado)) {
