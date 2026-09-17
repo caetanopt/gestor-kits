@@ -56,10 +56,13 @@ Preencha `.env.local` com os dois valores do seu projeto Supabase
 | `NEXT_PUBLIC_SUPABASE_URL`      | Project URL                  |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave `anon` / `publishable` |
 
-Não é preciso mais nada. Em particular, **a chave `service_role` não é
-usada** e não deve ser configurada: toda a autorização assenta nas políticas
-RLS e em funções `SECURITY DEFINER` invocadas com a sessão do próprio
-utilizador. Não existe nenhum caminho de código que contorne o RLS.
+Não é preciso mais nada para a aplicação funcionar: toda a autorização
+assenta nas políticas RLS e em funções `SECURITY DEFINER` invocadas com a
+sessão do próprio utilizador.
+
+A chave `service_role` é **opcional** e tem uma única finalidade — criar
+contas de utilizador a partir da aplicação, o que só a API de administração
+do Supabase Auth permite. Ver [Criar contas](#criar-contas).
 
 Nenhuma das duas é um segredo, e nesta aplicação nem sequer chegam ao
 browser: todo o acesso ao Supabase acontece no servidor. A segurança está nas

@@ -95,3 +95,17 @@ export function clientEnv(): ClientEnv {
   cachedClientEnv = parsed.data;
   return cachedClientEnv;
 }
+
+/**
+ * A criação de contas pela aplicação está configurada?
+ *
+ * Depende de `SUPABASE_SERVICE_ROLE_KEY`, que é opcional (ver
+ * `lib/supabase/admin.ts`). Vive aqui, e não junto do cliente que usa a
+ * chave, porque esse módulo é `server-only` e isto é só uma pergunta sobre o
+ * ambiente — precisa de ser respondida também no diagnóstico e nos testes.
+ *
+ * Nunca devolve a chave, só se existe.
+ */
+export function canCreateUsers(): boolean {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}

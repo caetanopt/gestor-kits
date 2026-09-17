@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/auth/dal";
-import { canCreateUsers } from "@/lib/supabase/admin";
+import { canCreateUsers } from "@/lib/env";
 import { listUsers } from "@/server/use-cases/users";
 import { UserManager } from "@/components/admin/user-manager";
 

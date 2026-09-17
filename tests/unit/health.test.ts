@@ -23,6 +23,7 @@ type HealthBody = {
     avisos: string[];
     autenticacaoDesativada: boolean;
     diagnosticoDeLoginAtivo: boolean;
+    criacaoDeContasDisponivel: boolean;
   };
 };
 
@@ -103,5 +104,26 @@ describe("/api/health", () => {
 
     process.env.LOGIN_DIAGNOSTICS = "1";
     expect((await body()).data.diagnosticoDeLoginAtivo).toBe(true);
+  });
+});
+
+describe("criação de contas", () => {
+  it("diz que está disponível quando a service role está definida", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "uma-chave-qualquer";
+    expect((await body()).data.criacaoDeContasDisponivel).toBe(true);
+  });
+
+  it("e indisponível sem ela, ou com ela em branco", async () => {
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    expect((await body()).data.criacaoDeContasDisponivel).toBe(false);
+
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "   ";
+    expect((await body()).data.criacaoDeContasDisponivel).toBe(false);
+  });
+
+  it("nunca devolve a própria chave", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "chave-secreta-que-nao-pode-sair";
+    const texto = JSON.stringify(await body());
+    expect(texto).not.toContain("chave-secreta-que-nao-pode-sair");
   });
 });

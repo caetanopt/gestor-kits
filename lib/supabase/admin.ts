@@ -27,8 +27,3 @@ export function createSupabaseAdminClient() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 }
-
-/** A criação de contas pela aplicação está configurada? */
-export function canCreateUsers(): boolean {
-  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
-}

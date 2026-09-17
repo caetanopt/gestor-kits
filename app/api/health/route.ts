@@ -1,4 +1,5 @@
 import { ok } from "@/lib/api/response";
+import { canCreateUsers } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -69,5 +70,11 @@ export function GET() {
       process.env.AUTH_BYPASS_EMAIL && process.env.AUTH_BYPASS_PASSWORD,
     ),
     diagnosticoDeLoginAtivo: process.env.LOGIN_DIAGNOSTICS === "1",
+    // Se o botão "Nova conta" aparece na página Utilizadores. Depende de
+    // SUPABASE_SERVICE_ROLE_KEY estar definida no ambiente onde a aplicação
+    // corre — e definir uma variável no painel só tem efeito depois de novo
+    // deploy, que é onde isto normalmente falha. Booleano: a chave não sai
+    // daqui.
+    criacaoDeContasDisponivel: canCreateUsers(),
   });
 }
