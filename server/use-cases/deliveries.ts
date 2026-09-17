@@ -111,30 +111,6 @@ export async function listEmployeesForExport(
 }
 
 /**
- * Entregas na última hora.
- *
- * O total entregue diz onde se chegou; este diz se ainda está a acontecer e a
- * que ritmo, que é a única coisa sobre a qual dá para agir durante o evento
- * — abrir outro balcão, chamar mais gente.
- *
- * `head: true` pede só a contagem, sem trazer as linhas. Anuladas não contam:
- * o que interessa é o que saiu e ficou entregue.
- */
-export async function countDeliveriesLastHour(): Promise<number> {
-  const supabase = await createSupabaseServerClient();
-  const desde = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-
-  const { count, error } = await supabase
-    .from("deliveries")
-    .select("id", { count: "exact", head: true })
-    .is("reversed_at", null)
-    .gte("delivered_at", desde);
-
-  if (error) throw mapPostgrestError(error);
-  return count ?? 0;
-}
-
-/**
  * Entrega um kit.
  *
  * Toda a lógica crítica — duplicados, stock, auditoria — acontece dentro de

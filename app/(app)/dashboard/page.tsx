@@ -2,35 +2,21 @@ import type { Metadata } from "next";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireUser } from "@/lib/auth/dal";
 import { listCompanyTotals } from "@/server/use-cases/companies";
-import { countDeliveriesLastHour } from "@/server/use-cases/deliveries";
+import { percent, somarTotais } from "@/lib/ui/totais";
 
 export const metadata: Metadata = { title: "Dashboard · Kits" };
 
 // O dashboard reflete entregas a decorrer; não deve ser servido de cache.
 export const dynamic = "force-dynamic";
 
-/** Percentagem de colaboradores que já levantaram o kit. */
-function percent(delivered: number, employees: number): number {
-  return employees === 0 ? 0 : Math.round((delivered / employees) * 100);
-}
-
 export default async function DashboardPage() {
   // Acessível a ambos os perfis. Vive fora de /admin de propósito: assim a
   // fronteira de permissões coincide com a estrutura do URL, e /admin pode
   // ser inteiramente administrativo.
   const user = await requireUser();
-  const [companies, ultimaHora] = await Promise.all([
-    listCompanyTotals(),
-    countDeliveriesLastHour(),
-  ]);
+  const companies = await listCompanyTotals();
 
-  const totals = companies.reduce(
-    (acc, company) => ({
-      delivered: acc.delivered + company.delivered,
-      employees: acc.employees + company.employeeCount,
-    }),
-    { delivered: 0, employees: 0 },
-  );
+  const totals = somarTotais(companies);
 
   return (
     <div className="space-y-6">
@@ -38,9 +24,14 @@ export default async function DashboardPage() {
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Kits entregues" value={totals.delivered} tone="entregue" />
-        {/* O total diz onde se chegou; este diz se ainda está a acontecer. É o
-            único número daqui sobre o qual dá para agir durante o evento. */}
-        <Stat label="Na última hora" value={ultimaHora} tone="disponivel" />
+        {/* Quantos kits ainda faltam sair. É o número que diz se o evento
+            está perto do fim, e sai dos mesmos totais por empresa — não
+            custa uma consulta extra. */}
+        <Stat
+          label="Colaboradores sem kit"
+          value={totals.porEntregar}
+          tone="disponivel"
+        />
         <Stat label="Colaboradores" value={totals.employees} />
         <Stat label="Empresas" value={companies.length} />
       </dl>
@@ -189,7 +180,7 @@ function ExportLink({ href, children }: { href: string; children: React.ReactNod
   return (
     <a
       href={href}
-      className="inline-flex min-h-11 items-center text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 touch-manipulation rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+      className="text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 inline-flex min-h-11 touch-manipulation items-center rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
     >
       {children}
     </a>
