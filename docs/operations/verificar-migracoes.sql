@@ -13,11 +13,22 @@ select 'Tabelas' as verificacao,
 
 union all
 select 'Vistas',
-       count(*) || ' de 3',
-       case when count(*) = 3 then '✓' else '✗ FALTAM' end
+       count(*) || ' de 2',
+       case when count(*) = 2 then '✓' else '✗ FALTAM' end
   from pg_views
  where schemaname = 'public'
-   and viewname in ('company_totals','delivery_history','employee_list')
+   and viewname in ('delivery_history','employee_list')
+
+union all
+-- A vista company_totals foi substituída pela função company_totals_list na
+-- migração 0014: lida diretamente, a contagem de colaboradores vinha a zero
+-- para quem não é administrador.
+select 'Totais por empresa (migração 0014)',
+       case when count(*) = 0 then 'função, como esperado'
+            else 'ainda existe a vista company_totals' end,
+       case when count(*) = 0 then '✓' else '✗ FALTA APLICAR 0014' end
+  from pg_views
+ where schemaname = 'public' and viewname = 'company_totals'
 
 union all
 select 'Funções de negócio',
@@ -32,7 +43,7 @@ select 'Funções de negócio',
          'handle_new_user','totals_snapshot','delivery_payload','app_error',
          'touch_updated_at','derive_company_code','save_employee',
          'set_user_role','set_user_active','active_admin_count','set_user_name',
-         'search_employees_for_delivery'
+         'search_employees_for_delivery','company_totals_list'
        ]) as esperada
   left join pg_proc p
     on p.proname = esperada

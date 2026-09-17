@@ -115,16 +115,6 @@ export type Database = {
       };
     };
     Views: {
-      company_totals: {
-        Row: {
-          id: string;
-          name: string;
-          code: string;
-          delivered: number;
-          employee_count: number;
-        };
-        Relationships: [];
-      };
       employee_list: {
         Row: {
           id: string;
@@ -176,6 +166,16 @@ export type Database = {
         Returns: Json;
       };
       import_employees: { Args: { p_rows: Json }; Returns: Json };
+      company_totals_list: {
+        Args: Record<string, never>;
+        Returns: {
+          id: string;
+          name: string;
+          code: string;
+          delivered: number;
+          employee_count: number;
+        }[];
+      };
       set_user_name: { Args: { p_user_id: string; p_name: string }; Returns: Json };
       set_user_role: { Args: { p_user_id: string; p_role: string }; Returns: Json };
       set_user_active: {

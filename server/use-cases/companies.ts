@@ -12,16 +12,18 @@ import {
 /**
  * Lista as empresas com o que cada uma entregou.
  *
- * Lê a vista `company_totals`, que conta as entregas ativas e os
+ * Chama `company_totals_list()`, que conta as entregas ativas e os
  * colaboradores. Uma única consulta para todas as empresas — sem N+1.
+ *
+ * É uma função e não uma vista porque o RLS de `employees` reserva a tabela
+ * aos administradores: lida diretamente, a contagem de colaboradores vinha a
+ * zero para um distribuidor. A função devolve só os totais, e a tabela
+ * continua fechada.
  */
 export async function listCompanyTotals(): Promise<CompanyTotalsRow[]> {
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("company_totals")
-    .select("id, name, code, delivered, employee_count")
-    .order("name", { ascending: true });
+  const { data, error } = await supabase.rpc("company_totals_list");
 
   if (error) throw mapPostgrestError(error);
 
