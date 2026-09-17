@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   // Acessível a ambos os perfis. Vive fora de /admin de propósito: assim a
   // fronteira de permissões coincide com a estrutura do URL, e /admin pode
   // ser inteiramente administrativo.
-  await requireUser();
+  const user = await requireUser();
   const [companies, ultimaHora] = await Promise.all([
     listCompanyTotals(),
     countDeliveriesLastHour(),
@@ -56,82 +56,140 @@ export default async function DashboardPage() {
           </ProgressLink>
         </div>
       ) : (
-        <div className="ring-ink-200 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
-          <table className="w-full text-sm">
-            <caption className="text-ink-700 px-4 py-3 text-left font-medium">
-              Distribuição por empresa
-            </caption>
-            <thead>
-              <tr className="border-ink-200 text-ink-700 border-y text-left">
-                <th scope="col" className="px-4 py-2 font-medium">
-                  Empresa
-                </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
-                  Entregues
-                </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
-                  Colaboradores
-                </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
-                  % levantado
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.map((company) => {
-                const pct = percent(company.delivered, company.employeeCount);
-                return (
-                  <tr key={company.id} className="border-ink-100 border-b last:border-0">
-                    <td className="text-ink-900 px-4 py-2.5 font-medium">
-                      {/* O código só interessa a quem prepara ficheiros de
+        <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
+          {/* A exportação é só para administradores: o ficheiro leva nomes e
+              emails de toda a gente, e um distribuidor não tem de os poder
+              descarregar em bloco. */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <p className="text-ink-700 font-medium">Distribuição por empresa</p>
+            {user.role === "admin" && totals.delivered > 0 && (
+              <ExportLink href="/api/entregas/exportar">
+                Exportar entregas (CSV)
+              </ExportLink>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <caption className="sr-only">
+                Kits entregues e colaboradores por empresa
+              </caption>
+              <thead>
+                <tr className="border-ink-200 text-ink-700 border-y text-left">
+                  <th scope="col" className="px-4 py-2 font-medium">
+                    Empresa
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    Entregues
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    Colaboradores
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    % levantado
+                  </th>
+                  {user.role === "admin" && (
+                    <th scope="col" className="px-4 py-2">
+                      <span className="sr-only">Exportar</span>
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {companies.map((company) => {
+                  const pct = percent(company.delivered, company.employeeCount);
+                  return (
+                    <tr
+                      key={company.id}
+                      className="border-ink-100 border-b last:border-0"
+                    >
+                      <td className="text-ink-900 px-4 py-2.5 font-medium">
+                        {/* O código só interessa a quem prepara ficheiros de
                           importação, e esses vivem na página Empresas. Aqui é
                           ruído. */}
-                      {company.name}
-                    </td>
-                    <td className="text-ink-900 px-4 py-2.5 text-right font-semibold tabular-nums">
-                      {company.delivered}
-                    </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
-                      {company.employeeCount}
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <div
-                          className="bg-ink-200 h-1.5 w-16 overflow-hidden rounded-full"
-                          aria-hidden="true"
-                        >
+                        {company.name}
+                      </td>
+                      <td className="text-ink-900 px-4 py-2.5 text-right font-semibold tabular-nums">
+                        {company.delivered}
+                      </td>
+                      <td className="px-4 py-2.5 text-right tabular-nums">
+                        {company.employeeCount}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <div
-                            className="bg-eco-500 h-full rounded-full"
-                            style={{ width: `${pct}%` }}
-                          />
+                            className="bg-ink-200 h-1.5 w-16 overflow-hidden rounded-full"
+                            aria-hidden="true"
+                          >
+                            <div
+                              className="bg-eco-500 h-full rounded-full"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-ink-700 w-10 tabular-nums">{pct}%</span>
                         </div>
-                        <span className="text-ink-700 w-10 tabular-nums">{pct}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-ink-200 border-t font-semibold">
-                <th scope="row" className="px-4 py-2.5 text-left">
-                  Total
-                </th>
-                <td className="px-4 py-2.5 text-right tabular-nums">
-                  {totals.delivered}
-                </td>
-                <td className="px-4 py-2.5 text-right tabular-nums">
-                  {totals.employees}
-                </td>
-                <td className="px-4 py-2.5 text-right tabular-nums">
-                  {percent(totals.delivered, totals.employees)}%
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+                      </td>
+                      {user.role === "admin" && (
+                        <td className="px-4 py-2.5 text-right">
+                          {company.delivered > 0 && (
+                            <a
+                              href={`/api/entregas/exportar?empresa=${company.id}`}
+                              className="text-ink-700 hover:text-ink-900 text-xs font-semibold underline"
+                            >
+                              CSV
+                              {/* "CSV" sozinho, repetido em cada linha, não diz
+                                  a que empresa pertence. */}
+                              <span className="sr-only">
+                                {" "}
+                                das entregas de {company.name}
+                              </span>
+                            </a>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-ink-200 border-t font-semibold">
+                  <th scope="row" className="px-4 py-2.5 text-left">
+                    Total
+                  </th>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {totals.delivered}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {totals.employees}
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    {percent(totals.delivered, totals.employees)}%
+                  </td>
+                  {user.role === "admin" && <td />}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Ligação que descarrega um ficheiro.
+ *
+ * Não é um ProgressLink: o pedido não é uma navegação, a página fica onde
+ * está e o browser recebe um ficheiro. A barra do topo nunca terminaria.
+ */
+function ExportLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 touch-manipulation rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+    >
+      {children}
+    </a>
   );
 }
 

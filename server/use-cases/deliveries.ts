@@ -8,6 +8,7 @@ import {
   employeeLookupSchema,
   employeeSearchSchema,
   reverseResultSchema,
+  type DeliveredPerson,
   type DeliveryResult,
   type EmployeeLookup,
   type EmployeeSearch,
@@ -60,6 +61,47 @@ export async function searchEmployeesForDelivery(query: string): Promise<Employe
 
   if (error) throw mapPostgrestError(error);
   return parseRpc(employeeSearchSchema, data, "search_employees_for_delivery");
+}
+
+/** Teto do ficheiro exportado. Um evento fica muito abaixo disto. */
+const EXPORT_MAX = 20_000;
+
+/**
+ * Quem recebeu kit, para exportar.
+ *
+ * Lê `employee_list`, cujo `kit_delivered` já exclui as entregas anuladas —
+ * uma entrega anulada não é uma entrega, e o documento não a deve listar.
+ *
+ * O `range` explícito existe porque o PostgREST limita as respostas a mil
+ * linhas por defeito. Sem ele, um evento grande exportaria um ficheiro
+ * silenciosamente truncado, que é pior do que nenhum.
+ */
+export async function listDeliveredPeople(
+  companyId?: string,
+): Promise<DeliveredPerson[]> {
+  const supabase = await createSupabaseServerClient();
+
+  let query = supabase
+    .from("employee_list")
+    .select("company_name, employee_number, name, email, delivered_at, delivered_by_name")
+    .eq("kit_delivered", true)
+    .order("company_name", { ascending: true })
+    .order("name", { ascending: true })
+    .range(0, EXPORT_MAX - 1);
+
+  if (companyId) query = query.eq("company_id", companyId);
+
+  const { data, error } = await query;
+  if (error) throw mapPostgrestError(error);
+
+  return (data ?? []).map((row) => ({
+    companyName: row.company_name,
+    employeeNumber: row.employee_number,
+    name: row.name,
+    email: row.email,
+    deliveredAt: row.delivered_at,
+    deliveredByName: row.delivered_by_name,
+  }));
 }
 
 /**

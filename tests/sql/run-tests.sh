@@ -366,12 +366,34 @@ as_user "$OPER" "select deliver_kit('12345', gen_random_uuid());" >/dev/null
 CONTA="select count(*) from public.deliveries where reversed_at is null and delivered_at >= now() - interval '1 hour';"
 r=$(q "$CONTA")
 check "uma entrega acabada de fazer conta" "1" "$r"
-q "update public.deliveries set delivered_at = now() - interval '3 hours';" >/dev/null
-r=$(q "$CONTA")
+
+# A alteração da data é verificada: uma que falhasse em silêncio deixaria o
+# teste a passar pela razão errada.
+r=$(q "update public.deliveries set delivered_at = now() - interval '3 hours'; $CONTA")
 check "uma entrega de há três horas já não conta" "0" "$r"
-q "update public.deliveries set delivered_at = now(), reversed_at = now();" >/dev/null
+r=$(q "update public.deliveries set delivered_at = now(); $CONTA")
+check "reposta a hora, volta a contar" "1" "$r"
+
+echo "    — documento exportado —"
+# O documento das entregas sai de employee_list filtrada por kit_delivered.
+# É esta propriedade que mantém fora do ficheiro quem teve a entrega anulada.
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list where kit_delivered;")
+check "quem recebeu aparece no documento" "1" "$r"
+r=$(as_user "$ADMIN" "select name from public.employee_list where kit_delivered;")
+check "com o nome, que o documento leva" "João Silva" "$r"
+r=$(as_user "$ADMIN" "select company_name from public.employee_list where kit_delivered;")
+check "e a empresa" "Empresa A" "$r"
+
+# Anular pela função real, e não por um UPDATE à mão: o esquema exige que
+# reversed_at e reversed_by andem juntos, e só a função os põe coerentes.
+DID=$(q "select id from public.deliveries limit 1;")
+as_user "$ADMIN" "select reverse_delivery('$DID', 'engano');" >/dev/null
 r=$(q "$CONTA")
 check "uma entrega anulada não conta, mesmo sendo recente" "0" "$r"
+r=$(as_user "$ADMIN" "select kit_delivered from public.employee_list where employee_number = '12345';")
+check "anulada deixa de contar como entregue" "f" "$r"
+r=$(as_user "$ADMIN" "select count(*) from public.employee_list where kit_delivered;")
+check "e sai do documento" "0" "$r"
 
 echo
 echo "───────────────────────────────────"

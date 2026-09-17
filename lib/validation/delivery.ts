@@ -158,3 +158,13 @@ export function correspondenciaUnicaPorEmail(
   const unico = search.results[0];
   return unico && unico.email !== null ? unico : null;
 }
+
+/** Uma pessoa que recebeu kit, tal como sai para o documento exportado. */
+export type DeliveredPerson = {
+  companyName: string;
+  employeeNumber: string;
+  name: string;
+  email: string | null;
+  deliveredAt: string | null;
+  deliveredByName: string | null;
+};
