@@ -45,6 +45,21 @@ export async function setUserRole(userId: string, role: UserRole): Promise<void>
   if (error) throw mapPostgrestError(error);
 }
 
+/**
+ * Altera o nome de uma conta.
+ *
+ * Existe para as contas que já foram criadas sem nome: sem isto, o cabeçalho
+ * continuaria a mostrar-lhes o email para sempre.
+ */
+export async function setUserName(userId: string, name: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("set_user_name", {
+    p_user_id: userId,
+    p_name: name,
+  });
+  if (error) throw mapPostgrestError(error);
+}
+
 export async function setUserActive(userId: string, isActive: boolean): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("set_user_active", {
@@ -75,7 +90,7 @@ export async function createUser(input: NewUserInput): Promise<UserRow> {
     email: input.email,
     password: input.password,
     email_confirm: true,
-    user_metadata: input.fullName ? { full_name: input.fullName } : {},
+    user_metadata: { full_name: input.fullName },
   });
 
   if (error || !data.user) {
@@ -97,7 +112,7 @@ export async function createUser(input: NewUserInput): Promise<UserRow> {
   return {
     id: data.user.id,
     email: input.email,
-    name: input.fullName ?? "",
+    name: input.fullName,
     role: input.role,
     isActive: true,
     createdAt: data.user.created_at,

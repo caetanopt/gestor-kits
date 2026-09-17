@@ -5,6 +5,18 @@ export const roleSchema = z.enum(["admin", "distributor"], {
   message: "Perfil inválido.",
 });
 
+/**
+ * Nome da pessoa, tal como aparece no cabeçalho.
+ *
+ * Obrigatório: é o que identifica quem tem sessão iniciada. Vazio, a
+ * aplicação voltaria a mostrar o email.
+ */
+export const userNameSchema = z
+  .string({ message: "Indique o nome." })
+  .trim()
+  .min(1, "Indique o nome.")
+  .max(160, "O nome é demasiado longo.");
+
 export const newUserSchema = z.object({
   email: z
     .string({ message: "Indique o email." })
@@ -13,7 +25,7 @@ export const newUserSchema = z.object({
     .max(254, "O email é demasiado longo.")
     .email("Email inválido.")
     .transform((valor) => valor.toLowerCase()),
-  fullName: z.string().trim().max(160, "O nome é demasiado longo.").optional(),
+  fullName: userNameSchema,
   // 8 caracteres é o mínimo do Supabase Auth. Exigido aqui para o erro
   // aparecer no formulário e não como falha vinda do servidor de autenticação.
   password: z
@@ -23,6 +35,7 @@ export const newUserSchema = z.object({
   role: roleSchema,
 });
 
+export const nameChangeSchema = z.object({ name: userNameSchema });
 export const roleChangeSchema = z.object({ role: roleSchema });
 export const activeChangeSchema = z.object({ isActive: z.boolean() });
 

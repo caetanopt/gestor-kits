@@ -176,6 +176,7 @@ export type Database = {
         Returns: Json;
       };
       import_employees: { Args: { p_rows: Json }; Returns: Json };
+      set_user_name: { Args: { p_user_id: string; p_name: string }; Returns: Json };
       set_user_role: { Args: { p_user_id: string; p_role: string }; Returns: Json };
       set_user_active: {
         Args: { p_user_id: string; p_active: boolean };

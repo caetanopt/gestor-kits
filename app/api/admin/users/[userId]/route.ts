@@ -3,8 +3,12 @@ import { z } from "zod";
 import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
 import { requireApiAdmin } from "@/lib/auth/dal";
-import { activeChangeSchema, roleChangeSchema } from "@/lib/validation/user";
-import { setUserActive, setUserRole } from "@/server/use-cases/users";
+import {
+  activeChangeSchema,
+  nameChangeSchema,
+  roleChangeSchema,
+} from "@/lib/validation/user";
+import { setUserActive, setUserName, setUserRole } from "@/server/use-cases/users";
 
 const idSchema = z.string().uuid("Identificador de utilizador inválido.");
 
@@ -28,6 +32,12 @@ export async function PATCH(
 
     const body: unknown = await request.json().catch(() => null);
 
+    const nome = nameChangeSchema.safeParse(body);
+    if (nome.success) {
+      await setUserName(id.data, nome.data.name);
+      return ok({ id: id.data, name: nome.data.name });
+    }
+
     const papel = roleChangeSchema.safeParse(body);
     if (papel.success) {
       await setUserRole(id.data, papel.data.role);
@@ -41,7 +51,7 @@ export async function PATCH(
     }
 
     throw new AppError("VALIDATION_ERROR", {
-      details: ["Indique o perfil a atribuir ou o estado de ativação."],
+      details: ["Indique o nome, o perfil a atribuir ou o estado de ativação."],
     });
   } catch (error) {
     return toErrorResponse(error);

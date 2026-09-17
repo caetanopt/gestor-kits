@@ -291,6 +291,12 @@ dados, por isso não é exigida só por comodidade. Se a configurar, é usada
 exclusivamente para criar contas, a partir de uma rota já restrita a
 administradores.
 
+Cada conta leva um **nome**, obrigatório na criação. É esse nome que identifica
+quem tem sessão iniciada, no canto superior direito. Uma conta sem nome — as
+criadas antes desta versão, ou pelo painel do Supabase — continua a mostrar o
+email; a página **Utilizadores** assinala-as e tem um "Editar nome" em cada
+linha para as corrigir.
+
 ## Testes
 
 ```bash

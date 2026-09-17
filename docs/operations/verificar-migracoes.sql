@@ -31,7 +31,7 @@ select 'Funções de negócio',
          'find_employee_for_delivery','is_admin','is_active_user',
          'handle_new_user','totals_snapshot','delivery_payload','app_error',
          'touch_updated_at','derive_company_code','save_employee',
-         'set_user_role','set_user_active','active_admin_count',
+         'set_user_role','set_user_active','active_admin_count','set_user_name',
          'search_employees_for_delivery'
        ]) as esperada
   left join pg_proc p
@@ -62,6 +62,13 @@ select 'Email opcional (migração 0012)',
  where proname in ('import_employees', 'save_employee')
    and pronamespace = 'public'::regnamespace
    and prosrc like '%EMPLOYEE_EMAIL_REQUIRED%'
+
+union all
+select 'Contas sem nome',
+       count(*) || ' de ' || (select count(*) from public.profiles),
+       case when count(*) = 0 then '✓'
+            else '⚠ mostram o email no topo — corrigir em Utilizadores' end
+  from public.profiles where btrim(full_name) = ''
 
 union all
 select 'Colaboradores sem email',
