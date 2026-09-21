@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Distribuição de Kits — modo local</title>
+<!--
+  Distribuição de Kits — versão local, sem rede e sem instalação.
+
+  Abre com duplo clique. Corre inteiramente dentro do browser: não faz um
+  único pedido à rede, não tem servidor e não precisa de nada instalado.
+
+  COMO A REGRA "UM KIT POR COLABORADOR" É GARANTIDA
+  ------------------------------------------------
+  As entregas vivem num objeto indexado pelo número do colaborador,
+  normalizado (sem espaços, em maiúsculas) — a mesma normalização que a base
+  de dados usa. Um objeto não pode ter duas entradas com a mesma chave: a
+  segunda entrega ao mesmo colaborador é impossível de representar, não é
+  apenas recusada por uma verificação que alguém pode esquecer de fazer.
+
+  Antes de cada entrega o estado é RELIDO do armazenamento, e não assumido a
+  partir do que está em memória. Se houver uma segunda janela aberta, as duas
+  leem e escrevem o mesmo sítio.
+
+  ONDE OS DADOS FICAM
+  -------------------
+  No localStorage do browser, que sobrevive a fechar a janela e a desligar o
+  computador. NÃO sobrevive a limpar os dados de navegação nem a uma janela
+  anónima — por isso a aplicação descarrega uma cópia de segurança a cada 25
+  entregas, e insiste para que se exporte no fim.
+
+  O IndexedDB não é usado de propósito: em ficheiros abertos por duplo clique
+  fica pendurado sem dar erro, o que faria a aplicação parecer que gravava
+  quando não gravava.
+-->
+<style>
+  :root {
+    --azul: #002E5D;
+    --antracite: #2E3A46;
+    --cinza: #9CAEB8;
+    --cyan: #00AEEF;
+    --verde: #49B489;
+    --laranja: #FFA931;
+    --amarelo: #FFD23F;
+    --texto: #2E3A46;
+    --auxiliar: #58616B;
+    --pagina: #EBEFF1;
+    --cartao: #FFFFFF;
+    --painel: #F5F8F9;
+    --desativado: #D7DFE3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--pagina);
+    color: var(--texto);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .envolvente { max-width: 820px; margin: 0 auto; padding: 16px; }
+  header.topo { background: var(--cartao); border-bottom: 1px solid #dde4e8; }
+  header.topo .envolvente {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    padding-top: 12px; padding-bottom: 12px;
+  }
+  .marca { font-weight: 700; color: var(--azul); letter-spacing: .02em; }
+  .etiqueta-local {
+    background: var(--amarelo); color: var(--azul); font-size: 12px; font-weight: 700;
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .espaco { margin-left: auto; }
+  h1 {
+    font-size: 15px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--auxiliar); text-align: center; margin: 24px 0 16px;
+  }
+  .cartao {
+    background: var(--cartao); border: 1px solid #dde4e8; border-radius: 16px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  label { display: block; font-size: 14px; font-weight: 600; color: var(--auxiliar); margin-bottom: 6px; }
+  .dica { font-size: 12px; color: var(--auxiliar); margin-top: 6px; font-weight: 400; }
+  input[type=text], input[type=email], select, input[type=file] {
+    width: 100%; padding: 12px 14px; font-size: 16px; font-family: inherit;
+    border: 1px solid #c8d3d9; border-radius: 10px; background: #fff; color: var(--texto);
+  }
+  input:focus, select:focus, button:focus-visible {
+    outline: 3px solid var(--cyan); outline-offset: 1px;
+  }
+  #pesquisa {
+    text-align: center; font-size: 34px; font-weight: 700; letter-spacing: .04em;
+    padding: 18px 14px; background: var(--painel);
+  }
+  #pesquisa.compacto { font-size: 22px; padding: 10px 14px; }
+  .abas { display: flex; gap: 4px; background: var(--painel); padding: 4px; border-radius: 12px; margin-bottom: 14px; }
+  .abas button {
+    flex: 1; border: 0; background: transparent; padding: 10px; border-radius: 9px;
+    font: inherit; font-weight: 700; color: var(--auxiliar); cursor: pointer;
+  }
+  .abas button[aria-selected=true] { background: #fff; color: var(--azul); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  button {
+    font: inherit; font-weight: 700; cursor: pointer; border-radius: 10px;
+    padding: 12px 18px; border: 1px solid transparent; min-height: 44px;
+    transition: filter .1s ease, transform .1s ease;
+  }
+  button:active:not(:disabled) { transform: scale(.98); filter: brightness(.95); }
+  button:disabled { cursor: not-allowed; opacity: .55; }
+  .primario { background: var(--azul); color: #fff; }
+  .secundario { background: #fff; color: var(--azul); border-color: #c8d3d9; }
+  .perigo { background: var(--laranja); color: #3a2a00; }
+  .enorme { width: 100%; font-size: 24px; padding: 26px; border-radius: 14px; letter-spacing: .04em; }
+  .linha { display: flex; flex-wrap: wrap; gap: 10px; }
+  .linha.centro { justify-content: center; }
+  .grelha { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .contadores { display: grid; gap: 10px; grid-template-columns: repeat(3, 1fr); margin-bottom: 20px; }
+  .contador { background: var(--cartao); border: 1px solid #dde4e8; border-radius: 14px; overflow: hidden; }
+  .contador .barra { height: 5px; }
+  .contador .corpo { padding: 12px 14px; }
+  .contador .valor { font-size: 26px; font-weight: 700; color: var(--azul); font-variant-numeric: tabular-nums; }
+  .contador .nome { font-size: 12px; color: var(--auxiliar); }
+  .aviso { border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; border-left: 5px solid; }
+  .aviso h2 { margin: 0 0 4px; font-size: 16px; }
+  .aviso p { margin: 0; font-size: 14px; }
+  .erro { background: #FFF1E2; border-color: var(--laranja); }
+  .ok { background: #E8F6F0; border-color: var(--verde); }
+  .info { background: #E4F5FD; border-color: var(--cyan); }
+  .critico { background: #FFE3E3; border-color: #C62828; }
+  .selo { display: inline-block; border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 700; }
+  .selo.por-entregar { background: var(--cyan); color: #00263f; }
+  .selo.entregue { background: var(--laranja); color: #3a2a00; }
+  .nome-pessoa { font-size: 26px; font-weight: 700; color: var(--azul); margin: 0; }
+  .sub { color: var(--auxiliar); font-size: 14px; margin: 4px 0 14px; }
+  ul.resultados { list-style: none; margin: 0; padding: 0; }
+  ul.resultados li { border-bottom: 1px solid #eef2f4; }
+  ul.resultados li:last-child { border-bottom: 0; }
+  ul.resultados button {
+    width: 100%; text-align: left; background: none; border: 0; padding: 14px 4px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border-radius: 0;
+  }
+  ul.resultados button:hover { background: var(--painel); }
+  .r-nome { font-weight: 700; color: var(--azul); flex: 1 1 100%; }
+  .r-sub { color: var(--auxiliar); font-size: 14px; flex: 1 1 auto; }
+  kbd {
+    background: var(--painel); border: 1px solid #d6dfe4; border-radius: 5px;
+    padding: 1px 6px; font: 600 12px/1.6 inherit;
+  }
+  .rodape { text-align: center; color: var(--auxiliar); font-size: 13px; padding: 8px 0 32px; }
+  .oculto { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid #eef2f4; }
+  th { color: var(--auxiliar); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  @media (max-width: 480px) {
+    .contadores { grid-template-columns: 1fr; }
+    #pesquisa { font-size: 26px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="envolvente">
+    <span class="marca">Distribuição de Kits</span>
+    <span class="etiqueta-local">MODO LOCAL — SEM REDE</span>
+    <span class="espaco"></span>
+    <button type="button" class="secundario" id="btn-exportar">Exportar CSV</button>
+  </div>
+</header>
+
+<main class="envolvente">
+  <div id="alarme-gravacao" class="aviso critico oculto" role="alert">
+    <h2>As entregas não estão a ser gravadas.</h2>
+    <p id="alarme-gravacao-texto"></p>
+  </div>
+
+  <div id="alarme-janela" class="aviso erro oculto" role="alert">
+    <h2>Há outra janela desta aplicação aberta.</h2>
+    <p>Feche as restantes e use apenas uma. Com duas janelas, os contadores podem
+       divergir do que está gravado.</p>
+  </div>
+
+  <!-- ECRÃ 1: carregar a lista ------------------------------------------ -->
+  <section id="ecra-lista">
+    <h1>Carregar a lista de colaboradores</h1>
+    <div class="cartao">
+      <label for="ficheiro">Ficheiro CSV</label>
+      <input type="file" id="ficheiro" accept=".csv,.txt,text/csv">
+      <p class="dica">
+        Colunas aceites: <strong>numero</strong>, <strong>nome</strong>,
+        <strong>empresa</strong> e <strong>email</strong> (opcional). São aceites
+        cabeçalhos em português e o separador <kbd>;</kbd> do Excel português.
+        O ficheiro não sai deste computador.
+      </p>
+      <div id="erro-lista" class="aviso erro oculto" role="alert" style="margin-top:16px">
+        <h2>Não foi possível ler o ficheiro.</h2>
+        <p id="erro-lista-texto"></p>
+      </div>
+    </div>
+    <p class="rodape">Nada é enviado para lado nenhum. Esta página funciona sem internet.</p>
+  </section>
+
+  <!-- ECRÃ 2: distribuição ---------------------------------------------- -->
+  <section id="ecra-distribuicao" class="oculto">
+    <h1>Distribuição de Kits</h1>
+
+    <div class="contadores">
+      <div class="contador">
+        <div class="barra" style="background: var(--verde)"></div>
+        <div class="corpo"><div class="valor" id="c-entregues">0</div><div class="nome">Kits entregues</div></div>
+      </div>
+      <div class="contador">
+        <div class="barra" style="background: var(--cyan)"></div>
+        <div class="corpo"><div class="valor" id="c-falta">0</div><div class="nome">Colaboradores sem kit</div></div>
+      </div>
+      <div class="contador">
+        <div class="barra" style="background: var(--cinza)"></div>
+        <div class="corpo"><div class="valor" id="c-total">0</div><div class="nome">Colaboradores</div></div>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="abas" role="tablist" aria-label="Modo de pesquisa">
+        <button type="button" role="tab" id="aba-numero" aria-selected="true">N.º colaborador</button>
+        <button type="button" role="tab" id="aba-nome" aria-selected="false">Nome ou email</button>
+      </div>
+
+      <label for="pesquisa" id="rotulo-pesquisa" style="text-align:center">Número de colaborador</label>
+      <input type="text" id="pesquisa" autocomplete="off" autocorrect="off"
+             autocapitalize="characters" spellcheck="false" placeholder="—">
+
+      <div class="linha centro" style="margin-top:12px">
+        <button type="button" class="secundario" id="btn-pesquisar">Pesquisar</button>
+        <button type="button" class="secundario" id="btn-limpar">Limpar</button>
+      </div>
+      <p class="dica" style="text-align:center" id="dica-teclas">
+        <kbd>Enter</kbd> pesquisa · <kbd>Enter</kbd> com o campo vazio entrega · <kbd>Esc</kbd> limpa
+      </p>
+    </div>
+
+    <div id="resultado" aria-live="polite"></div>
+
+    <p class="rodape">
+      <button type="button" class="secundario" id="btn-recomecar">Recomeçar do zero</button>
+    </p>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* ===================================================================
+   Estado e persistência
+   =================================================================== */
+
+const CHAVE = "caetano.kits.local.v1";
+const CHAVE_JANELA = "caetano.kits.local.janela";
+const ENTREGAS_ENTRE_COPIAS = 25;
+
+/** Número do colaborador tal como é usado para chave: a mesma normalização
+    que `upper(btrim(employee_number))` na base de dados. */
+function chaveDe(numero) {
+  return String(numero == null ? "" : numero).trim().toUpperCase();
+}
+
+/** Minúsculas, sem acentos — para comparar nomes e cabeçalhos. */
+function simplificar(texto) {
+  return String(texto == null ? "" : texto)
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().trim();
+}
+
+function agora() { return new Date().toISOString(); }
+
+function estadoVazio() {
+  return { versao: 1, criadoEm: agora(), colaboradores: [], entregas: {}, copiaEm: 0 };
+}
+
+/** Lê o estado gravado. Nunca usa uma cópia em memória: é a leitura do
+    armazenamento que decide, para que uma segunda janela não invente entregas. */
+function ler() {
+  let bruto = null;
+  try { bruto = localStorage.getItem(CHAVE); }
+  catch (erro) { alarmar("O browser recusou o acesso ao armazenamento (" + erro.name + ")."); return estadoVazio(); }
+
+  if (!bruto) return estadoVazio();
+  try {
+    const dados = JSON.parse(bruto);
+    if (!dados || typeof dados !== "object" || !Array.isArray(dados.colaboradores)) {
+      throw new Error("formato inesperado");
+    }
+    dados.entregas = dados.entregas || {};
+    return dados;
+  } catch (erro) {
+    alarmar("Os dados gravados estão ilegíveis (" + erro.message + "). Não apague nada e exporte já o CSV.");
+    return estadoVazio();
+  }
+}
+
+/**
+ * Grava, e CONFIRMA relendo.
+ *
+ * Gravar e seguir em frente é como esta aplicação perderia um dia inteiro de
+ * trabalho em silêncio. Se a releitura não bater certo, o operador tem de
+ * saber no momento, não no fim.
+ */
+function gravar(estado) {
+  const texto = JSON.stringify(estado);
+  try {
+    localStorage.setItem(CHAVE, texto);
+    if (localStorage.getItem(CHAVE) !== texto) {
+      alarmar("O que foi gravado não corresponde ao que foi lido a seguir.");
+      return false;
+    }
+  } catch (erro) {
+    alarmar(
+      erro.name === "QuotaExceededError"
+        ? "O armazenamento do browser está cheio. Exporte o CSV imediatamente."
+        : "Não foi possível gravar (" + erro.name + "). Exporte o CSV imediatamente."
+    );
+    return false;
+  }
+  desalarmar();
+  return true;
+}
+
+function alarmar(texto) {
+  document.getElementById("alarme-gravacao-texto").textContent =
+    texto + " Não feche esta janela sem exportar.";
+  document.getElementById("alarme-gravacao").classList.remove("oculto");
+}
+function desalarmar() {
+  document.getElementById("alarme-gravacao").classList.add("oculto");
+}
+
+/* ===================================================================
+   A regra: um kit por colaborador
+   =================================================================== */
+
+/**
+ * Entrega o kit.
+ *
+ * As entregas são um objeto indexado pela chave do colaborador. Duas entregas
+ * ao mesmo colaborador são impossíveis de representar — não é uma verificação
+ * que se possa esquecer, é a forma dos dados. A releitura antes de escrever
+ * garante que a decisão é tomada sobre o que está gravado.
+ *
+ * Devolve { ok: true } ou { ok: false, jaEntregue } .
+ */
+function entregar(numero) {
+  const chave = chaveDe(numero);
+  const estado = ler();
+
+  const existente = estado.entregas[chave];
+  if (existente && !existente.anuladaEm) {
+    return { ok: false, jaEntregue: existente };
+  }
+
+  estado.entregas[chave] = { em: agora(), anuladaEm: null };
+  const gravou = gravar(estado);
+  return { ok: gravou, gravou: gravou };
+}
+
+/** Anula uma entrega. Fica o registo, com a hora da anulação. */
+function anular(numero) {
+  const chave = chaveDe(numero);
+  const estado = ler();
+  const existente = estado.entregas[chave];
+  if (!existente || existente.anuladaEm) return false;
+  existente.anuladaEm = agora();
+  return gravar(estado);
+}
+
+function temKit(estado, numero) {
+  const e = estado.entregas[chaveDe(numero)];
+  return Boolean(e && !e.anuladaEm);
+}
+
+function contarEntregues(estado) {
+  return Object.values(estado.entregas).filter((e) => !e.anuladaEm).length;
+}
+
+/* ===================================================================
+   Leitura do CSV
+   =================================================================== */
+
+/** Divide uma linha de CSV respeitando aspas. */
+function dividirLinha(linha, separador) {
+  const celulas = [];
+  let atual = "";
+  let dentroDeAspas = false;
+  for (let i = 0; i < linha.length; i += 1) {
+    const c = linha[i];
+    if (dentroDeAspas) {
+      if (c === '"') {
+        if (linha[i + 1] === '"') { atual += '"'; i += 1; }
+        else dentroDeAspas = false;
+      } else atual += c;
+    } else if (c === '"') dentroDeAspas = true;
+    else if (c === separador) { celulas.push(atual); atual = ""; }
+    else atual += c;
+  }
+  celulas.push(atual);
+  return celulas.map((c) => c.trim());
+}
+
+/** Descobre o separador pela primeira linha: ; , ou tabulação. */
+function descobrirSeparador(cabecalho) {
+  const contagens = [[";", 0], [",", 0], ["\t", 0]];
+  let dentroDeAspas = false;
+  for (const c of cabecalho) {
+    if (c === '"') dentroDeAspas = !dentroDeAspas;
+    if (dentroDeAspas) continue;
+    for (const par of contagens) if (c === par[0]) par[1] += 1;
+  }
+  contagens.sort((a, b) => b[1] - a[1]);
+  return contagens[0][1] > 0 ? contagens[0][0] : ";";
+}
+
+const ALIAS = {
+  numero: ["numero", "n", "no", "num", "numerocolaborador", "numerodecolaborador",
+           "ncolaborador", "employeenumber", "employee_number", "matricula",
+           "numerofuncionario", "numerodefuncionario"],
+  nome: ["nome", "name", "nomecolaborador", "nomedocolaborador", "nomecompleto"],
+  email: ["email", "mail", "correio", "correioeletronico"],
+  empresa: ["empresa", "company", "nomeempresa", "nomedaempresa"],
+  codigo: ["codigo", "companycode", "company_code", "sigla"],
+};
+
+function mapearCabecalho(celulas) {
+  const mapa = {};
+  celulas.forEach((celula, indice) => {
+    const limpo = simplificar(celula).replace(/[^a-z0-9]/g, "");
+    for (const coluna of Object.keys(ALIAS)) {
+      if (mapa[coluna] === undefined && ALIAS[coluna].indexOf(limpo) !== -1) mapa[coluna] = indice;
+    }
+  });
+  return mapa;
+}
+
+/** Lê o CSV. Devolve { colaboradores, problemas } ou lança com uma razão clara. */
+function lerCsv(texto) {
+  const limpo = texto.replace(/^﻿/, "");
+  const linhas = limpo.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+  if (linhas.length < 2) throw new Error("O ficheiro não tem linhas de dados.");
+
+  const separador = descobrirSeparador(linhas[0]);
+  const mapa = mapearCabecalho(dividirLinha(linhas[0], separador));
+
+  const emFalta = [];
+  if (mapa.numero === undefined) emFalta.push("número");
+  if (mapa.nome === undefined) emFalta.push("nome");
+  if (mapa.empresa === undefined && mapa.codigo === undefined) emFalta.push("empresa");
+  if (emFalta.length) {
+    throw new Error(
+      "Não encontrei a coluna " + emFalta.join(", nem a coluna ") +
+      ". O cabeçalho lido foi: " + linhas[0].slice(0, 120)
+    );
+  }
+
+  const colaboradores = [];
+  const problemas = [];
+  const vistos = Object.create(null);
+
+  for (let i = 1; i < linhas.length; i += 1) {
+    const celulas = dividirLinha(linhas[i], separador);
+    const pegar = (indice) => (indice === undefined ? "" : (celulas[indice] || "").trim());
+
+    const numero = pegar(mapa.numero);
+    const nome = pegar(mapa.nome);
+    const email = pegar(mapa.email);
+    const empresa = pegar(mapa.empresa) || pegar(mapa.codigo);
+
+    if (!numero && !nome && !empresa) continue;
+    if (!numero) { problemas.push("Linha " + (i + 1) + ": sem número."); continue; }
+    if (!nome) { problemas.push("Linha " + (i + 1) + ": colaborador " + numero + " sem nome."); continue; }
+
+    const chave = chaveDe(numero);
+    if (vistos[chave]) {
+      problemas.push("Linha " + (i + 1) + ": número " + numero + " repetido no ficheiro (ignorado).");
+      continue;
+    }
+    vistos[chave] = true;
+
+    colaboradores.push({ n: numero, nome: nome, email: email, empresa: empresa || "—" });
+  }
+
+  if (!colaboradores.length) throw new Error("Não consegui ler nenhum colaborador válido.");
+  return { colaboradores: colaboradores, problemas: problemas };
+}
+
+/* ===================================================================
+   Exportação
+   =================================================================== */
+
+function paraCsv(linhas) {
+  const escapar = (valor) => {
+    let v = valor == null ? "" : String(valor);
+    // Prefixo para o Excel não interpretar como fórmula.
+    if (/^[=+\-@]/.test(v)) v = "'" + v;
+    return /[";\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  return "﻿" + linhas.map((l) => l.map(escapar).join(";")).join("\r\n") + "\r\n";
+}
+
+function carimbo() {
+  const d = new Date();
+  const dois = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + dois(d.getMonth() + 1) + dois(d.getDate()) +
+         "-" + dois(d.getHours()) + dois(d.getMinutes());
+}
+
+function descarregar(nome, conteudo) {
+  const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** O documento com toda a gente, recebido ou não, mais o resumo por empresa. */
+function exportar(automatico) {
+  const estado = ler();
+  const linhas = [["Empresa", "N.º colaborador", "Nome", "Email", "Kit entregue", "Data e hora", "Anulada em"]];
+
+  const porEmpresa = Object.create(null);
+  let entregues = 0;
+
+  const ordenados = estado.colaboradores.slice().sort((a, b) =>
+    (a.empresa || "").localeCompare(b.empresa || "", "pt") ||
+    (a.nome || "").localeCompare(b.nome || "", "pt"));
+
+  for (const c of ordenados) {
+    const e = estado.entregas[chaveDe(c.n)];
+    const recebeu = Boolean(e && !e.anuladaEm);
+    if (recebeu) entregues += 1;
+    const chaveEmpresa = c.empresa || "—";
+    if (!porEmpresa[chaveEmpresa]) porEmpresa[chaveEmpresa] = { total: 0, entregues: 0 };
+    porEmpresa[chaveEmpresa].total += 1;
+    if (recebeu) porEmpresa[chaveEmpresa].entregues += 1;
+
+    linhas.push([
+      chaveEmpresa, c.n, c.nome, c.email || "",
+      recebeu ? "Sim" : "Não",
+      e && e.em ? new Date(e.em).toLocaleString("pt-PT") : "",
+      e && e.anuladaEm ? new Date(e.anuladaEm).toLocaleString("pt-PT") : "",
+    ]);
+  }
+
+  linhas.push([]);
+  linhas.push(["Resumo", "Entregues", "Colaboradores", "% levantado"]);
+  for (const nome of Object.keys(porEmpresa).sort((a, b) => a.localeCompare(b, "pt"))) {
+    const r = porEmpresa[nome];
+    linhas.push([nome, r.entregues, r.total, r.total ? Math.round((r.entregues / r.total) * 100) + "%" : "0%"]);
+  }
+  const total = estado.colaboradores.length;
+  linhas.push(["TOTAL", entregues, total, total ? Math.round((entregues / total) * 100) + "%" : "0%"]);
+
+  descarregar(
+    (automatico ? "copia-seguranca-kits-" : "entregas-kits-") + carimbo() + ".csv",
+    paraCsv(linhas)
+  );
+}
+
+/* ===================================================================
+   Interface
+   =================================================================== */
+
+let modo = "numero";
+let ultimoResultado = null;
+
+const $ = (id) => document.getElementById(id);
+const ecraLista = $("ecra-lista");
+const ecraDistribuicao = $("ecra-distribuicao");
+const campo = $("pesquisa");
+const painel = $("resultado");
+
+function escapar(texto) {
+  return String(texto == null ? "" : texto)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function mostrarEcras() {
+  const estado = ler();
+  const temLista = estado.colaboradores.length > 0;
+  ecraLista.classList.toggle("oculto", temLista);
+  ecraDistribuicao.classList.toggle("oculto", !temLista);
+  $("btn-exportar").classList.toggle("oculto", !temLista);
+  if (temLista) { atualizarContadores(estado); focar(); }
+}
+
+function atualizarContadores(estado) {
+  const dados = estado || ler();
+  const entregues = contarEntregues(dados);
+  const total = dados.colaboradores.length;
+  $("c-entregues").textContent = entregues;
+  $("c-falta").textContent = Math.max(total - entregues, 0);
+  $("c-total").textContent = total;
+}
+
+function focar() {
+  campo.focus();
+  campo.select();
+}
+
+function compactar(sim) {
+  campo.classList.toggle("compacto", Boolean(sim));
+  $("dica-teclas").classList.toggle("oculto", Boolean(sim));
+}
+
+function limpar() {
+  ultimoResultado = null;
+  painel.innerHTML = "";
+  campo.value = "";
+  compactar(false);
+  focar();
+}
+
+/* --- pesquisa ------------------------------------------------------- */
+
+function procurarPorNumero(termo) {
+  const estado = ler();
+  const chave = chaveDe(termo);
+  const pessoa = estado.colaboradores.find((c) => chaveDe(c.n) === chave);
+  if (!pessoa) return { tipo: "ausente", numero: termo.trim(), nome: "", email: "" };
+  return { tipo: "pessoa", pessoa: pessoa, estado: estado };
+}
+
+function procurarPorTexto(termo) {
+  const estado = ler();
+  const alvo = simplificar(termo);
+  if (alvo.length < 2) return { tipo: "curto" };
+
+  const achados = estado.colaboradores.filter((c) =>
+    simplificar(c.nome).indexOf(alvo) !== -1 ||
+    (c.email && simplificar(c.email).indexOf(alvo) !== -1));
+
+  if (!achados.length) {
+    const pareceEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(termo.trim());
+    return {
+      tipo: "ausente",
+      numero: "",
+      nome: pareceEmail ? "" : termo.trim(),
+      email: pareceEmail ? termo.trim() : "",
+    };
+  }
+  if (achados.length === 1) return { tipo: "pessoa", pessoa: achados[0], estado: estado };
+  return { tipo: "varios", achados: achados.slice(0, 25), total: achados.length, estado: estado, termo: termo.trim() };
+}
+
+function pesquisar() {
+  const termo = campo.value;
+  if (!termo.trim()) return;
+  desenhar(modo === "numero" ? procurarPorNumero(termo) : procurarPorTexto(termo));
+  campo.value = "";
+}
+
+/* --- desenho -------------------------------------------------------- */
+
+function desenhar(resultado) {
+  ultimoResultado = resultado;
+  compactar(resultado.tipo !== "curto");
+
+  if (resultado.tipo === "curto") {
+    painel.innerHTML = '<div class="aviso info"><p>Escreva pelo menos 2 letras do nome, ou o email.</p></div>';
+    focar(); return;
+  }
+
+  if (resultado.tipo === "pessoa") desenharPessoa(resultado.pessoa, resultado.estado);
+  else if (resultado.tipo === "varios") desenharLista(resultado);
+  else desenharAusente(resultado);
+
+  focar();
+}
+
+function desenharPessoa(pessoa, estado, avisoHtml) {
+  const dados = estado || ler();
+  const entrega = dados.entregas[chaveDe(pessoa.n)];
+  const recebeu = Boolean(entrega && !entrega.anuladaEm);
+
+  painel.innerHTML = (avisoHtml || "") +
+    '<div class="cartao">' +
+      '<p class="nome-pessoa">' + escapar(pessoa.nome) + "</p>" +
+      '<p class="sub">N.º ' + escapar(pessoa.n) + " · " + escapar(pessoa.empresa) +
+        (pessoa.email ? " · " + escapar(pessoa.email) : "") + "</p>" +
+      (recebeu
+        ? '<p><span class="selo entregue">KIT JÁ ENTREGUE</span></p>' +
+          '<p class="sub">Entregue em ' + escapar(new Date(entrega.em).toLocaleString("pt-PT")) + ".</p>" +
+          '<button type="button" class="secundario" data-anular="' + escapar(pessoa.n) + '">Anular esta entrega</button>'
+        : '<p><span class="selo por-entregar">KIT AINDA NÃO ENTREGUE</span></p>' +
+          '<button type="button" class="primario enorme" data-entregar="' + escapar(pessoa.n) + '">ENTREGAR KIT</button>' +
+          '<p class="dica" style="text-align:center">Ou prima <kbd>Enter</kbd> com o campo de pesquisa vazio.</p>') +
+    "</div>";
+}
+
+function desenharLista(resultado) {
+  let html =
+    '<div class="cartao">' +
+    '<p class="sub">' + resultado.total + (resultado.total === 1 ? " resultado" : " resultados") +
+    (resultado.total > resultado.achados.length ? " · a mostrar os primeiros " + resultado.achados.length : "") +
+    "</p><ul class=\"resultados\">";
+
+  for (const c of resultado.achados) {
+    const recebeu = temKit(resultado.estado, c.n);
+    html +=
+      '<li><button type="button" data-abrir="' + escapar(c.n) + '">' +
+        '<span class="r-nome">' + escapar(c.nome) + "</span>" +
+        '<span class="r-sub">N.º ' + escapar(c.n) + " · " + escapar(c.empresa) + "</span>" +
+        '<span class="selo ' + (recebeu ? "entregue" : "por-entregar") + '" style="font-size:12px;padding:3px 10px">' +
+          (recebeu ? "Já entregue" : "Por entregar") +
+        "</span>" +
+      "</button></li>";
+  }
+
+  html += "</ul>" +
+    '<div style="border-top:1px solid #eef2f4;padding-top:14px;margin-top:6px">' +
+      '<button type="button" class="secundario" data-acrescentar="1">Nenhum destes? Acrescentar colaborador</button>' +
+    "</div></div>";
+  painel.innerHTML = html;
+}
+
+function desenharAusente(resultado) {
+  const estado = ler();
+  const empresas = [];
+  for (const c of estado.colaboradores) if (empresas.indexOf(c.empresa) === -1) empresas.push(c.empresa);
+  empresas.sort((a, b) => a.localeCompare(b, "pt"));
+
+  painel.innerHTML =
+    '<div class="cartao">' +
+      '<p class="nome-pessoa" style="font-size:20px">Não está na lista</p>' +
+      '<p class="sub">Acrescente o colaborador para lhe poder entregar o kit.</p>' +
+      '<div class="grelha">' +
+        '<div><label for="novo-numero">N.º colaborador</label>' +
+          '<input type="text" id="novo-numero" autocomplete="off" autocapitalize="characters" value="' + escapar(resultado.numero) + '"></div>' +
+        '<div><label for="novo-nome">Nome</label>' +
+          '<input type="text" id="novo-nome" autocomplete="off" value="' + escapar(resultado.nome) + '"></div>' +
+        '<div><label for="novo-email">Email <span style="font-weight:400">(opcional)</span></label>' +
+          '<input type="email" id="novo-email" autocomplete="off" autocapitalize="none" value="' + escapar(resultado.email) + '"></div>' +
+        '<div><label for="nova-empresa">Empresa</label>' +
+          '<select id="nova-empresa"><option value="">Selecione…</option>' +
+          empresas.map((e) => '<option value="' + escapar(e) + '">' + escapar(e) + "</option>").join("") +
+          '<option value="__nova__">+ Outra empresa…</option></select></div>' +
+      "</div>" +
+      '<div id="campo-nova-empresa" class="oculto" style="margin-top:14px">' +
+        '<label for="nome-nova-empresa">Nome da empresa nova</label>' +
+        '<input type="text" id="nome-nova-empresa" autocomplete="off"></div>' +
+      '<div id="erro-novo" class="aviso erro oculto" role="alert" style="margin-top:14px"><p id="erro-novo-texto"></p></div>' +
+      '<div class="linha" style="margin-top:16px">' +
+        '<button type="button" class="primario" data-criar="1">Acrescentar e abrir</button>' +
+        '<button type="button" class="secundario" data-cancelar="1">Cancelar</button>' +
+      "</div>" +
+    "</div>";
+
+  const seletor = $("nova-empresa");
+  seletor.addEventListener("change", () => {
+    $("campo-nova-empresa").classList.toggle("oculto", seletor.value !== "__nova__");
+    if (seletor.value === "__nova__") $("nome-nova-empresa").focus();
+  });
+
+  const porPreencher = resultado.numero ? "novo-nome" : "novo-numero";
+  setTimeout(() => { const el = $(porPreencher); if (el) el.focus(); }, 0);
+}
+
+/* --- ações ---------------------------------------------------------- */
+
+function acaoEntregar(numero) {
+  const resposta = entregar(numero);
+  const estado = ler();
+
+  if (!resposta.ok && resposta.jaEntregue) {
+    const pessoa = estado.colaboradores.find((c) => chaveDe(c.n) === chaveDe(numero));
+    // O aviso é passado a desenharPessoa em vez de escrito antes dela: escrito
+    // antes, o cartão da pessoa apagava-o no instante seguinte — e este é
+    // precisamente o aviso que não pode passar despercebido.
+    const aviso =
+      '<div class="aviso erro" role="alert">' +
+        "<h2>" + escapar(pessoa ? pessoa.nome : numero) + " já recebeu kit.</h2>" +
+        "<p>Entregue em " + escapar(new Date(resposta.jaEntregue.em).toLocaleString("pt-PT")) +
+        ". Não é possível entregar um segundo.</p>" +
+      "</div>";
+
+    if (pessoa) desenharPessoa(pessoa, estado, aviso);
+    else painel.innerHTML = aviso;
+
+    // Os contadores são relidos mesmo quando nada mudou: se outra janela tiver
+    // entregado entretanto, o ecrã tem de o refletir.
+    atualizarContadores(estado);
+    focar();
+    return;
+  }
+
+  if (!resposta.ok) { focar(); return; }
+
+  const pessoa = estado.colaboradores.find((c) => chaveDe(c.n) === chaveDe(numero));
+  painel.innerHTML =
+    '<div class="aviso ok" role="alert">' +
+      "<h2>Kit entregue a " + escapar(pessoa ? pessoa.nome : numero) + ".</h2>" +
+      "<p>N.º " + escapar(numero) + (pessoa ? " · " + escapar(pessoa.empresa) : "") + "</p>" +
+    "</div>";
+
+  atualizarContadores(estado);
+  compactar(true);
+  ultimoResultado = null;
+  talvezCopiaDeSeguranca(estado);
+  focar();
+}
+
+/** Cópia de segurança automática, de 25 em 25 entregas. */
+function talvezCopiaDeSeguranca(estado) {
+  const entregues = contarEntregues(estado);
+  if (entregues > 0 && entregues - (estado.copiaEm || 0) >= ENTREGAS_ENTRE_COPIAS) {
+    estado.copiaEm = entregues;
+    gravar(estado);
+    exportar(true);
+  }
+}
+
+function acaoAnular(numero) {
+  const estado = ler();
+  const pessoa = estado.colaboradores.find((c) => chaveDe(c.n) === chaveDe(numero));
+  const nome = pessoa ? pessoa.nome : numero;
+  if (!window.confirm("Anular a entrega de " + nome + "?\n\nO kit volta a ficar por entregar.")) return;
+  if (anular(numero)) {
+    const novo = ler();
+    atualizarContadores(novo);
+    if (pessoa) desenharPessoa(pessoa, novo);
+  }
+  focar();
+}
+
+function acaoCriar() {
+  const numero = $("novo-numero").value.trim();
+  const nome = $("novo-nome").value.trim();
+  const email = $("novo-email").value.trim();
+  const seletor = $("nova-empresa");
+  const empresa = seletor.value === "__nova__" ? $("nome-nova-empresa").value.trim() : seletor.value;
+
+  const falhar = (texto) => {
+    $("erro-novo-texto").textContent = texto;
+    $("erro-novo").classList.remove("oculto");
+  };
+
+  if (!numero) return falhar("Indique o número do colaborador.");
+  if (!nome) return falhar("Indique o nome.");
+  if (!empresa) return falhar("Selecione ou escreva a empresa.");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return falhar("O email está mal escrito.");
+
+  const estado = ler();
+  const chave = chaveDe(numero);
+  const existente = estado.colaboradores.find((c) => chaveDe(c.n) === chave);
+  if (existente) {
+    return falhar(
+      "O número " + numero + " já existe: " + existente.nome + " (" + existente.empresa + "). " +
+      "Pesquise por esse número em vez de o criar outra vez."
+    );
+  }
+
+  const pessoa = { n: numero, nome: nome, email: email, empresa: empresa, acrescentado: true };
+  estado.colaboradores.push(pessoa);
+  if (!gravar(estado)) return;
+
+  atualizarContadores(ler());
+  desenharPessoa(pessoa, ler());
+  focar();
+}
+
+/* --- eventos -------------------------------------------------------- */
+
+painel.addEventListener("click", (evento) => {
+  const alvo = evento.target.closest("button");
+  if (!alvo) return;
+  if (alvo.dataset.entregar) acaoEntregar(alvo.dataset.entregar);
+  else if (alvo.dataset.anular) acaoAnular(alvo.dataset.anular);
+  else if (alvo.dataset.abrir) desenharPessoa(
+    ler().colaboradores.find((c) => chaveDe(c.n) === chaveDe(alvo.dataset.abrir)), ler());
+  else if (alvo.dataset.acrescentar) desenhar({ tipo: "ausente", numero: "", nome: "", email: "" });
+  else if (alvo.dataset.criar) acaoCriar();
+  else if (alvo.dataset.cancelar) limpar();
+});
+
+campo.addEventListener("keydown", (evento) => {
+  if (evento.key === "Escape") { evento.preventDefault(); limpar(); return; }
+  if (evento.key !== "Enter") return;
+  evento.preventDefault();
+
+  if (campo.value.trim()) { pesquisar(); return; }
+
+  // Campo vazio com uma pessoa por entregar no ecrã: entrega.
+  // O leitor de código de barras escreve dígitos e termina em Enter, por isso
+  // um Enter com texto é SEMPRE uma pesquisa e nunca uma entrega.
+  const botao = painel.querySelector("button[data-entregar]");
+  if (botao) acaoEntregar(botao.dataset.entregar);
+});
+
+$("btn-pesquisar").addEventListener("click", pesquisar);
+$("btn-limpar").addEventListener("click", limpar);
+$("btn-exportar").addEventListener("click", () => exportar(false));
+
+function trocarModo(novo) {
+  modo = novo;
+  $("aba-numero").setAttribute("aria-selected", String(novo === "numero"));
+  $("aba-nome").setAttribute("aria-selected", String(novo === "nome"));
+  $("rotulo-pesquisa").textContent = novo === "numero" ? "Número de colaborador" : "Nome ou email";
+  campo.setAttribute("autocapitalize", novo === "numero" ? "characters" : "none");
+  campo.placeholder = novo === "numero" ? "—" : "Nome completo ou email";
+  limpar();
+}
+$("aba-numero").addEventListener("click", () => trocarModo("numero"));
+$("aba-nome").addEventListener("click", () => trocarModo("nome"));
+
+$("btn-recomecar").addEventListener("click", () => {
+  const estado = ler();
+  const entregues = contarEntregues(estado);
+  if (!window.confirm(
+    "Apagar a lista e as " + entregues + " entregas registadas?\n\n" +
+    "Isto não tem anulação. Exporte o CSV primeiro."
+  )) return;
+  if (!window.confirm("Tem mesmo a certeza? As " + entregues + " entregas serão perdidas.")) return;
+  try { localStorage.removeItem(CHAVE); } catch (erro) { /* nada a fazer */ }
+  limpar();
+  mostrarEcras();
+});
+
+$("ficheiro").addEventListener("change", (evento) => {
+  const ficheiro = evento.target.files && evento.target.files[0];
+  if (!ficheiro) return;
+
+  const leitor = new FileReader();
+  leitor.onerror = () => {
+    $("erro-lista-texto").textContent = "O browser não conseguiu abrir o ficheiro.";
+    $("erro-lista").classList.remove("oculto");
+  };
+  leitor.onload = () => {
+    try {
+      const lido = lerCsv(String(leitor.result));
+      const estado = ler();
+
+      // Uma lista nova não apaga entregas já feitas: as chaves são os números,
+      // por isso quem já recebeu continua marcado mesmo com a lista recarregada.
+      estado.colaboradores = lido.colaboradores;
+      estado.criadoEm = estado.criadoEm || agora();
+      if (!gravar(estado)) return;
+
+      $("erro-lista").classList.add("oculto");
+      mostrarEcras();
+
+      if (lido.problemas.length) {
+        painel.innerHTML =
+          '<div class="aviso info"><h2>' + lido.colaboradores.length + " colaboradores carregados.</h2>" +
+          "<p>" + lido.problemas.length + " linha(s) ignorada(s): " +
+          escapar(lido.problemas.slice(0, 5).join(" ")) +
+          (lido.problemas.length > 5 ? " …" : "") + "</p></div>";
+      } else {
+        painel.innerHTML =
+          '<div class="aviso ok"><h2>' + lido.colaboradores.length + " colaboradores carregados.</h2>" +
+          "<p>Pode começar a distribuir.</p></div>";
+      }
+    } catch (erro) {
+      $("erro-lista-texto").textContent = erro.message;
+      $("erro-lista").classList.remove("oculto");
+    }
+  };
+  leitor.readAsText(ficheiro, "utf-8");
+});
+
+/* --- segunda janela -------------------------------------------------- */
+
+(function vigiarJanelas() {
+  const meuId = String(Date.now()) + "." + Math.random().toString(36).slice(2);
+  function bater() {
+    try {
+      const bruto = localStorage.getItem(CHAVE_JANELA);
+      const outras = bruto ? JSON.parse(bruto) : {};
+      const limite = Date.now() - 8000;
+      let haOutra = false;
+      for (const id of Object.keys(outras)) {
+        if (outras[id] < limite) delete outras[id];
+        else if (id !== meuId) haOutra = true;
+      }
+      outras[meuId] = Date.now();
+      localStorage.setItem(CHAVE_JANELA, JSON.stringify(outras));
+      $("alarme-janela").classList.toggle("oculto", !haOutra);
+    } catch (erro) { /* sem vigilância, mas a aplicação continua */ }
+  }
+  bater();
+  setInterval(bater, 3000);
+  window.addEventListener("beforeunload", () => {
+    try {
+      const bruto = localStorage.getItem(CHAVE_JANELA);
+      const outras = bruto ? JSON.parse(bruto) : {};
+      delete outras[meuId];
+      localStorage.setItem(CHAVE_JANELA, JSON.stringify(outras));
+    } catch (erro) { /* nada a fazer */ }
+  });
+})();
+
+/* --- arranque -------------------------------------------------------- */
+
+mostrarEcras();
+window.addEventListener("focus", () => { if (!ecraDistribuicao.classList.contains("oculto")) focar(); });
+</script>
+</body>
+</html>
