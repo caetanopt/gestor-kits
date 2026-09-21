@@ -27,6 +27,20 @@ as_user() {
     -c "set role authenticated; set request.jwt.claim.sub = '$uid'; $sql" 2>&1
 }
 
+# Sem esta verificação, o `check` por substring dá 30 asserções a PASSAR contra
+# mensagens de erro de ligação: uma suíte verde a testar um PostgreSQL que nem
+# sequer está a correr é pior do que uma suíte vermelha.
+exigir_ligacao() {
+  local sonda
+  sonda=$(psql -h "$PGH" -U postgres -d postgres -tAX -c 'select 1;' 2>&1)
+  if [[ "$sonda" != *"1"* ]]; then
+    printf '\033[31mNão foi possível ligar ao PostgreSQL em %s\033[0m\n' "$PGH" >&2
+    printf '  %s\n' "$sonda" >&2
+    printf '  Levante um servidor e volte a correr (ver README, secção Testes).\n' >&2
+    exit 2
+  fi
+}
+
 check() {
   local label="$1" expected="$2" actual="$3"
   if [[ "$actual" == *"$expected"* ]]; then
@@ -50,6 +64,8 @@ reset_db() {
 }
 
 echo
+exigir_ligacao
+
 echo "═══ Entrega: caminho feliz ═══"
 reset_db
 r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) -> 'totals' ->> 'delivered';")
@@ -154,8 +170,31 @@ q "insert into public.employees (employee_number, name, email, company_id)
      from generate_series(1, 12) i;" >/dev/null
 r=$(as_user "$OPER" "select jsonb_array_length(search_employees_for_delivery('Homonimo ') -> 'results');")
 check "os resultados são limitados a 10" "10" "$r"
-r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'total';")
-check "o total real é reportado" "12" "$r"
+# Migração 0018: com a lista cortada, o total exato deixa de sair. Dizer "12"
+# — ou "2254", no volume real — a quem só pode ver dez entregava o tamanho da
+# base a quem o RLS impede de a ler.
+r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'total';" | tail -1)
+check "o total exato NÃO sai quando a lista é cortada" "11" "$r"
+r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'truncated';" | tail -1)
+check "mas fica dito que foi cortada" "true" "$r"
+
+# Sem corte, o total continua a ser exato: é o que a interface mostra.
+# "Teste 5" e não "Teste 1": o padrão é %termo%, e "1" apanhava também o 10,
+# o 11 e o 12.
+r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo Teste 5 ') ->> 'total';" | tail -1)
+check "sem corte, o total é exato" "1" "$r"
+
+echo "    — a pesquisa não serve de porta às traseiras do RLS —"
+# Antes da 0018, um distribuidor que lê ZERO linhas de employees recebia dez
+# nomes por cada letra, e o total exato dizia-lhe quantos faltavam.
+r=$(as_user "$OPER" "select count(*) from public.employees;" | tail -1)
+check "o distribuidor não lê a tabela" "0" "$r"
+for termo in "a " "o " "e " "H " "Ho "; do
+  r=$(as_user "$OPER" "select jsonb_array_length(search_employees_for_delivery('$termo') -> 'results');" | tail -1)
+  check "\"$termo\" já não devolve nomes" "0" "$r"
+done
+r=$(as_user "$OPER" "select search_employees_for_delivery('a ') ->> 'aguarda';" | tail -1)
+check "e diz que falta escrever" "true" "$r"
 r=$(as_user "$OPER" "select search_employees_for_delivery('Homonimo ') ->> 'truncated';")
 check "e assinala que há mais" "true" "$r"
 

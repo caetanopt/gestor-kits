@@ -83,3 +83,24 @@ describe("correspondenciaUnicaPorEmail", () => {
     ).toBeNull();
   });
 });
+
+describe("o espaço sozinho não abre a pesquisa", () => {
+  it("uma letra e um espaço já não sugere", () => {
+    // Era assim que se percorria a base toda sem acesso à tabela: "a " devolvia
+    // dez nomes, e variando a letra chegava-se a toda a gente.
+    expect(deveSugerir("a ")).toBe(false);
+    expect(deveSugerir("o ")).toBe(false);
+    expect(deveSugerir("ab ")).toBe(false);
+  });
+
+  it("uma pesquisa de balcão a sério continua a sugerir", () => {
+    expect(deveSugerir("Ana ")).toBe(true);
+    expect(deveSugerir("Miguel ")).toBe(true);
+    expect(deveSugerir("Zé S")).toBe(true);
+    expect(deveSugerir("Daniela Espanhol")).toBe(true);
+  });
+
+  it("e o email continua a valer por si, seja qual for o tamanho", () => {
+    expect(deveSugerir("a@b.pt")).toBe(true);
+  });
+});

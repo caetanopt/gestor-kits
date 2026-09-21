@@ -208,3 +208,43 @@ describe("analyseRows", () => {
     expect(result.issues[0]?.message).toContain("inválido");
   });
 });
+
+describe("duplicados dentro do ficheiro", () => {
+  const EMPRESAS = [
+    { id: "3f2504e0-4f89-41d3-9a0c-0305e82c3302", name: "Empresa A", code: "EA" },
+  ];
+
+  it("usa a mesma chave que a base de dados, e não uma mais agressiva", () => {
+    // `upper(btrim())` é o que a coluna gerada `employee_number_key` calcula.
+    // Com uma normalização que retire pontuação, "0012-3" e "00123" colidem e
+    // a segunda pessoa é descartada — para a base de dados são duas pessoas.
+    const resultado = analyseRows(
+      [
+        ["numero", "nome", "empresa"],
+        ["0012-3", "Pessoa Um", "EA"],
+        ["00123", "Pessoa Dois", "EA"],
+      ],
+      EMPRESAS,
+    );
+
+    expect(resultado.candidates.map((c) => c.employeeNumber)).toEqual([
+      "0012-3",
+      "00123",
+    ]);
+    expect(resultado.duplicatesInFile).toHaveLength(0);
+  });
+
+  it("mas continua a apanhar o repetido a sério, com maiúsculas e espaços", () => {
+    const resultado = analyseRows(
+      [
+        ["numero", "nome", "empresa"],
+        ["abc1", "Primeiro", "EA"],
+        ["  ABC1  ", "Segundo", "EA"],
+      ],
+      EMPRESAS,
+    );
+
+    expect(resultado.candidates).toHaveLength(1);
+    expect(resultado.duplicatesInFile).toHaveLength(1);
+  });
+});

@@ -606,8 +606,12 @@ function MatchList({
   return (
     <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
       <p className="text-ink-700 border-ink-100 border-b px-5 py-3 text-sm">
-        {search.total} {search.total === 1 ? "resultado" : "resultados"}
-        {search.truncated && " · a mostrar os primeiros 10; refine a pesquisa"}
+        {/* Cortada a lista, o servidor deixa de mandar o total exato (migração
+            0018): dizer "2254 resultados" a quem só pode ver dez entregava o
+            tamanho da base a quem não tem acesso a ela. */}
+        {search.truncated
+          ? "Mais de 10 resultados · escreva mais para refinar"
+          : `${search.total} ${search.total === 1 ? "resultado" : "resultados"}`}
       </p>
 
       <ul>

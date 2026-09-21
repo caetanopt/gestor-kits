@@ -241,6 +241,10 @@
     <div id="resultado" aria-live="polite"></div>
 
     <p class="rodape">
+      <!-- Recarregar mantém as entregas: as chaves são os números, por isso
+           quem já recebeu continua marcado. Sem este botão, o único caminho
+           para corrigir a lista era "Recomeçar do zero", que apaga tudo. -->
+      <button type="button" class="secundario" id="btn-recarregar">Substituir a lista</button>
       <button type="button" class="secundario" id="btn-recomecar">Recomeçar do zero</button>
     </p>
   </section>
@@ -292,8 +296,16 @@ function ler() {
     dados.entregas = dados.entregas || {};
     return dados;
   } catch (erro) {
-    alarmar("Os dados gravados estão ilegíveis (" + erro.message + "). Não apague nada e exporte já o CSV.");
-    return estadoVazio();
+    // NUNCA devolver um estado vazio aqui: todas as escritas são
+    // `gravar(ler())`, por isso a operação seguinte gravaria o vazio por cima
+    // dos dados que ainda estão no armazenamento — perdia-se o dia a tentar
+    // recuperá-lo. O estado devolvido é marcado, e `gravar` recusa-se a
+    // escrever sobre ele.
+    alarmar("Os dados gravados estão ilegíveis (" + erro.message + "). Não apague nada, não feche a janela, e chame quem montou isto.");
+    const bloqueado = estadoVazio();
+    bloqueado.ilegivel = true;
+    bloqueado.bruto = bruto;
+    return bloqueado;
   }
 }
 
@@ -305,6 +317,13 @@ function ler() {
  * saber no momento, não no fim.
  */
 function gravar(estado) {
+  // Trava de segurança: se o que está gravado não se conseguiu ler, escrever
+  // por cima destrói a única cópia que resta.
+  if (estado && estado.ilegivel) {
+    alarmar("A gravação foi travada para não destruir os dados que lá estão.");
+    return false;
+  }
+
   const texto = JSON.stringify(estado);
   try {
     localStorage.setItem(CHAVE, texto);
@@ -384,24 +403,49 @@ function contarEntregues(estado) {
    Leitura do CSV
    =================================================================== */
 
-/** Divide uma linha de CSV respeitando aspas. */
-function dividirLinha(linha, separador) {
-  const celulas = [];
+/**
+ * Divide o CSV inteiro em linhas de células, de uma só passagem.
+ *
+ * Tem de ser sobre o texto todo e não linha a linha: um campo entre aspas
+ * pode conter uma quebra de linha — "Rua das Flores, 3⏎Lisboa" é uma célula
+ * só — e partir o texto pelos \n antes de tratar as aspas desalinha todas as
+ * colunas a partir daí. É a mesma regra do leitor de CSV da aplicação
+ * principal.
+ */
+function dividirCsv(texto, separador) {
+  const linhas = [];
+  let celulas = [];
   let atual = "";
   let dentroDeAspas = false;
-  for (let i = 0; i < linha.length; i += 1) {
-    const c = linha[i];
+
+  for (let i = 0; i < texto.length; i += 1) {
+    const c = texto[i];
+
     if (dentroDeAspas) {
       if (c === '"') {
-        if (linha[i + 1] === '"') { atual += '"'; i += 1; }
+        if (texto[i + 1] === '"') { atual += '"'; i += 1; }
         else dentroDeAspas = false;
       } else atual += c;
-    } else if (c === '"') dentroDeAspas = true;
-    else if (c === separador) { celulas.push(atual); atual = ""; }
-    else atual += c;
+      continue;
+    }
+
+    if (c === '"') { dentroDeAspas = true; continue; }
+    if (c === separador) { celulas.push(atual); atual = ""; continue; }
+    if (c === "\r") continue;
+    if (c === "\n") {
+      celulas.push(atual);
+      linhas.push(celulas.map((x) => x.trim()));
+      celulas = [];
+      atual = "";
+      continue;
+    }
+    atual += c;
   }
+
   celulas.push(atual);
-  return celulas.map((c) => c.trim());
+  linhas.push(celulas.map((x) => x.trim()));
+
+  return linhas.filter((l) => l.some((celula) => celula !== ""));
 }
 
 /** Descobre o separador pela primeira linha: ; , ou tabulação. */
@@ -440,12 +484,13 @@ function mapearCabecalho(celulas) {
 
 /** Lê o CSV. Devolve { colaboradores, problemas } ou lança com uma razão clara. */
 function lerCsv(texto) {
-  const limpo = texto.replace(/^﻿/, "");
-  const linhas = limpo.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+  const primeiraLinha = texto.split(/\r\n|\n|\r/)[0] || "";
+  const separador = descobrirSeparador(primeiraLinha);
+
+  const linhas = dividirCsv(texto.replace(/^\ufeff/, ""), separador);
   if (linhas.length < 2) throw new Error("O ficheiro não tem linhas de dados.");
 
-  const separador = descobrirSeparador(linhas[0]);
-  const mapa = mapearCabecalho(dividirLinha(linhas[0], separador));
+  const mapa = mapearCabecalho(linhas[0]);
 
   const emFalta = [];
   if (mapa.numero === undefined) emFalta.push("número");
@@ -454,7 +499,7 @@ function lerCsv(texto) {
   if (emFalta.length) {
     throw new Error(
       "Não encontrei a coluna " + emFalta.join(", nem a coluna ") +
-      ". O cabeçalho lido foi: " + linhas[0].slice(0, 120)
+      ". O cabeçalho lido foi: " + linhas[0].join(" | ").slice(0, 120)
     );
   }
 
@@ -463,7 +508,7 @@ function lerCsv(texto) {
   const vistos = Object.create(null);
 
   for (let i = 1; i < linhas.length; i += 1) {
-    const celulas = dividirLinha(linhas[i], separador);
+    const celulas = linhas[i];
     const pegar = (indice) => (indice === undefined ? "" : (celulas[indice] || "").trim());
 
     const numero = pegar(mapa.numero);
@@ -912,6 +957,18 @@ function trocarModo(novo) {
 }
 $("aba-numero").addEventListener("click", () => trocarModo("numero"));
 $("aba-nome").addEventListener("click", () => trocarModo("nome"));
+
+$("btn-recarregar").addEventListener("click", () => {
+  const entregues = contarEntregues(ler());
+  if (!window.confirm(
+    "Substituir a lista de colaboradores por outro ficheiro?\n\n" +
+    "As " + entregues + " entregas já registadas são MANTIDAS: quem recebeu continua marcado."
+  )) return;
+  ecraLista.classList.remove("oculto");
+  ecraDistribuicao.classList.add("oculto");
+  $("ficheiro").value = "";
+  $("ficheiro").focus();
+});
 
 $("btn-recomecar").addEventListener("click", () => {
   const estado = ler();

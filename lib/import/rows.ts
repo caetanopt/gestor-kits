@@ -179,7 +179,14 @@ export function analyseRows(rows: string[][], companies: CompanyRef[]): ImportAn
     }
 
     // Duplicados dentro do próprio ficheiro.
-    const key = normaliseKey(number.data);
+    //
+    // A chave é a MESMA que a base de dados usa — `upper(btrim())` — e não a
+    // normalização agressiva de `normaliseKey`, que serve para cabeçalhos e
+    // nomes de empresa. `normaliseKey` retira pontuação: "0012-3" e "00123"
+    // davam a mesma chave, e a segunda pessoa era descartada como repetida
+    // quando para a base de dados é outra pessoa. Num ficheiro de milhares,
+    // ficava alguém de fora sem ninguém dar por isso.
+    const key = number.data.trim().toUpperCase();
     const firstSeenAt = seen.get(key);
     if (firstSeenAt !== undefined) {
       duplicatesInFile.push({

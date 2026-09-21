@@ -113,7 +113,11 @@ export const searchTermSchema = z
  * diferença entre estar a escrever e ter escrito.
  */
 export function deveSugerir(termo: string): boolean {
-  if (/\S\s/.test(termo)) return true;
+  // Espelha `public.search_employees_for_delivery` desde a migração 0018: o
+  // espaço sozinho não chega, são precisos 3 caracteres. "a " tinha espaço e
+  // devolvia dez nomes — era por ali que se conseguia percorrer a base toda
+  // sem ter acesso à tabela.
+  if (/\S\s/.test(termo) && termo.trim().length >= 3) return true;
   return pareceEmail(termo);
 }
 

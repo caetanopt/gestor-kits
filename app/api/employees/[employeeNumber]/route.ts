@@ -18,8 +18,11 @@ export async function GET(
   try {
     await requireApiSession();
 
+    // `context.params` já vem descodificado pelo Next.js. Descodificar outra
+    // vez rebentava com um número que contivesse "%": "50%" dava um
+    // URIError, apanhado como erro interno, em vez da mensagem de validação.
     const { employeeNumber } = await context.params;
-    const parsed = employeeNumberSchema.safeParse(decodeURIComponent(employeeNumber));
+    const parsed = employeeNumberSchema.safeParse(employeeNumber);
     if (!parsed.success) {
       throw new AppError("VALIDATION_ERROR", {
         details: parsed.error.issues.map((issue) => issue.message),

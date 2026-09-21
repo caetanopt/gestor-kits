@@ -15,6 +15,17 @@ fail=0
 
 q() { psql -h "$PGH" -U postgres -d "$DB" -tAX -c "$1" 2>&1; }
 
+# Ver a nota em run-tests.sh: uma suíte verde contra um servidor parado engana.
+exigir_ligacao() {
+  local sonda
+  sonda=$(psql -h "$PGH" -U postgres -d postgres -tAX -c 'select 1;' 2>&1)
+  if [[ "$sonda" != *"1"* ]]; then
+    printf '\033[31mNão foi possível ligar ao PostgreSQL em %s\033[0m\n' "$PGH" >&2
+    printf '  %s\n' "$sonda" >&2
+    exit 2
+  fi
+}
+
 check() {
   local label="$1" expected="$2" actual="$3"
   if [[ "$actual" == "$expected" ]]; then
@@ -73,6 +84,8 @@ storm() {
 # processos psql verdadeiramente em paralelo.
 
 echo
+exigir_ligacao
+
 echo "═══ Corrida pelo MESMO colaborador ═══"
 echo "    $CONC operadores em simultâneo sobre o colaborador 1"
 setup 1

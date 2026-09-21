@@ -83,6 +83,16 @@ select 'Contas sem nome',
   from public.profiles where btrim(full_name) = ''
 
 union all
+-- Migração 0018: o espaço sozinho deixou de abrir a pesquisa por nome.
+select 'Pesquisa sem enumeração (migração 0018)',
+       case when count(*) = 1 then 'aplicada' else 'FALTA APLICAR 0018' end,
+       case when count(*) = 1 then '✓' else '✗ DISTRIBUIDOR ENUMERA COLABORADORES' end
+  from pg_proc p
+ where p.proname = 'search_employees_for_delivery'
+   and p.pronamespace = 'public'::regnamespace
+   and p.prosrc like '%length(v_termo) >= 3%'
+
+union all
 select 'Colaboradores sem email',
        count(*) || ' de ' || (select count(*) from public.employees),
        '✓ (o email é opcional)'

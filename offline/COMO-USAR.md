@@ -19,7 +19,7 @@ Um ficheiro só, `distribuicao-offline.html`. Duplo clique, abre no browser.
 As entregas são guardadas num índice pelo número do colaborador, normalizado
 sem espaços e em maiúsculas — a mesma regra da base de dados. Duas entregas ao
 mesmo colaborador **não são recusadas por uma verificação: são impossíveis de
-representar**. `9787`, ` 9787 ` e `9787 ` são a mesma pessoa.
+representar**. `9787`, `9787` e `9787 ` são a mesma pessoa.
 
 Se tentar entregar a quem já recebeu, aparece um aviso laranja com a data e a
 hora da primeira entrega, e o botão de entregar não existe.
@@ -31,7 +31,7 @@ volta a ficar por entregar.
 
 Pesquise pelo número, nome ou email. Se não existir, aparece o formulário **Não
 está na lista**, já preenchido com o que escreveu. Escolha a empresa (ou crie
-uma nova) e clique em *Acrescentar e abrir* — o cartão abre pronto a entregar.
+uma nova) e clique em _Acrescentar e abrir_ — o cartão abre pronto a entregar.
 
 Um número que já exista é recusado, com o nome de quem o tem.
 
