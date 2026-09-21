@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { MAX_IMPORT_BYTES, MAX_IMPORT_MB } from "@/lib/import/limites";
 import type { ImportReport } from "@/server/use-cases/import-employees";
 
 type ApiEnvelope =
@@ -24,6 +25,17 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
       return;
     }
 
+    // Recusado aqui, antes de sair do browser: acima de 4,5 MB o pedido morre
+    // na plataforma com um 413 que não é o nosso JSON, e a mensagem que
+    // sobrava não dizia nada de útil.
+    if (file.size > MAX_IMPORT_BYTES) {
+      setError(
+        `O ficheiro tem ${(file.size / 1024 / 1024).toFixed(1)} MB e o limite é ${MAX_IMPORT_MB} MB. ` +
+          `Guarde-o como CSV, que é muito mais pequeno do que um Excel, ou divida-o em partes.`,
+      );
+      return;
+    }
+
     setBusy(true);
     setError(null);
 
@@ -31,14 +43,31 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
     body.append("file", file);
     body.append("commit", String(commit));
 
+    // Rede e servidor são falhas diferentes e precisam de respostas
+    // diferentes. Juntá-las numa só mensagem mandava sempre verificar a rede,
+    // mesmo quando o servidor tinha respondido — com um 413 por ficheiro
+    // grande demais, por exemplo, que é uma página de erro e não o nosso
+    // envelope JSON.
     const response = await fetch("/api/import", { method: "POST", body }).catch(
       () => null,
     );
-    const result = (await response?.json().catch(() => null)) as ApiEnvelope | null;
+
+    if (!response) {
+      setBusy(false);
+      setError("Sem ligação ao servidor. Verifique a rede e tente novamente.");
+      return;
+    }
+
+    const result = (await response.json().catch(() => null)) as ApiEnvelope | null;
     setBusy(false);
 
     if (!result) {
-      setError("Sem ligação ao servidor. Tente novamente.");
+      setError(
+        response.status === 413
+          ? "O ficheiro é grande demais para ser enviado. Divida-o em partes ou guarde-o como CSV."
+          : `O servidor respondeu de forma inesperada (${response.status}). Se voltar a acontecer, registe este número.`,
+      );
+      setReport(null);
       return;
     }
     if (!result.success) {

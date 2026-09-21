@@ -2,8 +2,8 @@ import "server-only";
 import { readSheet } from "read-excel-file/node";
 import { parseCsv } from "./csv";
 
-export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
-export const MAX_IMPORT_ROWS = 20_000;
+// Os limites vivem em ./limites, que a interface também importa.
+export { MAX_IMPORT_BYTES, MAX_IMPORT_MB, MAX_IMPORT_ROWS } from "./limites";
 
 // "PK\x03\x04": um .xlsx é um arquivo ZIP.
 const XLSX_SIGNATURE = [0x50, 0x4b, 0x03, 0x04];
