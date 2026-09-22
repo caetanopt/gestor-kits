@@ -204,12 +204,16 @@ check "traz o estado da entrega" "true" "$r"
 r=$(as_user "$OPER" "select search_employees_for_delivery('Ana ') -> 'results' -> 0 ->> 'companyName';")
 check "traz a empresa" "Empresa A" "$r"
 
-echo "═══ Secção 20: anulação administrativa ═══"
+echo "═══ Secção 20: anulação de entrega ═══"
 DID=$(q "select id from public.deliveries where employee_id = '00000000-0000-0000-0000-0000000000e1';")
-r=$(as_user "$OPER" "select reverse_delivery('$DID', 'engano');")
-check "operador NÃO pode anular" "FORBIDDEN" "$r"
-r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'engano') -> 'totals' ->> 'delivered';")
-check "administrador anula e o total desce" "3" "$r"
+# Migração 0019: o distribuidor passou a poder anular. Era `FORBIDDEN` até aí,
+# e o resultado disso era o engano ficar por corrigir durante o evento.
+r=$(as_user "$OPER" "select reverse_delivery('$DID', 'engano') -> 'totals' ->> 'delivered';" | tail -1)
+check "o distribuidor anula e o total desce" "3" "$r"
+r=$(q "select p.role from public.deliveries d join public.profiles p on p.id = d.reversed_by where d.id = '$DID';")
+check "e fica registado que foi ele" "distributor" "$r"
+r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'engano');")
+check "o administrador também continua a poder (já estava anulada)" "ALREADY_REVERSED" "$r"
 r=$(as_user "$ADMIN" "select reverse_delivery('$DID', 'outra vez');")
 check "anular duas vezes é recusado" "ALREADY_REVERSED" "$r"
 r=$(q "select count(*) from public.delivery_logs where action = 'DELIVERY_REVERSED';")
@@ -459,6 +463,36 @@ r=$(as_user "$OPER" "select create_employee_for_delivery('9791', 'Mal Escrito', 
 check "email mal escrito é recusado" "VALIDATION_ERROR" "$r"
 r=$(q "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'create_employee_for_delivery';")
 check "só existe uma versão da função, sem sobrecargas" "1" "$r"
+
+echo
+echo "═══ Anulação pelo distribuidor (migração 0019) ═══"
+# Quem dá pelo engano é quem está ao balcão, e não um administrador que pode
+# nem estar no evento.
+reset_db
+as_user "$OPER" "select deliver_kit('12345', gen_random_uuid());" >/dev/null
+DID=$(q "select id from public.deliveries where reversed_at is null limit 1;")
+r=$(as_user "$OPER" "select reverse_delivery('$DID', 'engano do balcão') ->> 'deliveryId';" | tail -1)
+check "o distribuidor anula uma entrega" "$DID" "$r"
+r=$(q "select reversed_at is not null from public.deliveries where id = '$DID';")
+check "a entrega fica marcada como anulada" "t" "$r"
+r=$(q "select p.role from public.deliveries d join public.profiles p on p.id = d.reversed_by where d.id = '$DID';")
+check "e fica registado QUEM anulou" "distributor" "$r"
+r=$(q "select notes from public.delivery_logs where action = 'DELIVERY_REVERSED' and delivery_id = '$DID';")
+check "com o motivo na auditoria" "engano do balcão" "$r"
+r=$(as_user "$OPER" "select reverse_delivery('$DID', 'outra vez');")
+check "anular duas vezes continua a ser recusado" "ALREADY_REVERSED" "$r"
+r=$(as_user "$OPER" "select deliver_kit('12345', gen_random_uuid()) ->> 'repeated';" | tail -1)
+check "e o kit pode voltar a ser entregue" "false" "$r"
+
+# O que a 0019 NÃO abriu.
+r=$(as_user "$OPER" "select reverse_delivery('00000000-0000-0000-0000-0000000000ff');")
+check "entrega inexistente continua a dar erro" "DELIVERY_NOT_FOUND" "$r"
+r=$(as_user "$OPER" "select count(*) from public.employees;" | tail -1)
+check "anular não lhe abre a tabela de colaboradores" "0" "$r"
+r=$(as_user "$OPER" "select count(*) from public.delivery_logs;" | tail -1)
+check "nem o histórico de auditoria" "0" "$r"
+r=$(as_user "$OPER" "update public.deliveries set reversed_at = null;")
+check "nem escrever diretamente nas entregas" "denied for table deliveries" "$r"
 
 echo
 echo "═══ Números do dashboard ═══"

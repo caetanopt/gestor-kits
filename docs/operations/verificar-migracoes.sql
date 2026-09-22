@@ -93,6 +93,16 @@ select 'Pesquisa sem enumeração (migração 0018)',
    and p.prosrc like '%length(v_termo) >= 3%'
 
 union all
+-- Migração 0019: a anulação deixou de ser exclusiva dos administradores.
+select 'Anulação pelo distribuidor (migração 0019)',
+       case when count(*) = 1 then 'aplicada' else 'FALTA APLICAR 0019' end,
+       case when count(*) = 1 then '✓' else '✗ só administradores anulam' end
+  from pg_proc p
+ where p.proname = 'reverse_delivery'
+   and p.pronamespace = 'public'::regnamespace
+   and p.prosrc not like '%is_admin()%'
+
+union all
 select 'Colaboradores sem email',
        count(*) || ' de ' || (select count(*) from public.employees),
        '✓ (o email é opcional)'

@@ -308,6 +308,35 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
     [focusSearch],
   );
 
+  /**
+   * Anula a entrega visível e reabre o cartão.
+   *
+   * A seguir à anulação pesquisa-se o mesmo número outra vez, em vez de se
+   * corrigir o cartão em memória: o estado que interessa é o do servidor, e
+   * quem anulou por engano quer ver, preto no branco, que o kit voltou a
+   * estar por entregar.
+   */
+  const anularEntrega = useCallback(
+    async (lookup: EmployeeLookup, deliveryId: string) => {
+      setScreen({ kind: "busy", label: "A anular…" });
+
+      const result = await callApi<unknown>(`/api/deliveries/${deliveryId}/reverse`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reason: "Anulada no balcão" }),
+      });
+
+      if (!result.success) {
+        setScreen({ kind: "error", message: result.message });
+        focusSearch();
+        return;
+      }
+
+      await searchByNumber(lookup.employee.employeeNumber);
+    },
+    [focusSearch, searchByNumber],
+  );
+
   const reset = useCallback(() => {
     setScreen({ kind: "idle" });
     setQuery("");
@@ -561,9 +590,11 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
 
         {screen.kind === "found" && (
           <FoundCard
+            key={screen.lookup.employee.id}
             lookup={screen.lookup}
             canDeliver={canDeliver}
             onDeliver={() => void deliver(screen.lookup, screen.idempotencyKey)}
+            onAnular={(deliveryId) => void anularEntrega(screen.lookup, deliveryId)}
           />
         )}
 
@@ -796,13 +827,18 @@ function FoundCard({
   lookup,
   canDeliver,
   onDeliver,
+  onAnular,
 }: {
   lookup: EmployeeLookup;
   canDeliver: boolean;
   onDeliver: () => void;
+  onAnular: (deliveryId: string) => void;
 }) {
   const { employee, company, totals, delivery } = lookup;
   const alreadyDelivered = delivery !== null;
+  // A anulação é destrutiva e acontece a dois toques de distância do botão
+  // de entregar: pede confirmação no próprio cartão, com o nome à vista.
+  const [aConfirmar, setAConfirmar] = useState(false);
 
   return (
     <div className="ring-ink-200 space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
@@ -853,6 +889,40 @@ function FoundCard({
             Entregue em {formatDateTime(delivery.deliveredAt)} por{" "}
             {delivery.deliveredBy.name}.
           </p>
+
+          {aConfirmar ? (
+            <div className="mt-3 space-y-2">
+              <p className="font-semibold">
+                Anular a entrega a {employee.name}? O kit volta a ficar por entregar.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => onAnular(delivery.id)}
+                >
+                  Confirmar anulação
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setAConfirmar(false)}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setAConfirmar(true)}
+              >
+                Entreguei por engano — anular
+              </Button>
+            </div>
+          )}
         </Alert>
       )}
 

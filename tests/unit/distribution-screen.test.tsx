@@ -594,3 +594,73 @@ describe("pesquisa por nome ou email", () => {
     });
   });
 });
+
+describe("anular a entrega ao balcão", () => {
+  it("pede confirmação antes de anular", async () => {
+    // A anulação fica a dois toques do botão de entregar: um clique só seria
+    // demasiado fácil de dar sem querer, com o cartão da pessoa à frente.
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: DELIVERED }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.keyboard("12346{Enter}");
+    await screen.findByText("Ana Costa");
+
+    await user.click(
+      screen.getByRole("button", { name: "Entreguei por engano — anular" }),
+    );
+    expect(screen.getByText(/Anular a entrega a Ana Costa/)).toBeInTheDocument();
+    expect(deliveries()).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByText(/Anular a entrega a Ana Costa/)).not.toBeInTheDocument();
+  });
+
+  it("confirmada, chama a rota de anulação e relê o estado do servidor", async () => {
+    const user = userEvent.setup();
+    let jaAnulou = false;
+    mockFetch((url) => {
+      if (url.includes("/reverse")) {
+        jaAnulou = true;
+        return { success: true, data: {} };
+      }
+      // Depois de anulada, o servidor passa a dizer que não há entrega ativa.
+      return {
+        success: true,
+        data: jaAnulou ? { ...DELIVERED, delivery: null } : DELIVERED,
+      };
+    });
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.keyboard("12346{Enter}");
+    await screen.findByText("Ana Costa");
+
+    await user.click(
+      screen.getByRole("button", { name: "Entreguei por engano — anular" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Confirmar anulação" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /entregar kit/i })).toBeEnabled(),
+    );
+
+    const anulacoes = calls.filter((c) => c.url.includes("/reverse"));
+    expect(anulacoes).toHaveLength(1);
+    expect(anulacoes[0]?.method).toBe("POST");
+    // O cartão volta a mostrar que o kit está por entregar.
+    expect(screen.queryByText(/já recebeu um kit/)).not.toBeInTheDocument();
+  });
+
+  it("quem ainda não recebeu kit não tem o que anular", async () => {
+    const user = userEvent.setup();
+    mockFetch(() => ({ success: true, data: LOOKUP }));
+
+    render(<DistributionScreen companies={EMPRESAS} />);
+    await user.keyboard("12345{Enter}");
+    await screen.findByText("João Silva");
+
+    expect(
+      screen.queryByRole("button", { name: "Entreguei por engano — anular" }),
+    ).not.toBeInTheDocument();
+  });
+});

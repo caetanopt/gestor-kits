@@ -235,9 +235,15 @@ cartão da pesquisa por número, e o `Enter` seguinte entrega o kit.
 | Listar e editar colaboradores        |      ✗       |       ✓       |
 | Criar e editar empresas e limites    |      ✗       |       ✓       |
 | Importar colaboradores               |      ✗       |       ✓       |
-| Anular entregas                      |      ✗       |       ✓       |
+| Anular entregas                      |      ✓       |       ✓       |
 | Consultar histórico                  |      ✗       |       ✓       |
 | Gerir utilizadores                   |      ✗       |       ✓       |
+
+O distribuidor anula uma entrega a partir do próprio cartão do colaborador,
+no ecrã de distribuição, com confirmação. Quem dá pelo engano é quem está ao
+balcão, e obrigar a chamar um administrador era garantir que o engano ficava
+por corrigir durante o evento. A anulação é suave e fica registada com o nome
+de quem a fez — a defesa aqui é o rasto, não a permissão.
 
 Os distribuidores acedem a `/dashboard` e `/distribuicao`. Tudo o que está em
 `/admin` exige perfil de administrador — a fronteira de permissões coincide
