@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireAdmin } from "@/lib/auth/dal";
 import { listCompanyTotals } from "@/server/use-cases/companies";
-import { listEmployees } from "@/server/use-cases/employees";
+import { countManualEmployees, listEmployees } from "@/server/use-cases/employees";
 import { employeeFilterSchema } from "@/lib/validation/employee";
 import { EmployeeManager } from "@/components/admin/employee-manager";
 
@@ -35,9 +35,10 @@ export default async function ColaboradoresPage(props: {
   const pagina = Number(single("pagina") ?? "0");
   const page = Number.isInteger(pagina) && pagina >= 0 ? pagina : 0;
 
-  const [{ rows, hasMore }, companies] = await Promise.all([
+  const [{ rows, hasMore }, companies, manuais] = await Promise.all([
     listEmployees(filter, page),
     listCompanyTotals(),
+    countManualEmployees(),
   ]);
 
   const paginaHref = (destino: number) => {
@@ -64,11 +65,42 @@ export default async function ColaboradoresPage(props: {
         </div>
         <ProgressLink
           href="/admin/importar"
-          className="ring-ink-300 text-ink-900 hover:bg-ink-50 inline-flex min-h-11 items-center rounded bg-white px-4 py-2.5 text-sm font-semibold ring-1"
+          className="ring-azul-900 text-azul-900 hover:bg-dourado-50 inline-flex min-h-11 items-center rounded bg-white px-4 py-2.5 text-sm font-semibold ring-1"
         >
           Importar ficheiro
         </ProgressLink>
       </div>
+
+      {/* Exportação dos acrescentados à mão. A página já é só para
+          administradores (requireAdmin acima), tal como a rota. */}
+      <section
+        aria-labelledby="manuais-titulo"
+        className="ring-dourado-200 flex flex-wrap items-center justify-between gap-4 rounded bg-white p-4 ring-1 sm:p-5"
+      >
+        <div className="min-w-0">
+          <h2
+            id="manuais-titulo"
+            className="text-ink-900 font-display text-xl font-normal"
+          >
+            Acrescentados manualmente
+          </h2>
+          <p className="text-ink-700 mt-1 text-sm">
+            {manuais === 0
+              ? "Ainda não foi acrescentado nenhum colaborador à mão."
+              : `${manuais} ${manuais === 1 ? "colaborador acrescentado" : "colaboradores acrescentados"} no balcão de distribuição ou nesta página. Não inclui os importados de ficheiro.`}
+          </p>
+        </div>
+        {manuais > 0 && (
+          // <a> e não ProgressLink: é um ficheiro a descarregar, não uma
+          // navegação, e a barra de progresso do topo nunca terminaria.
+          <a
+            href="/api/colaboradores/exportar/manuais"
+            className="text-azul-900 ring-azul-900 hover:bg-dourado-50 active:bg-dourado-100 inline-flex min-h-11 shrink-0 touch-manipulation items-center rounded bg-white px-4 py-2.5 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+          >
+            Exportar (CSV)
+          </a>
+        )}
+      </section>
 
       <form
         method="get"

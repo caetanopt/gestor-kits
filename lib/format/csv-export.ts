@@ -1,4 +1,5 @@
 import type { ExportedEmployee } from "@/lib/validation/delivery";
+import type { ColaboradorManual } from "@/lib/employees/manuais";
 
 /**
  * Geração de CSV para abrir no Excel.
@@ -115,5 +116,51 @@ export function colaboradoresParaCsv(
       String(total - comKit),
     ]),
     ["Total", String(totalGeral), String(comKitGeral), String(totalGeral - comKitGeral)],
+  ]);
+}
+
+const ORIGENS: Record<ColaboradorManual["origem"], string> = {
+  distribuicao: "Balcão de distribuição",
+  colaboradores: "Página Colaboradores",
+};
+
+/**
+ * Documento dos colaboradores acrescentados à mão.
+ *
+ * Mesmas regras do documento geral (delimitador, BOM, fórmulas neutralizadas)
+ * e mais três colunas que só fazem sentido aqui: quando, por quem e onde a
+ * pessoa foi acrescentada. O total vai no fim, depois de uma linha em branco.
+ */
+export function colaboradoresManuaisParaCsv(
+  pessoas: readonly ColaboradorManual[],
+  formatarData: (iso: string) => string,
+): string {
+  return toCsv([
+    [
+      "N.º colaborador",
+      "Nome",
+      "Email",
+      "Empresa",
+      "Acrescentado em",
+      "Acrescentado por",
+      "Onde",
+      "Kit entregue",
+      "Data de entrega",
+      "Entregue por",
+    ],
+    ...pessoas.map((p) => [
+      p.employeeNumber,
+      p.name,
+      p.email ?? "",
+      p.companyName,
+      formatarData(p.createdAt),
+      p.createdByName ?? "",
+      ORIGENS[p.origem],
+      p.kitDelivered ? "Sim" : "Não",
+      p.deliveredAt ? formatarData(p.deliveredAt) : "",
+      p.deliveredByName ?? "",
+    ]),
+    [],
+    ["Total", String(pessoas.length)],
   ]);
 }

@@ -9,6 +9,12 @@ import {
   type EmployeeResult,
   type EmployeeRow,
 } from "@/lib/validation/employee";
+import {
+  combinarCriacoesManuais,
+  type ColaboradorManual,
+  type LinhaColaborador,
+  type PerfilAutor,
+} from "@/lib/employees/manuais";
 
 export const EMPLOYEE_PAGE_SIZE = 50;
 
@@ -94,4 +100,89 @@ export async function saveEmployee(
     throw new AppError("INTERNAL_ERROR");
   }
   return parsed.data;
+}
+
+/** Teto da exportação, igual ao da exportação geral. */
+const MANUAIS_MAX = 20_000;
+/**
+ * Identificadores por pedido. Cada um ocupa 37 caracteres no URL do
+ * PostgREST; 100 dão ~4 KB, bem abaixo dos limites de um pedido GET.
+ */
+const LOTE = 100;
+
+function emLotes<T>(itens: readonly T[]): T[][] {
+  const lotes: T[][] = [];
+  for (let i = 0; i < itens.length; i += LOTE) lotes.push(itens.slice(i, i + LOTE));
+  return lotes;
+}
+
+/**
+ * Quantos colaboradores foram acrescentados à mão (ver lib/employees/manuais).
+ *
+ * O histórico só é legível por administradores (RLS), e esta contagem
+ * herda essa regra: para outro perfil devolve zero, nunca a contagem real.
+ */
+export async function countManualEmployees(): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("delivery_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("action", "EMPLOYEE_CREATED")
+    .not("employee_id", "is", null);
+
+  if (error) throw mapPostgrestError(error);
+  return count ?? 0;
+}
+
+/**
+ * Colaboradores acrescentados à mão, com os dados atuais de cada um, quem
+ * os acrescentou, onde, e o estado do kit.
+ *
+ * Três leituras em vez de uma com junções: o histórico, as pessoas que
+ * interessam e os autores. Todas passam pelo RLS de quem pede — só um
+ * administrador lê o histórico e os colaboradores.
+ */
+export async function listManualEmployees(): Promise<ColaboradorManual[]> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: registos, error } = await supabase
+    .from("delivery_logs")
+    .select("employee_id, performed_by, performed_at, metadata")
+    .eq("action", "EMPLOYEE_CREATED")
+    .not("employee_id", "is", null)
+    .order("performed_at", { ascending: true })
+    .range(0, MANUAIS_MAX - 1);
+  if (error) throw mapPostgrestError(error);
+
+  const lista = registos ?? [];
+  const ids = [
+    ...new Set(lista.map((r) => r.employee_id).filter((v): v is string => !!v)),
+  ];
+  const autores = [
+    ...new Set(lista.map((r) => r.performed_by).filter((v): v is string => !!v)),
+  ];
+
+  const linhas: LinhaColaborador[] = [];
+  for (const lote of emLotes(ids)) {
+    const { data, error: erro } = await supabase
+      .from("employee_list")
+      .select(
+        "id, employee_number, name, email, company_name, kit_delivered, delivered_at, delivered_by_name",
+      )
+      .in("id", lote);
+    if (erro) throw mapPostgrestError(erro);
+    linhas.push(...(data ?? []));
+  }
+
+  const perfis: PerfilAutor[] = [];
+  for (const lote of emLotes(autores)) {
+    const { data, error: erro } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", lote);
+    if (erro) throw mapPostgrestError(erro);
+    perfis.push(...(data ?? []));
+  }
+
+  return combinarCriacoesManuais(lista, perfis, linhas);
 }
