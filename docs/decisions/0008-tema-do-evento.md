@@ -59,6 +59,16 @@ proposta 3.
 Só o ecrã de distribuição muda; as outras páginas mantêm os cartões
 arredondados.
 
+## Dashboard (sugestão C, "Contadores sobre o escuro")
+
+- Os quatro contadores deixam de ter cartão: ficam no fundo escuro, em Rubik
+  fina e grande, separados por um filete dourado. Kits entregues a dourado
+  (13,6:1), os outros a branco; rótulos em maiúsculas espaçadas (12,6:1).
+- A tabela fica num cartão como os da distribuição: cantos retos, filete
+  dourado, cabeçalho em dourado escuro, separadores dourados claros,
+  números em Rubik, barra de progresso dourada, CSV com contorno.
+- Rótulos e cálculos não mudam.
+
 Contrastes fixados em `tests/unit/contraste.test.ts`.
 
 ## Reverter

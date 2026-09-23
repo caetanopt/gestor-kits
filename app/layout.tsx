@@ -25,8 +25,9 @@ const montserrat = Montserrat({
  */
 const rubik = Rubik({
   subsets: ["latin"],
-  // 600 para o ENTREGAR KIT, que herda o peso dos restantes botões.
-  weight: ["400", "500", "600"],
+  // 300 para os contadores do Dashboard; 600 para o ENTREGAR KIT, que herda
+  // o peso dos restantes botões.
+  weight: ["300", "400", "500", "600"],
   variable: "--font-rubik",
   display: "swap",
 });

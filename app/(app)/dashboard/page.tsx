@@ -20,24 +20,22 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-ink-900 text-xl font-semibold">Dashboard</h1>
+      <h1 className="text-ink-900 font-display text-3xl font-normal">Dashboard</h1>
 
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Kits entregues" value={totals.delivered} tone="entregue" />
+      {/* Contadores pousados no fundo escuro, sem cartão, como no convite:
+          números grandes em Rubik fina, o de kits entregues a dourado. */}
+      <dl className="grid grid-cols-2 gap-y-6 py-1 sm:grid-cols-4">
+        <Stat label="Kits entregues" value={totals.delivered} destaque />
         {/* Quantos kits ainda faltam sair. É o número que diz se o evento
             está perto do fim, e sai dos mesmos totais por empresa — não
             custa uma consulta extra. */}
-        <Stat
-          label="Colaboradores sem kit"
-          value={totals.porEntregar}
-          tone="disponivel"
-        />
+        <Stat label="Colaboradores sem kit" value={totals.porEntregar} />
         <Stat label="Colaboradores" value={totals.employees} />
         <Stat label="Empresas" value={companies.length} />
       </dl>
 
       {companies.length === 0 ? (
-        <div className="ring-ink-200 rounded-2xl bg-white p-8 text-center ring-1">
+        <div className="ring-dourado-200 rounded bg-white p-8 text-center ring-1">
           <p className="text-ink-700 text-sm">Ainda não existem empresas.</p>
           <ProgressLink
             href="/admin/empresas"
@@ -47,12 +45,14 @@ export default async function DashboardPage() {
           </ProgressLink>
         </div>
       ) : (
-        <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
+        <div className="ring-dourado-200 overflow-hidden rounded bg-white ring-1">
           {/* A exportação é só para administradores: o ficheiro leva nomes e
               emails de toda a gente, e um distribuidor não tem de os poder
               descarregar em bloco. */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-            <p className="text-ink-700 font-medium">Distribuição por empresa</p>
+          <div className="border-dourado-100 flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
+            <h2 className="text-ink-900 font-display text-xl font-normal">
+              Distribuição por empresa
+            </h2>
             {user.role === "admin" && totals.employees > 0 && (
               <ExportLink href="/api/colaboradores/exportar">
                 Exportar lista (CSV)
@@ -66,7 +66,7 @@ export default async function DashboardPage() {
                 Kits entregues e colaboradores por empresa
               </caption>
               <thead>
-                <tr className="border-ink-200 text-ink-700 border-y text-left">
+                <tr className="border-dourado-100 text-dourado-700 border-b text-left text-xs tracking-[0.08em] uppercase">
                   <th scope="col" className="px-2 py-2 font-medium sm:px-4">
                     Empresa
                   </th>
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
                   return (
                     <tr
                       key={company.id}
-                      className="border-ink-100 border-b last:border-0"
+                      className="border-dourado-100 border-b last:border-0"
                     >
                       <td className="text-ink-900 px-2 py-2.5 font-medium sm:px-4">
                         {/* O código só interessa a quem prepara ficheiros de
@@ -103,20 +103,20 @@ export default async function DashboardPage() {
                           ruído. */}
                         {company.name}
                       </td>
-                      <td className="text-ink-900 px-2 py-2.5 text-right font-semibold tabular-nums sm:px-4">
+                      <td className="text-ink-900 font-display px-2 py-2.5 text-right text-base font-medium tabular-nums sm:px-4">
                         {company.delivered}
                       </td>
-                      <td className="hidden px-2 py-2.5 text-right tabular-nums sm:table-cell sm:px-4">
+                      <td className="text-ink-700 font-display hidden px-2 py-2.5 text-right text-base tabular-nums sm:table-cell sm:px-4">
                         {company.employeeCount}
                       </td>
                       <td className="px-2 py-2.5 text-right sm:px-4">
                         <div className="flex items-center justify-end gap-2">
                           <div
-                            className="bg-ink-200 h-1.5 w-16 overflow-hidden rounded-full"
+                            className="bg-dourado-100 h-1.5 w-16 overflow-hidden rounded-full"
                             aria-hidden="true"
                           >
                             <div
-                              className="bg-eco-500 h-full rounded-full"
+                              className="bg-dourado-500 h-full rounded-full"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
                           {company.employeeCount > 0 && (
                             <a
                               href={`/api/colaboradores/exportar?empresa=${company.id}`}
-                              className="text-ink-700 hover:text-ink-900 inline-flex min-h-11 min-w-11 items-center justify-end text-xs font-semibold underline"
+                              className="text-azul-900 ring-dourado-200 hover:bg-dourado-50 active:bg-dourado-100 inline-flex min-h-9 items-center rounded px-2.5 text-xs font-semibold ring-1 ring-inset"
                             >
                               CSV
                               {/* "CSV" sozinho, repetido em cada linha, não diz
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-ink-200 border-t font-semibold">
+                <tr className="border-dourado-200 font-display border-t text-base font-medium">
                   <th scope="row" className="px-2 py-2.5 text-left sm:px-4">
                     Total
                   </th>
@@ -180,34 +180,39 @@ function ExportLink({ href, children }: { href: string; children: React.ReactNod
   return (
     <a
       href={href}
-      className="text-ink-900 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 inline-flex min-h-11 touch-manipulation items-center rounded-lg bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
+      className="text-azul-900 ring-azul-900 hover:bg-dourado-50 active:bg-dourado-100 inline-flex min-h-11 touch-manipulation items-center rounded bg-white px-3 py-2 text-sm font-semibold ring-1 transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
     >
       {children}
     </a>
   );
 }
 
-/** Cores da barra de cada métrica, segundo os papéis de estado da marca. */
-type Tone = "disponivel" | "entregue" | "bloqueado";
-
-const BARRAS: Record<Tone, string> = {
-  disponivel: "bg-cyan-500",
-  entregue: "bg-eco-500",
-  bloqueado: "bg-laranja-500",
-};
-
-function Stat({ label, value, tone }: { label: string; value: number; tone?: Tone }) {
-  // A cor identifica a métrica através de uma barra, não do número: sobre
-  // branco, as cores secundárias da marca não têm contraste para texto.
-  const bar = tone ? BARRAS[tone] : "bg-ink-300";
-
+/**
+ * Um contador do topo, pousado diretamente no fundo escuro do evento.
+ *
+ * Sem cartão: um filete dourado à esquerda separa-os. O de kits entregues
+ * vai a dourado (13,6:1 sobre o fundo); os outros a branco. O rótulo usa o
+ * tom auxiliar do tema, que sobre o fundo escuro dá 12,6:1.
+ */
+function Stat({
+  label,
+  value,
+  destaque = false,
+}: {
+  label: string;
+  value: number;
+  destaque?: boolean;
+}) {
   return (
-    <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
-      <div aria-hidden="true" className={`h-1.5 ${bar}`} />
-      <div className="p-4">
-        <dd className="text-ink-900 text-3xl font-semibold tabular-nums">{value}</dd>
-        <dt className="text-ink-700 mt-1 text-xs">{label}</dt>
-      </div>
+    <div className="border-dourado-500/35 border-s px-4 sm:px-7">
+      <dd
+        className={`font-display text-4xl leading-none font-light tabular-nums sm:text-5xl ${
+          destaque ? "text-dourado-300" : "text-white"
+        }`}
+      >
+        {value}
+      </dd>
+      <dt className="text-ink-700 mt-2 text-xs tracking-[0.14em] uppercase">{label}</dt>
     </div>
   );
 }
