@@ -161,6 +161,16 @@ describe("a exportação dos acrescentados é só para administradores", () => {
     expect(rota).not.toContain("requireApiSession");
   });
 
+  it("no dashboard, a ligação só aparece a administradores", () => {
+    const dashboard = readFileSync(
+      resolve(process.cwd(), "app/(app)/dashboard/page.tsx"),
+      "utf8",
+    );
+    expect(dashboard).toMatch(
+      /user\.role === "admin" && manuais > 0 && \(\s*<ExportLink href="\/api\/colaboradores\/exportar\/manuais">/,
+    );
+  });
+
   it("a ligação vive numa página só de administradores", () => {
     expect(pagina).toContain("/api/colaboradores/exportar/manuais");
     expect(pagina).toContain("await requireAdmin()");

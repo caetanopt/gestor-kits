@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ProgressLink } from "@/components/ui/route-progress";
 import { requireUser } from "@/lib/auth/dal";
 import { listCompanyTotals } from "@/server/use-cases/companies";
+import { countManualEmployees } from "@/server/use-cases/employees";
 import { percent, somarTotais } from "@/lib/ui/totais";
 
 export const metadata: Metadata = { title: "Dashboard · Kits" };
@@ -14,7 +15,12 @@ export default async function DashboardPage() {
   // fronteira de permissões coincide com a estrutura do URL, e /admin pode
   // ser inteiramente administrativo.
   const user = await requireUser();
-  const companies = await listCompanyTotals();
+  // A contagem dos acrescentados à mão só interessa a quem pode exportar.
+  // Para um distribuidor nem se pede: o histórico é só de administradores.
+  const [companies, manuais] = await Promise.all([
+    listCompanyTotals(),
+    user.role === "admin" ? countManualEmployees() : Promise.resolve(0),
+  ]);
 
   const totals = somarTotais(companies);
 
@@ -53,11 +59,20 @@ export default async function DashboardPage() {
             <h2 className="text-ink-900 font-display text-xl font-normal">
               Distribuição por empresa
             </h2>
-            {user.role === "admin" && totals.employees > 0 && (
-              <ExportLink href="/api/colaboradores/exportar">
-                Exportar lista (CSV)
-              </ExportLink>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {/* Só os acrescentados no balcão ou na página Colaboradores,
+                  sem os importados (ver docs/decisions/0009). */}
+              {user.role === "admin" && manuais > 0 && (
+                <ExportLink href="/api/colaboradores/exportar/manuais">
+                  Acrescentados manualmente (CSV)
+                </ExportLink>
+              )}
+              {user.role === "admin" && totals.employees > 0 && (
+                <ExportLink href="/api/colaboradores/exportar">
+                  Exportar lista (CSV)
+                </ExportLink>
+              )}
+            </div>
           </div>
 
           <div className="relative overflow-x-auto">
