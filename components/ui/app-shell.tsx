@@ -93,8 +93,13 @@ export function AppShell({
         </div>
       )}
 
+      {/* O cabeçalho alinha com a moldura, não com a coluna do conteúdo: a
+          largura do conteúdo muda de página para página (800 px na
+          Distribuição, mais nas tabelas), a moldura é sempre a mesma. Os
+          40 px de margem deixam o menu e o Sair 24 px para dentro do filete,
+          iguais dos dois lados. */}
       <header className="relative px-4 pt-3 sm:px-10 sm:pt-1">
-        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-3">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-3">
           {/* O fundo por trás do logótipo corta o filete de cima da moldura,
               como numa moldura de certificado. */}
           <div className="bg-evento-fundo col-start-2 row-start-1 px-3 sm:px-5">
@@ -130,7 +135,7 @@ export function AppShell({
                 voltaria a iniciar sessão no pedido seguinte. */}
             {!isAuthBypassEnabled() && (
               <form action={signOut} className="shrink-0">
-                <Button type="submit" variant="sobreEscuro">
+                <Button type="submit" variant="sobreEscuro" size="sm">
                   Sair
                 </Button>
               </form>
@@ -139,10 +144,6 @@ export function AppShell({
         </div>
       </header>
 
-      {/* Mesma estrutura do cabeçalho — margem por fora, largura máxima por
-          dentro — para que o Sair e a linha dourada fiquem na mesma vertical
-          que as margens dos cartões. Com a margem dentro da largura máxima,
-          o conteúdo ficava 40 px mais estreito de cada lado que o cabeçalho. */}
       <main className="relative px-4 py-6 sm:px-10 sm:pb-12">
         <div className="mx-auto max-w-6xl">{children}</div>
       </main>

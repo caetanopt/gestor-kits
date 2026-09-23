@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from "react";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost" | "evento" | "sobreEscuro";
-type Size = "md" | "lg" | "xl";
+type Size = "sm" | "md" | "lg" | "xl";
 
 /**
  * Cores segundo o Brand Book.
@@ -55,6 +55,10 @@ const TOQUE =
   "active:scale-[0.97] active:brightness-95 motion-reduce:active:scale-100";
 
 const SIZES: Record<Size, string> = {
+  // Ações secundárias fora da zona de trabalho, como o Sair do cabeçalho.
+  // 36 px de altura: abaixo dos 44 px dos restantes botões, mas acima dos
+  // 24 px que a WCAG 2.2 AA exige para alvos de toque.
+  sm: "min-h-9 px-3 py-1.5 text-xs rounded-md",
   md: "px-4 py-2.5 text-sm rounded-lg",
   lg: "px-6 py-3.5 text-base rounded-xl",
   // Alvo generoso para utilização com o dedo em tablet durante o evento.
