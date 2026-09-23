@@ -119,7 +119,18 @@ export function AppShell({
             ))}
           </nav>
 
-          <div className="col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3">
+          {/* Com o menu por baixo (administrador), os dados da sessão ficam a
+              meio caminho entre o filete de cima da moldura e a linha do
+              menu, e não a meio do logótipo. A diferença entre os dois
+              centros é sempre de 12 px, qualquer que seja a altura do
+              logótipo: o filete está 12 px abaixo do topo da fila e a linha
+              12 px abaixo do fim dela. Um transform desloca sem mexer na
+              altura da fila. Sem moldura (telemóvel), fica centrado. */}
+          <div
+            className={`col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3 ${
+              menuAoLado ? "" : "sm:translate-y-3"
+            }`}
+          >
             {/* O nome só a partir de md: abaixo disso não cabe ao lado do
                 logótipo, e truncado para um nome comprido não empurrar o
                 botão Sair para fora do ecrã. */}
