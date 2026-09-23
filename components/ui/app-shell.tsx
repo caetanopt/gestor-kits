@@ -131,17 +131,19 @@ export function AppShell({
               menuAoLado ? "" : "sm:translate-y-3"
             }`}
           >
-            {/* O nome só a partir de md: abaixo disso não cabe ao lado do
-                logótipo, e truncado para um nome comprido não empurrar o
-                botão Sair para fora do ecrã. */}
-            <span className="text-ink-800 hidden min-w-0 truncate text-sm md:inline">
-              {user.name}
-            </span>
-            {user.role === "admin" && (
-              <span className="text-dourado-300 ring-dourado-500/60 hidden shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 lg:inline">
-                Administrador
+            {/* Nome e, por baixo, o cargo. Só a partir de md: abaixo disso
+                não cabem ao lado do logótipo. Truncados, para um nome
+                comprido não empurrar o botão Sair para fora do ecrã. */}
+            <div className="hidden min-w-0 flex-col items-end leading-tight md:flex">
+              <span className="text-ink-800 max-w-full truncate text-sm">
+                {user.name}
               </span>
-            )}
+              {user.role === "admin" && (
+                <span className="text-dourado-300 text-xs font-medium">
+                  Administrador
+                </span>
+              )}
+            </div>
             {/* Sem o botão quando a autenticação está desativada: o proxy
                 voltaria a iniciar sessão no pedido seguinte. */}
             {!isAuthBypassEnabled() && (
