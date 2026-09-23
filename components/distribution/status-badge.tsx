@@ -8,7 +8,11 @@ type State = "disponivel" | "entregue" | "bloqueado";
  * confortavelmente com antracite por cima (4.5:1 a 6.1:1).
  */
 const STYLES: Record<State, string> = {
-  disponivel: "bg-cyan-500 text-ink-800",
+  // Por entregar: contorno dourado, como no convite. Texto em dourado escuro,
+  // o único que passa AA sobre branco (5,9:1). Os outros dois estados
+  // continuam cheios: pedem atenção, e têm de se distinguir deste à
+  // primeira vista.
+  disponivel: "border border-dourado-600 text-dourado-700",
   entregue: "bg-eco-500 text-ink-800",
   bloqueado: "bg-laranja-500 text-ink-800",
 };
@@ -24,7 +28,7 @@ const ICONS: Record<State, string> = {
 export function StatusBadge({ state, label }: { state: State; label: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-base font-bold tracking-wide ${STYLES[state]}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded px-3.5 py-1.5 text-sm font-bold tracking-[0.08em] ${STYLES[state]}`}
     >
       <span aria-hidden="true">{ICONS[state]}</span>
       {label}

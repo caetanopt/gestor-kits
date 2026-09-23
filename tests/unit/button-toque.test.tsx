@@ -16,6 +16,7 @@ const VARIANTES = [
   "ghost",
   "evento",
   "sobreEscuro",
+  "contorno",
 ] as const;
 
 describe("resposta ao toque nos botões", () => {

@@ -14,22 +14,28 @@ export function TotalsPanel({
   company: CompanySummary;
   totals: Totals;
 }) {
+  // Como no convite: um filete por cima, as duas contagens separadas por
+  // outro, números em Rubik e rótulos em versaletes dourados.
   return (
-    <div className="bg-ink-50 ring-ink-200 rounded-xl p-4 ring-1">
-      <p className="text-ink-700 text-sm font-medium">{company.name}</p>
+    <div className="border-dourado-100 border-t pt-4">
+      <p className="text-ink-700 text-center text-sm">{company.name}</p>
 
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-center">
-        <div>
-          <dd className="text-ink-900 text-2xl font-semibold tabular-nums">
+      <dl className="mt-2 grid grid-cols-2 text-center">
+        <div className="border-dourado-100 border-e">
+          <dd className="text-ink-900 font-display text-3xl tabular-nums">
             {totals.delivered}
           </dd>
-          <dt className="text-ink-700 text-xs">entregues</dt>
+          <dt className="text-dourado-700 mt-0.5 text-xs font-medium tracking-[0.08em] uppercase">
+            entregues
+          </dt>
         </div>
         <div>
-          <dd className="text-ink-900 text-2xl font-semibold tabular-nums">
+          <dd className="text-ink-900 font-display text-3xl tabular-nums">
             {totals.employees}
           </dd>
-          <dt className="text-ink-700 text-xs">colaboradores</dt>
+          <dt className="text-dourado-700 mt-0.5 text-xs font-medium tracking-[0.08em] uppercase">
+            colaboradores
+          </dt>
         </div>
       </dl>
     </div>

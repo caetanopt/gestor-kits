@@ -113,6 +113,17 @@ describe("tema do evento (fundo azul-escuro)", () => {
     expect(contraste(EVENTO.dourado, EVENTO.fundo)).toBeGreaterThanOrEqual(3);
   });
 
+  it("o dourado escuro passa AA como texto nos cartões brancos e no campo creme", () => {
+    // Estado "KIT AINDA NÃO ENTREGUE" e rótulos dos totais.
+    expect(contraste(EVENTO.douradoTexto, "#FFFFFF")).toBeGreaterThanOrEqual(AA);
+    expect(contraste(EVENTO.douradoTexto, EVENTO.creme)).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("o texto dos cartões continua a passar AA sobre o campo creme", () => {
+    expect(contraste(TEXTO.titulo, EVENTO.creme)).toBeGreaterThanOrEqual(AA);
+    expect(contraste(TEXTO.auxiliar, EVENTO.creme)).toBeGreaterThanOrEqual(AA);
+  });
+
   it("o azul profundo não serve de texto sobre o fundo do evento", () => {
     // Daí a ligação solta na página de importação usar ink-900, que o tema
     // troca por branco, e não azul-900.

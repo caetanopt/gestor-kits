@@ -37,6 +37,28 @@ foi escolhida a 13 ("Moldura"), com duas indicações:
 - **Barra de progresso** da navegação passa a dourada: o azul profundo
   desaparecia sobre o fundo novo.
 
+## Cartões do ecrã de distribuição (proposta 3, "Convite")
+
+Pedido a seguir: os cartões brancos da Distribuição com o desenho da
+proposta 3.
+
+- Cantos quase retos (4 px) e filete dourado `#E6C98F`, sem sombra.
+- Separadores sublinhados; o ativo tem traço dourado, negrito e cor azul,
+  para não depender só da cor.
+- Campo de pesquisa creme `#FFFDF8` com filete dourado. O foco continua com
+  o contorno ciano do resto da aplicação.
+- Nome do colaborador, números e ENTREGAR KIT em Rubik, a letra do convite
+  (PSD). O texto corrente continua em Montserrat.
+- "KIT AINDA NÃO ENTREGUE" com contorno dourado e texto dourado escuro
+  `#8A5A14` (5,9:1 sobre branco). "JÁ ENTREGUE" continua cheio a laranja:
+  tem de se distinguir do outro estado à primeira vista.
+- ENTREGAR KIT com filete dourado recolhido 1 px da borda.
+- Os botões ganharam a opção `retos`, com o raio separado do tamanho, para
+  não haver duas classes de raio a disputar o mesmo elemento.
+
+Só o ecrã de distribuição muda; as outras páginas mantêm os cartões
+arredondados.
+
 Contrastes fixados em `tests/unit/contraste.test.ts`.
 
 ## Reverter

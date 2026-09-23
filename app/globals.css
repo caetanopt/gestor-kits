@@ -76,8 +76,13 @@
    * testados. O fundo é o azul mais escuro do "Save the Date", liso.
    * ──────────────────────────────────────────────────────────────────── */
   --color-evento-fundo: #000e2c;
+  --color-dourado-50: #fffdf8; /* creme do campo de pesquisa */
+  --color-dourado-100: #efe3c8; /* separadores dentro dos cartões */
+  --color-dourado-200: #e6c98f; /* filete dos cartões */
   --color-dourado-300: #ffd483;
   --color-dourado-500: #f4b15f;
+  --color-dourado-600: #c9973f; /* traço do separador ativo */
+  --color-dourado-700: #8a5a14; /* texto dourado sobre branco (5,9:1) */
 
   /* ── Papéis de estado ────────────────────────────────────────────────────
    * Nomes semânticos para o domínio. Sempre usados como FUNDO.
@@ -96,6 +101,9 @@
   --font-sans:
     var(--font-montserrat), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     sans-serif;
+  /* Rubik, do convite do evento: números e títulos do ecrã de distribuição. */
+  --font-display:
+    var(--font-rubik), var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -139,6 +147,7 @@ body {
   :where(.tema-evento)
     :where(
       .bg-white,
+      .bg-dourado-50,
       .bg-ink-50,
       .bg-ink-100,
       .bg-ink-200,

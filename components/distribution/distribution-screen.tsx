@@ -440,13 +440,13 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
     // coluna.
     <div className="mx-auto w-full max-w-[800px] space-y-6">
       {/* Pesquisa ------------------------------------------------------- */}
-      <div className="ring-ink-200 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
+      <div className="ring-dourado-200 rounded bg-white p-5 ring-1 sm:p-6">
         {/* Separadores. O modo por número fica primeiro por ser o fluxo
             rápido do evento. */}
         <div
           role="tablist"
           aria-label="Modo de pesquisa"
-          className="bg-ink-100 mb-4 flex gap-1 rounded-xl p-1"
+          className="border-dourado-100 mb-4 flex border-b"
         >
           {(
             [
@@ -460,10 +460,12 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
               role="tab"
               aria-selected={mode === valor}
               onClick={() => changeMode(valor)}
-              className={`flex-1 touch-manipulation rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100 ${
+              // Separador sublinhado, como no convite. O ativo distingue-se
+              // pelo traço, pelo peso e pela cor — não só pela cor.
+              className={`active:bg-dourado-50 -mb-px flex-1 touch-manipulation border-b-2 px-4 py-2.5 text-sm transition duration-100 select-none ${
                 mode === valor
-                  ? "text-azul-900 bg-white shadow-sm"
-                  : "text-ink-700 hover:text-ink-900 active:bg-ink-200"
+                  ? "text-azul-900 border-dourado-600 font-bold"
+                  : "text-ink-700 hover:text-ink-900 border-transparent font-semibold"
               }`}
             >
               {rotulo}
@@ -509,9 +511,12 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
               requestAnimationFrame(() => inputRef.current?.focus());
             }
           }}
-          className={`bg-ink-50 text-ink-900 ring-ink-200 mt-3 w-full rounded-xl px-4 text-center font-semibold ring-1 focus:bg-white focus:ring-2 focus:ring-cyan-500 disabled:opacity-60 ${
+          // Campo creme com filete dourado, como no convite. O foco fica com
+          // o contorno ciano de todos os campos da aplicação (globals.css),
+          // sem um segundo anel a desenhar uma borda dupla.
+          className={`bg-dourado-50 text-ink-900 ring-dourado-200 font-display mt-3 w-full rounded px-4 text-center font-medium ring-1 disabled:opacity-60 ${
             compacto ? "py-2" : "py-5"
-          } ${mode === "numero" ? "text-4xl tracking-wider tabular-nums" : "text-2xl"}`}
+          } ${mode === "numero" ? "text-4xl tracking-[0.1em] tabular-nums" : "text-2xl"}`}
           placeholder={mode === "numero" ? "—" : "Nome completo ou email"}
         />
 
@@ -523,7 +528,8 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
           <Button
             type="button"
             size={compacto ? "md" : "lg"}
-            variant="secondary"
+            variant="contorno"
+            retos
             disabled={busy || !query.trim()}
             onClick={() => {
               if (mode === "numero") void searchByNumber(query);
@@ -536,6 +542,7 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
             type="button"
             size={compacto ? "md" : "lg"}
             variant="ghost"
+            retos
             onClick={reset}
             disabled={busy}
           >
@@ -571,7 +578,8 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
             {query.trim() !== "" && (
               <Button
                 type="button"
-                variant="secondary"
+                variant="contorno"
+                retos
                 onClick={() => setScreen(estadoAusente(query))}
               >
                 Não está na lista? Acrescentar
@@ -635,8 +643,8 @@ function MatchList({
   onAusente: () => void;
 }) {
   return (
-    <div className="ring-ink-200 overflow-hidden rounded-2xl bg-white shadow-sm ring-1">
-      <p className="text-ink-700 border-ink-100 border-b px-5 py-3 text-sm">
+    <div className="ring-dourado-200 overflow-hidden rounded bg-white ring-1">
+      <p className="text-ink-700 border-dourado-100 border-b px-5 py-3 text-sm">
         {/* Cortada a lista, o servidor deixa de mandar o total exato (migração
             0018): dizer "2254 resultados" a quem só pode ver dez entregava o
             tamanho da base a quem não tem acesso a ela. */}
@@ -647,14 +655,16 @@ function MatchList({
 
       <ul>
         {search.results.map((match) => (
-          <li key={match.id} className="border-ink-100 border-b last:border-0">
+          <li key={match.id} className="border-dourado-100 border-b last:border-0">
             <button
               type="button"
               onClick={() => onOpen(match)}
-              className="hover:bg-ink-50 flex w-full flex-wrap items-start gap-x-3 gap-y-2 px-5 py-3 text-left sm:items-center sm:py-4"
+              className="hover:bg-dourado-50 flex w-full flex-wrap items-start gap-x-3 gap-y-2 px-5 py-3 text-left sm:items-center sm:py-4"
             >
               <span className="min-w-0 flex-1 basis-full sm:basis-auto">
-                <span className="text-ink-900 block font-semibold">{match.name}</span>
+                <span className="text-ink-900 font-display block text-lg">
+                  {match.name}
+                </span>
                 <span className="text-ink-700 block text-sm">
                   N.º {match.employeeNumber} · {match.companyName}
                 </span>
@@ -666,11 +676,11 @@ function MatchList({
               </span>
 
               {match.kitDelivered ? (
-                <span className="bg-laranja-500 text-ink-800 shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold">
+                <span className="bg-laranja-500 text-ink-800 shrink-0 rounded px-2 py-0.5 text-xs font-semibold">
                   Já entregue
                 </span>
               ) : (
-                <span className="text-ink-800 shrink-0 rounded-md bg-cyan-500 px-2 py-0.5 text-xs font-semibold">
+                <span className="border-dourado-600 text-dourado-700 shrink-0 rounded border px-2 py-0.5 text-xs font-semibold">
                   Por entregar
                 </span>
               )}
@@ -682,8 +692,8 @@ function MatchList({
       {/* Encontrar homónimos e não encontrar a pessoa é o caso mais comum de
           todos: três Danielas e nenhuma é aquela. Sem esta saída, a lista era
           um beco. */}
-      <div className="border-ink-100 border-t px-5 py-3">
-        <Button type="button" variant="secondary" onClick={onAusente}>
+      <div className="border-dourado-100 border-t px-5 py-3">
+        <Button type="button" variant="contorno" retos onClick={onAusente}>
           Nenhum destes? Acrescentar colaborador
         </Button>
       </div>
@@ -749,10 +759,12 @@ function AusenteCard({
           companyId: empresa,
         });
       }}
-      className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6"
+      className="ring-dourado-200 space-y-4 rounded bg-white p-5 ring-1 sm:p-6"
     >
       <div>
-        <h2 className="text-ink-900 text-xl font-semibold">Não está na lista</h2>
+        <h2 className="text-ink-900 font-display text-2xl font-normal">
+          Não está na lista
+        </h2>
         <p className="text-ink-700 mt-1 text-sm">
           Acrescente o colaborador para lhe poder entregar o kit.
         </p>
@@ -812,10 +824,10 @@ function AusenteCard({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="lg">
+        <Button type="submit" size="lg" retos>
           Acrescentar e abrir
         </Button>
-        <Button type="button" size="lg" variant="secondary" onClick={onCancel}>
+        <Button type="button" size="lg" variant="contorno" retos onClick={onCancel}>
           Cancelar
         </Button>
       </div>
@@ -841,15 +853,19 @@ function FoundCard({
   const [aConfirmar, setAConfirmar] = useState(false);
 
   return (
-    <div className="ring-ink-200 space-y-5 rounded-2xl bg-white p-5 shadow-sm ring-1 sm:p-6">
-      <div>
-        <h2 className="text-ink-900 text-2xl font-semibold">{employee.name}</h2>
-        <p className="text-ink-700 mt-1 text-sm">
-          N.º {employee.employeeNumber} · {company.name}
-        </p>
-      </div>
+    <div className="ring-dourado-200 space-y-5 rounded bg-white p-5 ring-1 sm:p-6">
+      {/* Nome à esquerda e estado à direita, como no convite. Num ecrã
+          estreito o estado passa para baixo do nome em vez de o apertar. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <h2 className="text-ink-900 font-display text-3xl font-normal">
+            {employee.name}
+          </h2>
+          <p className="text-ink-700 mt-1 text-sm">
+            N.º {employee.employeeNumber} · {company.name}
+          </p>
+        </div>
 
-      <div>
         {alreadyDelivered ? (
           <StatusBadge state="bloqueado" label="JÁ ENTREGUE" />
         ) : (
@@ -870,6 +886,7 @@ function FoundCard({
         type="button"
         size="xl"
         variant="evento"
+        retos
         className="w-full"
         disabled={!canDeliver}
         onClick={onDeliver}
@@ -900,13 +917,15 @@ function FoundCard({
                 <Button
                   type="button"
                   variant="danger"
+                  retos
                   onClick={() => onAnular(delivery.id)}
                 >
                   Confirmar anulação
                 </Button>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="contorno"
+                  retos
                   onClick={() => setAConfirmar(false)}
                 >
                   Cancelar
@@ -917,7 +936,8 @@ function FoundCard({
             <div className="mt-3">
               <Button
                 type="button"
-                variant="secondary"
+                variant="contorno"
+                retos
                 onClick={() => setAConfirmar(true)}
               >
                 Entreguei por engano — anular
@@ -936,7 +956,7 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
   const { employee, company, totals, repeated } = result;
 
   return (
-    <div className="bg-eco-100 ring-eco-300 space-y-5 rounded-2xl p-5 ring-1 sm:p-6">
+    <div className="bg-eco-100 ring-eco-300 space-y-5 rounded p-5 ring-1 sm:p-6">
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
@@ -945,7 +965,7 @@ function DeliveredCard({ result }: { result: DeliveryResult }) {
           ✓
         </span>
         <div>
-          <p className="text-ink-900 text-xl font-semibold">
+          <p className="text-ink-900 font-display text-2xl font-normal">
             {repeated
               ? "Kit já tinha sido entregue nesta operação."
               : "Kit entregue com sucesso."}
