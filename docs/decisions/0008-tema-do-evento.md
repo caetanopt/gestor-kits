@@ -23,14 +23,12 @@ foi escolhida a 13 ("Moldura"), com duas indicações:
   é trocado, porque também é o fundo dos botões principais.
 - **Moldura dourada** à volta da página, interrompida pelo logótipo no topo.
   Escondida no telemóvel, onde o espaço faz falta ao conteúdo.
-- **Menu.** Com duas opções (distribuidor) fica à esquerda do logótipo a
-  partir de 1024 px. Com seis (administrador) não cabe ao lado do logótipo
-  (~500 px disponíveis para ~600 px de opções), por isso passa para uma
-  linha própria por baixo. As opções têm `whitespace-nowrap`: num ecrã
-  estreito passam inteiras para a linha seguinte, nunca quebram a meio.
-  Verificado a 390, 640, 768, 1024, 1280 e 1440 px nos dois perfis: todas as
-  opções com 44 px de altura (uma linha), sem deslocamento horizontal e sem
-  sobreposição com o logótipo.
+- **Menu.** Sempre numa linha própria por baixo do logótipo, para os dois
+  perfis. (Chegou a ficar ao lado do logótipo para o distribuidor, que só
+  tem duas opções; foi pedido o mesmo cabeçalho do administrador.) As
+  opções têm `whitespace-nowrap`: num ecrã estreito passam inteiras para a
+  linha seguinte, nunca quebram a meio. Os dados da sessão ficam a meio
+  entre o filete da moldura e a linha do menu.
 - **Página atual** assinalada no menu a dourado com traço por baixo e
   `aria-current`, para não depender só da cor.
 - **ENTREGAR KIT** em azul profundo com texto e contorno dourados (9,7:1).

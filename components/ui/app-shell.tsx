@@ -63,19 +63,6 @@ export function AppShell({
   nav: NavItem[];
   children: React.ReactNode;
 }) {
-  /**
-   * Onde vai o menu.
-   *
-   * Com duas opções (distribuidor), o menu cabe à esquerda do logótipo,
-   * como na proposta. Com seis (administrador) não cabe: medido a 1280 px,
-   * o espaço de cada lado do logótipo é ~500 px e as seis opções ocupam
-   * ~600. Em vez de as deixar partir, o menu passa para uma linha própria
-   * por baixo do logótipo. As opções nunca quebram a meio
-   * (`whitespace-nowrap`); num ecrã estreito, passam inteiras para a linha
-   * seguinte.
-   */
-  const menuAoLado = nav.length <= 3;
-
   return (
     <div className="tema-evento relative min-h-dvh">
       <RouteProgress />
@@ -108,29 +95,25 @@ export function AppShell({
 
           <nav
             aria-label="Navegação principal"
-            className={`col-span-3 row-start-2 flex flex-wrap justify-center gap-x-1 gap-y-1 ${
-              menuAoLado
-                ? "lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:justify-start"
-                : "border-dourado-500/25 border-t pt-2"
-            }`}
+            // Sempre por baixo do logótipo, numa linha própria, para os dois
+            // perfis: o mesmo cabeçalho para toda a gente. As opções nunca
+            // quebram a meio (`whitespace-nowrap`); num ecrã estreito passam
+            // inteiras para a linha seguinte.
+            className="border-dourado-500/25 col-span-3 row-start-2 flex flex-wrap justify-center gap-x-1 gap-y-1 border-t pt-2"
           >
             {nav.map((item) => (
               <NavLink key={item.href} href={item.href} label={item.label} />
             ))}
           </nav>
 
-          {/* Com o menu por baixo (administrador), os dados da sessão ficam a
+          {/* Com o menu por baixo do logótipo, os dados da sessão ficam a
               meio caminho entre o filete de cima da moldura e a linha do
               menu, e não a meio do logótipo. A diferença entre os dois
               centros é sempre de 12 px, qualquer que seja a altura do
               logótipo: o filete está 12 px abaixo do topo da fila e a linha
               12 px abaixo do fim dela. Um transform desloca sem mexer na
               altura da fila. Sem moldura (telemóvel), fica centrado. */}
-          <div
-            className={`col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3 ${
-              menuAoLado ? "" : "sm:translate-y-3"
-            }`}
-          >
+          <div className="col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3 sm:translate-y-3">
             {/* Nome e, por baixo, o cargo. Só a partir de md: abaixo disso
                 não cabem ao lado do logótipo. Truncados, para um nome
                 comprido não empurrar o botão Sair para fora do ecrã. */}
