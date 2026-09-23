@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { ok, toErrorResponse } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
 import { requireApiAdmin } from "@/lib/auth/dal";
-import { employeeInputSchema } from "@/lib/validation/employee";
+import { employeeCreateSchema } from "@/lib/validation/employee";
 import { saveEmployee } from "@/server/use-cases/employees";
 
 /**
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     await requireApiAdmin();
 
     const body: unknown = await request.json().catch(() => null);
-    const parsed = employeeInputSchema.safeParse(body);
+    const parsed = employeeCreateSchema.safeParse(body);
     if (!parsed.success) {
       throw new AppError("VALIDATION_ERROR", {
         details: parsed.error.issues.map((issue) => issue.message),

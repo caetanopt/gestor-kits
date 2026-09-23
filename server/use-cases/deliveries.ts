@@ -64,7 +64,19 @@ export async function createEmployeeForDelivery(
     p_company_id: input.companyId,
   });
 
-  if (error) throw mapPostgrestError(error);
+  if (error) {
+    const erro = mapPostgrestError(error);
+    // Número vazio recusado: base de dados anterior à migração 0020 (ver
+    // semNumeroNaBaseAntiga em employees.ts, que faz o mesmo).
+    if (input.employeeNumber === null && erro.code === "VALIDATION_ERROR") {
+      throw new AppError("DB_OUT_OF_DATE", {
+        details: [
+          "A base de dados ainda exige o número de colaborador. Falta aplicar a migração 0020.",
+        ],
+      });
+    }
+    throw erro;
+  }
   return parseRpc(employeeLookupSchema, data, "create_employee_for_delivery");
 }
 

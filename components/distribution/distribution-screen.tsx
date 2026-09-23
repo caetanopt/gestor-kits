@@ -768,11 +768,17 @@ function AusenteCard({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="N.º colaborador" htmlFor="novo-numero">
+        {/* Opcional: quem chega ao balcão nem sempre sabe o número. Vazio, a
+            base de dados atribui um automático (SN0001…, migração 0020), e
+            o cartão de entrega que abre a seguir mostra-o. */}
+        <Field
+          label="N.º colaborador"
+          htmlFor="novo-numero"
+          hint="Opcional. Vazio, é atribuído um (SN0001…)."
+        >
           <Input
             id="novo-numero"
             value={numero}
-            required
             maxLength={40}
             autoComplete="off"
             autoCapitalize="characters"

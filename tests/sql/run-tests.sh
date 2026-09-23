@@ -294,8 +294,9 @@ r=$(as_user "$ADMIN" "select save_employee(null, '77001', 'Duplicado', 'dup@exem
 check "número duplicado é recusado" "DUPLICATE_EMPLOYEE_NUMBER" "$r"
 r=$(as_user "$ADMIN" "select save_employee(null, '77003', 'Empresa Inexistente', 'x@exemplo.pt', '00000000-0000-0000-0000-0000000000ff');")
 check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
-r=$(as_user "$ADMIN" "select save_employee(null, '', 'Sem Número', 'y@exemplo.pt', '00000000-0000-0000-0000-0000000000c1');")
-check "número em falta é recusado" "VALIDATION_ERROR" "$r"
+# Desde a 0020, criar sem número atribui um automático (SN…).
+r=$(as_user "$ADMIN" "select save_employee(null, '', 'Sem Número', 'y@exemplo.pt', '00000000-0000-0000-0000-0000000000c1') ->> 'employeeNumber';" | tail -1)
+check "número em falta recebe um automático" "SN" "${r:0:2}"
 EID=$(q "select id from public.employees where employee_number = '77001';")
 r=$(as_user "$ADMIN" "select save_employee('$EID', '77001', 'Nome Corrigido', 'corrigido@exemplo.pt', '00000000-0000-0000-0000-0000000000c2') ->> 'name';")
 check "editar altera nome, email e empresa" "Nome Corrigido" "$r"
@@ -448,8 +449,6 @@ r=$(q "select metadata ->> 'origem' from public.delivery_logs where action = 'EM
 check "fica auditado com a origem" "distribuicao" "$r"
 r=$(as_user "$OPER" "select create_employee_for_delivery('9788', 'Sem empresa', null, '00000000-0000-0000-0000-0000000000ff');")
 check "empresa inexistente é recusada" "COMPANY_NOT_FOUND" "$r"
-r=$(as_user "$OPER" "select create_employee_for_delivery('', 'Sem número', null, '$EMPRESA');")
-check "número vazio é recusado" "VALIDATION_ERROR" "$r"
 
 # Quem pesquisa por email já o tem escrito; deitá-lo fora fazia com que a
 # pesquisa seguinte pelo mesmo email não encontrasse a pessoa acabada de criar.
@@ -463,6 +462,36 @@ r=$(as_user "$OPER" "select create_employee_for_delivery('9791', 'Mal Escrito', 
 check "email mal escrito é recusado" "VALIDATION_ERROR" "$r"
 r=$(q "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = 'create_employee_for_delivery';")
 check "só existe uma versão da função, sem sobrecargas" "1" "$r"
+
+echo
+echo "═══ Número automático (migração 0020) ═══"
+# Sem número ao criar, a base de dados atribui SN0001, SN0002… A pessoa
+# continua a ter uma chave única e o kit entrega-se por ela como a qualquer
+# outra.
+reset_db
+EMPRESA=$(q "select id from public.companies where code = 'EMPA';")
+q "select setval('public.employee_auto_number_seq', 1, false);" >/dev/null
+r=$(as_user "$OPER" "select create_employee_for_delivery('', 'Sem Numero Balcao', null, '$EMPRESA') -> 'employee' ->> 'employeeNumber';" | tail -1)
+check "no balcão, sem número, recebe SN0001" "SN0001" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery(null, 'Sem Numero Dois', null, '$EMPRESA') -> 'employee' ->> 'employeeNumber';" | tail -1)
+check "número nulo também, e o seguinte é SN0002" "SN0002" "$r"
+r=$(as_user "$OPER" "select deliver_kit('SN0001', gen_random_uuid()) ->> 'repeated';" | tail -1)
+check "o kit entrega-se pelo número automático" "false" "$r"
+# Alguém escreveu à mão o próximo número automático: o gerador salta-o.
+as_user "$ADMIN" "select save_employee(null, 'SN0003', 'Escrito A Mao', null, '$EMPRESA');" >/dev/null
+r=$(as_user "$ADMIN" "select save_employee(null, '  ', 'Sem Numero Pagina', null, '$EMPRESA') ->> 'employeeNumber';" | tail -1)
+check "na página Colaboradores também, saltando um número já usado" "SN0004" "$r"
+r=$(q "select count(*) from public.delivery_logs where action = 'EMPLOYEE_CREATED';")
+check "cada criação fica auditada como acrescentada à mão" "4" "$r"
+ID=$(q "select id from public.employees where employee_number = 'SN0004';")
+r=$(as_user "$ADMIN" "select save_employee('$ID', '', 'Sem Numero Pagina', null, '$EMPRESA');")
+check "ao editar, o número continua obrigatório" "VALIDATION_ERROR" "$r"
+r=$(as_user "$OPER" "select public.next_auto_employee_number();")
+check "o gerador não se chama diretamente" "permission denied" "$r"
+r=$(as_user "$OPER" "select nextval('public.employee_auto_number_seq');")
+check "nem a sequência" "permission denied" "$r"
+r=$(as_user "$OPER" "select create_employee_for_delivery('', '', null, '$EMPRESA');")
+check "sem número continua a exigir nome" "VALIDATION_ERROR" "$r"
 
 echo
 echo "═══ Anulação pelo distribuidor (migração 0019) ═══"

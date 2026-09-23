@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { employeeNumberSchema } from "./delivery";
+import { employeeNumberOpcionalSchema, employeeNumberSchema } from "./delivery";
 
 export const employeeNameSchema = z
   .string()
@@ -39,6 +39,17 @@ export const employeeInputSchema = z.object({
 });
 
 /**
+ * Criação na página Colaboradores: igual à edição, mas o número pode ficar
+ * vazio — a base de dados atribui um automático (migração 0020). Na edição
+ * (`employeeInputSchema`) continua obrigatório.
+ */
+export const employeeCreateSchema = employeeInputSchema.extend({
+  employeeNumber: employeeNumberOpcionalSchema,
+});
+
+export type EmployeeCreate = z.infer<typeof employeeCreateSchema>;
+
+/**
  * Colaborador acrescentado ao balcão, no ecrã de distribuição.
  *
  * A empresa é obrigatória — é por ela que a entrega é contabilizada. O email
@@ -46,7 +57,8 @@ export const employeeInputSchema = z.object({
  * email já o tem escrito e não se perde.
  */
 export const novoColaboradorSchema = z.object({
-  employeeNumber: employeeNumberSchema,
+  // Opcional desde a migração 0020: sem número, é atribuído um automático.
+  employeeNumber: employeeNumberOpcionalSchema,
   name: employeeNameSchema,
   // Opcional, como em todo o resto da aplicação desde a migração 0012. Existe
   // porque quem chegou aqui a pesquisar por email já o tem escrito, e deitá-lo

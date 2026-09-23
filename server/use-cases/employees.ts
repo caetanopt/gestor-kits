@@ -5,6 +5,7 @@ import { mapPostgrestError } from "@/lib/api/rpc";
 import {
   employeeResultSchema,
   type EmployeeFilter,
+  type EmployeeCreate,
   type EmployeeInput,
   type EmployeeResult,
   type EmployeeRow,
@@ -76,9 +77,29 @@ export async function listEmployees(
   };
 }
 
-/** Cria ou edita um colaborador. Apenas administradores (verificado no SQL). */
+/**
+ * Número vazio recusado com VALIDATION_ERROR: é a base de dados de antes da
+ * migração 0020, que ainda o exige. O esquema Zod já validou tudo o resto,
+ * por isso não é um erro de quem preencheu — é uma migração por aplicar, e
+ * dizê-lo poupa uma procura às cegas no dia do evento.
+ */
+function semNumeroNaBaseAntiga(erro: AppError, numero: string | null): AppError {
+  if (numero === null && erro.code === "VALIDATION_ERROR") {
+    return new AppError("DB_OUT_OF_DATE", {
+      details: [
+        "A base de dados ainda exige o número de colaborador. Falta aplicar a migração 0020.",
+      ],
+    });
+  }
+  return erro;
+}
+
+/**
+ * Cria ou edita um colaborador. Apenas administradores (verificado no SQL).
+ * Ao criar, o número pode vir nulo: a base de dados atribui um automático.
+ */
 export async function saveEmployee(
-  input: EmployeeInput & { id?: string | undefined },
+  input: (EmployeeInput | EmployeeCreate) & { id?: string | undefined },
 ): Promise<EmployeeResult> {
   const supabase = await createSupabaseServerClient();
 
@@ -92,7 +113,7 @@ export async function saveEmployee(
     p_company_id: input.companyId,
   });
 
-  if (error) throw mapPostgrestError(error);
+  if (error) throw semNumeroNaBaseAntiga(mapPostgrestError(error), input.employeeNumber);
 
   const parsed = employeeResultSchema.safeParse(data);
   if (!parsed.success) {

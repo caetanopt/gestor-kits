@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { employeeInputSchema } from "@/lib/validation/employee";
+import {
+  employeeCreateSchema,
+  employeeInputSchema,
+  novoColaboradorSchema,
+} from "@/lib/validation/employee";
 
 const base = {
   employeeNumber: "12345",
@@ -66,5 +70,46 @@ describe("employeeInputSchema", () => {
       false,
     );
     expect(employeeInputSchema.safeParse({ ...base, name: "  " }).success).toBe(false);
+  });
+});
+
+describe("número de colaborador ao criar (migração 0020)", () => {
+  const criar = {
+    name: "João Silva",
+    email: "",
+    companyId: "00000000-0000-4000-8000-0000000000c1",
+  };
+
+  it.each(["", "   ", null, undefined])(
+    "na página Colaboradores, %j chega à base de dados como nulo",
+    (employeeNumber) => {
+      const r = employeeCreateSchema.safeParse({ ...criar, employeeNumber });
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.employeeNumber).toBeNull();
+    },
+  );
+
+  it("no balcão também", () => {
+    const r = novoColaboradorSchema.safeParse({ ...criar, employeeNumber: "" });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.employeeNumber).toBeNull();
+  });
+
+  it("preenchido, mantém as regras de sempre", () => {
+    const r = employeeCreateSchema.safeParse({ ...criar, employeeNumber: " 9787 " });
+    expect(r.success && r.data.employeeNumber).toBe("9787");
+    expect(
+      employeeCreateSchema.safeParse({ ...criar, employeeNumber: "97 87" }).success,
+    ).toBe(false);
+    expect(
+      employeeCreateSchema.safeParse({ ...criar, employeeNumber: "x".repeat(41) })
+        .success,
+    ).toBe(false);
+  });
+
+  it("ao editar, continua obrigatório", () => {
+    expect(employeeInputSchema.safeParse({ ...criar, employeeNumber: "" }).success).toBe(
+      false,
+    );
   });
 });

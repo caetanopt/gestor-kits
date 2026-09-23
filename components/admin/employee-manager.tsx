@@ -101,7 +101,16 @@ export function EmployeeManager({
       return;
     }
 
-    setNotice(draft.id ? "Colaborador atualizado." : "Colaborador criado.");
+    // Ao criar sem número, quem o atribui é a base de dados (SN0001…): a
+    // mensagem diz qual foi, para se poder pesquisar a pessoa a seguir.
+    const numero = (result.data as { employeeNumber?: unknown } | null)?.employeeNumber;
+    setNotice(
+      draft.id
+        ? "Colaborador atualizado."
+        : typeof numero === "string"
+          ? `Colaborador criado com o n.º ${numero}.`
+          : "Colaborador criado.",
+    );
     setDraft(null);
     router.refresh();
   }
@@ -131,11 +140,18 @@ export function EmployeeManager({
           {error && <Alert tone="error">{error}</Alert>}
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Field label="N.º colaborador" htmlFor="emp-number">
+            {/* Ao criar, o número é opcional: vazio, a base de dados atribui
+                um automático (migração 0020). Ao editar, continua
+                obrigatório. */}
+            <Field
+              label="N.º colaborador"
+              htmlFor="emp-number"
+              hint={editing ? undefined : "Opcional. Vazio, é atribuído um (SN0001…)."}
+            >
               <Input
                 id="emp-number"
                 value={draft.employeeNumber}
-                required
+                required={editing}
                 maxLength={40}
                 inputMode="numeric"
                 autoComplete="off"

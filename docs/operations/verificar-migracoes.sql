@@ -103,6 +103,15 @@ select 'Anulação pelo distribuidor (migração 0019)',
    and p.prosrc not like '%is_admin()%'
 
 union all
+-- Migração 0020: número de colaborador automático ao criar sem número.
+select 'Número automático (migração 0020)',
+       case when count(*) = 1 then 'aplicada' else 'FALTA APLICAR 0020' end,
+       case when count(*) = 1 then '✓' else '✗ criar sem número é recusado' end
+  from pg_proc p
+ where p.proname = 'next_auto_employee_number'
+   and p.pronamespace = 'public'::regnamespace
+
+union all
 select 'Colaboradores sem email',
        count(*) || ' de ' || (select count(*) from public.employees),
        '✓ (o email é opcional)'

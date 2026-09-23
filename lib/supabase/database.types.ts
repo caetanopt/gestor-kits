@@ -169,7 +169,8 @@ export type Database = {
       import_employees: { Args: { p_rows: Json }; Returns: Json };
       create_employee_for_delivery: {
         Args: {
-          p_employee_number: string;
+          // Nulo ou vazio: número automático (migração 0020).
+          p_employee_number: string | null;
           p_name: string;
           p_email: string | null;
           p_company_id: string;
@@ -195,7 +196,8 @@ export type Database = {
       save_employee: {
         Args: {
           p_id: string | null;
-          p_employee_number: string;
+          // Nulo ou vazio ao criar: número automático (migração 0020).
+          p_employee_number: string | null;
           p_name: string;
           p_email: string | null;
           p_company_id: string;

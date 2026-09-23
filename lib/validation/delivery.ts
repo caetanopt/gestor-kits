@@ -14,6 +14,24 @@ export const employeeNumberSchema = z
   .max(40, "O número de colaborador é demasiado longo.")
   .regex(/^[\p{L}\p{N}._/-]+$/u, "O número de colaborador tem caracteres inválidos.");
 
+/**
+ * Número de colaborador ao CRIAR alguém à mão: pode ficar vazio.
+ *
+ * Vazio, ausente ou nulo chegam à base de dados como null, e é ela que
+ * atribui um automático (SN0001…, migração 0020). Preenchido, valem as
+ * mesmas regras do número obrigatório.
+ */
+export const employeeNumberOpcionalSchema = z
+  .string()
+  .trim()
+  .max(40, "O número de colaborador é demasiado longo.")
+  .refine(
+    (valor) => valor === "" || /^[\p{L}\p{N}._/-]+$/u.test(valor),
+    "O número de colaborador tem caracteres inválidos.",
+  )
+  .nullish()
+  .transform((valor) => (valor ? valor : null));
+
 export const deliveryRequestSchema = z.object({
   employeeNumber: employeeNumberSchema,
   // Gerada pelo cliente a cada resultado de pesquisa: torna a entrega
