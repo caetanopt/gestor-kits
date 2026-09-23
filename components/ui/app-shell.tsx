@@ -139,8 +139,12 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-10 sm:pb-12">
-        {children}
+      {/* Mesma estrutura do cabeçalho — margem por fora, largura máxima por
+          dentro — para que o Sair e a linha dourada fiquem na mesma vertical
+          que as margens dos cartões. Com a margem dentro da largura máxima,
+          o conteúdo ficava 40 px mais estreito de cada lado que o cabeçalho. */}
+      <main className="relative px-4 py-6 sm:px-10 sm:pb-12">
+        <div className="mx-auto max-w-6xl">{children}</div>
       </main>
     </div>
   );
