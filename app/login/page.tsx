@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser, homePathFor } from "@/lib/auth/dal";
-import { CaetanoLogo } from "@/components/brand/caetano-logo";
+import { LogoEvento } from "@/components/brand/logo-evento";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Entrar · Distribuição de Kits" };
@@ -11,10 +11,10 @@ export default async function LoginPage() {
   if (user) redirect(homePathFor(user.role));
 
   return (
-    <main className="flex min-h-dvh items-center justify-center p-6">
+    <main className="tema-evento flex min-h-dvh items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <CaetanoLogo className="text-azul-900 h-8 w-auto" />
+          <LogoEvento className="h-16 w-auto sm:h-20" />
           <h1 className="text-ink-900 mt-6 text-xl font-semibold">
             Distribuição de Kits
           </h1>

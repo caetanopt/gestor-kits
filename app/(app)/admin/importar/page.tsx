@@ -19,7 +19,7 @@ export default async function ImportarPage() {
         </p>
         <ProgressLink
           href="/admin/colaboradores"
-          className="text-azul-900 mt-2 inline-block text-sm font-medium underline"
+          className="text-ink-900 mt-2 inline-block text-sm font-medium underline"
         >
           ← Voltar aos colaboradores
         </ProgressLink>

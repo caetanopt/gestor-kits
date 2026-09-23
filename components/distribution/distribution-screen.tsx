@@ -869,6 +869,7 @@ function FoundCard({
       <Button
         type="button"
         size="xl"
+        variant="evento"
         className="w-full"
         disabled={!canDeliver}
         onClick={onDeliver}

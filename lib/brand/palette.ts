@@ -30,6 +30,24 @@ export const FUNDO = {
   desativado: "#D7DFE3",
 } as const;
 
+/**
+ * Identidade do evento: 80.º Aniversário e Centenário do Fundador.
+ *
+ * Cores tiradas do "Save the Date" (PSD): o azul mais escuro do fundo e os
+ * dois dourados do lettering. O fundo é liso, sem o degradê para azul claro
+ * do convite: por cima de um fundo que muda de cor, o mesmo texto passa e
+ * deixa de passar nos rácios de contraste conforme a zona do ecrã.
+ */
+export const EVENTO = {
+  fundo: "#000E2C",
+  dourado: "#FFD483",
+  douradoForte: "#F4B15F",
+  /** Texto sobre o fundo do evento: títulos, corrente e auxiliar. */
+  textoTitulo: "#FFFFFF",
+  textoCorrente: "#E6ECF2",
+  textoAuxiliar: "#C9D3DA",
+} as const;
+
 /** Luminância relativa, segundo a definição da WCAG 2.2. */
 export function luminancia(hex: string): number {
   const n = Number.parseInt(hex.slice(1), 16);

@@ -1,8 +1,9 @@
-import { ProgressLink, RouteProgress } from "@/components/ui/route-progress";
+import { RouteProgress } from "@/components/ui/route-progress";
 import { signOut } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { isAuthBypassEnabled } from "@/lib/auth/bypass";
-import { CaetanoLogo } from "@/components/brand/caetano-logo";
+import { LogoEvento } from "@/components/brand/logo-evento";
+import { NavLink } from "@/components/ui/nav-link";
 import type { CurrentUser } from "@/lib/auth/dal";
 
 export type NavItem = { href: string; label: string };
@@ -26,6 +27,33 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/utilizadores", label: "Utilizadores" },
 ];
 
+/**
+ * Moldura dourada do evento: um filete à volta da página e cantos marcados.
+ *
+ * Decorativa (aria-hidden) e sem receber cliques. Acompanha a altura da
+ * página inteira em vez de ficar presa ao ecrã, porque o logótipo interrompe
+ * o filete de cima: com a moldura fixa, ao rolar, o logótipo afastava-se e o
+ * corte no filete ficava a flutuar vazio.
+ *
+ * Não aparece no telemóvel, onde os 16 px de cada lado fazem falta ao
+ * conteúdo.
+ */
+function Moldura() {
+  const canto = "border-dourado-300 absolute size-6";
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-4 hidden sm:block"
+    >
+      <div className="border-dourado-500/50 absolute inset-0 border" />
+      <span className={`${canto} -top-1.5 -left-1.5 border-t-[3px] border-l-[3px]`} />
+      <span className={`${canto} -top-1.5 -right-1.5 border-t-[3px] border-r-[3px]`} />
+      <span className={`${canto} -bottom-1.5 -left-1.5 border-b-[3px] border-l-[3px]`} />
+      <span className={`${canto} -right-1.5 -bottom-1.5 border-r-[3px] border-b-[3px]`} />
+    </div>
+  );
+}
+
 export function AppShell({
   user,
   nav,
@@ -35,68 +63,74 @@ export function AppShell({
   nav: NavItem[];
   children: React.ReactNode;
 }) {
+  /**
+   * Onde vai o menu.
+   *
+   * Com duas opções (distribuidor), o menu cabe à esquerda do logótipo,
+   * como na proposta. Com seis (administrador) não cabe: medido a 1280 px,
+   * o espaço de cada lado do logótipo é ~500 px e as seis opções ocupam
+   * ~600. Em vez de as deixar partir, o menu passa para uma linha própria
+   * por baixo do logótipo. As opções nunca quebram a meio
+   * (`whitespace-nowrap`); num ecrã estreito, passam inteiras para a linha
+   * seguinte.
+   */
+  const menuAoLado = nav.length <= 3;
+
   return (
-    <div className="min-h-dvh">
+    <div className="tema-evento relative min-h-dvh">
       <RouteProgress />
+      <Moldura />
 
       {/* Aviso deliberadamente impossível de ignorar: enquanto a autenticação
           estiver desativada, qualquer pessoa com o URL entra. */}
       {isAuthBypassEnabled() && (
         <div
           role="alert"
-          className="bg-laranja-500 text-ink-800 px-4 py-2 text-center text-sm font-semibold"
+          className="bg-laranja-500 text-ink-800 relative px-4 py-2 text-center text-sm font-semibold"
         >
           ⚠ Autenticação desativada — qualquer pessoa com este endereço tem acesso total.
           Não usar com dados reais.
         </div>
       )}
 
-      <header className="border-ink-200 border-b bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <CaetanoLogo className="text-azul-900 h-5 w-auto" />
-            <span
-              aria-hidden="true"
-              className="bg-ink-200 hidden h-5 w-px sm:inline-block"
-            />
-            <span className="text-ink-700 hidden text-sm font-medium sm:inline">
-              Distribuição de Kits
-            </span>
+      <header className="relative px-4 pt-3 sm:px-10 sm:pt-1">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-3">
+          {/* O fundo por trás do logótipo corta o filete de cima da moldura,
+              como numa moldura de certificado. */}
+          <div className="bg-evento-fundo col-start-2 row-start-1 px-3 sm:px-5">
+            <LogoEvento className="h-10 w-auto sm:h-14 md:h-16" />
           </div>
 
-          {/* `order-last w-full` abaixo de lg: com seis itens de menu, a
-              navegação não cabe na mesma fila que o logótipo e a conta, e sem
-              isto era o botão Sair que ia sozinho para uma terceira fila.
-              Medido a 768: cabeçalho de 149px para 125px. */}
           <nav
             aria-label="Navegação principal"
-            className="order-last flex w-full flex-wrap gap-x-1 gap-y-2 lg:order-none lg:w-auto"
+            className={`col-span-3 row-start-2 flex flex-wrap justify-center gap-x-1 gap-y-1 ${
+              menuAoLado
+                ? "lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:justify-start"
+                : "border-dourado-500/25 border-t pt-2"
+            }`}
           >
             {nav.map((item) => (
-              <ProgressLink
-                key={item.href}
-                href={item.href}
-                className="text-ink-700 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 has-[[data-navegacao-pendente]]:bg-ink-100 has-[[data-navegacao-pendente]]:text-ink-900 inline-flex min-h-11 touch-manipulation items-center rounded-lg px-3 py-2 text-sm font-medium transition duration-100 select-none active:scale-[0.97] motion-reduce:active:scale-100"
-              >
-                {item.label}
-              </ProgressLink>
+              <NavLink key={item.href} href={item.href} label={item.label} />
             ))}
           </nav>
 
-          <div className="ms-auto flex items-center gap-3">
-            <span className="text-ink-700 text-sm">
-              <span className="hidden sm:inline">{user.name}</span>
-              {user.role === "admin" && (
-                <span className="bg-amarelo-100 text-ink-800 rounded-full px-2 py-0.5 text-xs font-medium sm:ms-2">
-                  Administrador
-                </span>
-              )}
+          <div className="col-start-3 row-start-1 flex min-w-0 items-center justify-end gap-3">
+            {/* O nome só a partir de md: abaixo disso não cabe ao lado do
+                logótipo, e truncado para um nome comprido não empurrar o
+                botão Sair para fora do ecrã. */}
+            <span className="text-ink-800 hidden min-w-0 truncate text-sm md:inline">
+              {user.name}
             </span>
+            {user.role === "admin" && (
+              <span className="text-dourado-300 ring-dourado-500/60 hidden shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 lg:inline">
+                Administrador
+              </span>
+            )}
             {/* Sem o botão quando a autenticação está desativada: o proxy
                 voltaria a iniciar sessão no pedido seguinte. */}
             {!isAuthBypassEnabled() && (
-              <form action={signOut}>
-                <Button type="submit" variant="ghost">
+              <form action={signOut} className="shrink-0">
+                <Button type="submit" variant="sobreEscuro">
                   Sair
                 </Button>
               </form>
@@ -105,7 +139,9 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="relative mx-auto max-w-6xl px-4 py-6 sm:px-10 sm:pb-12">
+        {children}
+      </main>
     </div>
   );
 }

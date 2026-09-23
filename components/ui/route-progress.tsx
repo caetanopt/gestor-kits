@@ -99,13 +99,12 @@ export function RouteProgress() {
       aria-hidden="true"
       className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[3px]"
     >
-      {/* Azul profundo e não cyan: a barra diz alguma coisa, portanto vale-lhe
-          o mínimo de 3:1 para elementos não textuais, e o cyan sobre branco
-          fica em 2,53:1 (ver tests/unit/contraste.test.ts). O brilho cyan é
-          só halo — não transporta significado nenhum, e por isso pode ser
-          ele a dar o movimento que a cor da marca não dá. */}
+      {/* Dourado do evento: a barra passa por cima do fundo azul-escuro, onde
+          o azul profundo de antes desaparecia. Sobre esse fundo o dourado dá
+          13,6:1, bem acima dos 3:1 pedidos a elementos não textuais (ver
+          tests/unit/contraste.test.ts). */}
       <div
-        className="bg-azul-900 h-full w-full origin-left shadow-[0_1px_5px_rgba(0,174,239,0.45)]"
+        className="bg-dourado-300 h-full w-full origin-left shadow-[0_1px_5px_rgba(255,212,131,0.45)]"
         style={{
           transform: `scaleX(${progresso})`,
           opacity: fase === "a-terminar" ? 0 : 1,

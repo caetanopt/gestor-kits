@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contraste, FUNDO, luminancia, PALETA, TEXTO } from "@/lib/brand/palette";
+import { contraste, EVENTO, FUNDO, luminancia, PALETA, TEXTO } from "@/lib/brand/palette";
 
 /**
  * O manual da marca fornece apenas tintas mais claras de cada cor, pensadas
@@ -94,5 +94,28 @@ describe("luminancia", () => {
       contraste("#FFFFFF", "#002E5D"),
       10,
     );
+  });
+});
+
+describe("tema do evento (fundo azul-escuro)", () => {
+  it("os três tons de texto claros passam AA sobre o fundo do evento", () => {
+    expect(contraste(EVENTO.textoTitulo, EVENTO.fundo)).toBeGreaterThanOrEqual(AA);
+    expect(contraste(EVENTO.textoCorrente, EVENTO.fundo)).toBeGreaterThanOrEqual(AA);
+    expect(contraste(EVENTO.textoAuxiliar, EVENTO.fundo)).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("o dourado passa AA como texto, no menu e no botão ENTREGAR KIT", () => {
+    expect(contraste(EVENTO.dourado, EVENTO.fundo)).toBeGreaterThanOrEqual(AA);
+    expect(contraste(EVENTO.dourado, PALETA.azulProfundo)).toBeGreaterThanOrEqual(AA);
+  });
+
+  it("a barra de progresso dourada cumpre 3:1 sobre o fundo do evento", () => {
+    expect(contraste(EVENTO.dourado, EVENTO.fundo)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("o azul profundo não serve de texto sobre o fundo do evento", () => {
+    // Daí a ligação solta na página de importação usar ink-900, que o tema
+    // troca por branco, e não azul-900.
+    expect(contraste(PALETA.azulProfundo, EVENTO.fundo)).toBeLessThan(3);
   });
 });

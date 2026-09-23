@@ -71,6 +71,14 @@
 
   --color-claim: #2aa8e0; /* cor do claim "Your favourite way to move" */
 
+  /* ── Evento: 80.º Aniversário e Centenário do Fundador ─────────────────
+   * Valores em lib/brand/palette.ts (EVENTO), onde os contrastes são
+   * testados. O fundo é o azul mais escuro do "Save the Date", liso.
+   * ──────────────────────────────────────────────────────────────────── */
+  --color-evento-fundo: #000e2c;
+  --color-dourado-300: #ffd483;
+  --color-dourado-500: #f4b15f;
+
   /* ── Papéis de estado ────────────────────────────────────────────────────
    * Nomes semânticos para o domínio. Sempre usados como FUNDO.
    * ──────────────────────────────────────────────────────────────────── */
@@ -95,13 +103,62 @@ html {
 }
 
 body {
-  background-color: var(--color-ink-100);
+  /* O fundo do evento também no body, e não só no invólucro da aplicação:
+     é o que se vê quando o browser deixa puxar a página para lá do fim. */
+  background-color: var(--color-evento-fundo);
   color: var(--color-ink-800);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
 @layer base {
+  /**
+   * Tema do evento: fundo azul-escuro, cartões brancos.
+   *
+   * O texto das páginas usa os tons ink-*, pensados para fundo claro. Em vez
+   * de reescrever cada página, o tema troca os três tons de texto por
+   * versões claras — e devolve os originais a tudo o que tem fundo claro
+   * (cartões, avisos, etiquetas de estado). Um título solto na página fica
+   * branco; o mesmo título dentro de um cartão continua azul profundo.
+   *
+   * Fica na camada base e com :where() de propósito: especificidade zero,
+   * para que qualquer classe de cor escrita num elemento continue a ganhar.
+   *
+   * O azul profundo (azul-900) não é trocado: também é o fundo dos botões
+   * principais, e trocá-lo pintava-os de claro com texto branco por cima.
+   * Uma ligação solta na página usa ink-900, que é o mesmo azul fora do tema.
+   */
+  :where(.tema-evento) {
+    --color-ink-900: #ffffff;
+    --color-ink-800: #e6ecf2;
+    --color-ink-700: #c9d3da;
+    background-color: var(--color-evento-fundo);
+    color: var(--color-ink-800);
+  }
+
+  :where(.tema-evento)
+    :where(
+      .bg-white,
+      .bg-ink-50,
+      .bg-ink-100,
+      .bg-ink-200,
+      .bg-cyan-100,
+      .bg-cyan-500,
+      .bg-eco-100,
+      .bg-eco-500,
+      .bg-laranja-100,
+      .bg-laranja-300,
+      .bg-laranja-500,
+      .bg-amarelo-100,
+      .bg-amarelo-500,
+      .bg-dourado-300
+    ) {
+    --color-ink-900: #002e5d;
+    --color-ink-800: #2e3a46;
+    --color-ink-700: #58616b;
+    color: var(--color-ink-800);
+  }
+
   h1,
   h2,
   h3 {

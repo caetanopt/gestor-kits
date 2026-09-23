@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost";
+type Variant = "primary" | "secondary" | "danger" | "ghost" | "evento" | "sobreEscuro";
 type Size = "md" | "lg" | "xl";
 
 /**
@@ -22,6 +22,16 @@ const VARIANTS: Record<Variant, string> = {
   danger:
     "bg-laranja-500 text-ink-800 hover:bg-laranja-300 active:bg-laranja-300 disabled:bg-ink-200 disabled:text-ink-700",
   ghost: "text-ink-700 hover:bg-ink-100 active:bg-ink-200 disabled:text-ink-700",
+  // A ação principal do evento, ENTREGAR KIT: o mesmo azul profundo, com o
+  // dourado do lettering dos 80 anos no texto e no contorno (9.6:1).
+  // Desativado perde o dourado, para não parecer disponível.
+  evento:
+    "bg-azul-900 text-dourado-300 ring-2 ring-inset ring-dourado-300 hover:bg-azul-700 active:bg-azul-700 disabled:bg-ink-200 disabled:text-ink-700 disabled:ring-0",
+  // Botão secundário pousado diretamente no fundo escuro do evento, como o
+  // Sair do cabeçalho. O ghost não serve aí: o fundo claro do hover ficava
+  // por baixo de texto claro.
+  sobreEscuro:
+    "text-white ring-1 ring-white/30 hover:bg-white/10 active:bg-white/15 disabled:text-ink-700",
 };
 
 /**

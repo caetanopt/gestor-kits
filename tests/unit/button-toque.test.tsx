@@ -9,7 +9,14 @@ import { Button } from "@/components/ui/button";
  * devolvia os botões ao estado em que um toque não mudava nada — que foi
  * exatamente o defeito relatado.
  */
-const VARIANTES = ["primary", "secondary", "danger", "ghost"] as const;
+const VARIANTES = [
+  "primary",
+  "secondary",
+  "danger",
+  "ghost",
+  "evento",
+  "sobreEscuro",
+] as const;
 
 describe("resposta ao toque nos botões", () => {
   it.each(VARIANTES)("a variante %s encolhe e escurece ao ser premida", (variant) => {
