@@ -124,6 +124,12 @@ describe("tema do evento (fundo azul-escuro)", () => {
     expect(contraste(TEXTO.auxiliar, EVENTO.creme)).toBeGreaterThanOrEqual(AA);
   });
 
+  it("o contorno de foco cumpre 3:1 nos cartões, no campo creme e no fundo escuro", () => {
+    expect(contraste(EVENTO.foco, "#FFFFFF")).toBeGreaterThanOrEqual(3);
+    expect(contraste(EVENTO.foco, EVENTO.creme)).toBeGreaterThanOrEqual(3);
+    expect(contraste(EVENTO.foco, EVENTO.fundo)).toBeGreaterThanOrEqual(3);
+  });
+
   it("o azul profundo não serve de texto sobre o fundo do evento", () => {
     // Daí a ligação solta na página de importação usar ink-900, que o tema
     // troca por branco, e não azul-900.

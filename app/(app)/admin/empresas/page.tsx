@@ -12,7 +12,7 @@ export default async function EmpresasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-ink-900 text-xl font-semibold">Empresas</h1>
+        <h1 className="text-ink-900 font-display text-3xl font-normal">Empresas</h1>
         <p className="text-ink-700 mt-1 text-sm">
           Cada empresa tem um limite de kits independente. O código é gerado a partir do
           nome e serve para identificar a empresa nos ficheiros de importação.

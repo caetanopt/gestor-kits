@@ -14,7 +14,7 @@ export default async function UtilizadoresPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-ink-900 text-xl font-semibold">Utilizadores</h1>
+        <h1 className="text-ink-900 font-display text-3xl font-normal">Utilizadores</h1>
         <p className="text-ink-700 mt-1 text-sm">
           O <strong>Administrador</strong> tem acesso total. O{" "}
           <strong>Distribuidor</strong> acede apenas ao Dashboard e à Distribuição.

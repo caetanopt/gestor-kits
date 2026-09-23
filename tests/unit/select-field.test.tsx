@@ -34,7 +34,7 @@ describe("campo de seleção", () => {
     expect(classes).toContain("text-sm");
   });
 
-  it("acompanha o Input no anel de foco e na cor do texto", () => {
+  it("acompanha o Input no filete e na cor do texto", () => {
     render(
       <Select aria-label="Empresa">
         <option>Caetano Retail</option>
@@ -42,7 +42,10 @@ describe("campo de seleção", () => {
     );
     const classes = screen.getByRole("combobox").className;
 
-    expect(classes).toContain("focus:ring-cyan-500");
+    // O foco é o contorno global de :focus-visible, igual em todos os
+    // controlos; o campo só tem de não trazer um anel próprio por cima.
+    expect(classes).toContain("ring-dourado-200");
+    expect(classes).not.toContain("focus:ring");
     expect(classes).toContain("text-ink-900");
   });
 });

@@ -168,9 +168,9 @@ export function UserManager({
       ) : (
         <form
           onSubmit={criar}
-          className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1"
+          className="ring-dourado-200 space-y-4 rounded bg-white p-5 ring-1"
         >
-          <h2 className="text-ink-900 font-semibold">Nova conta</h2>
+          <h2 className="text-ink-900 font-display text-xl font-normal">Nova conta</h2>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_2fr_1fr_1fr]">
             <Field label="Email" htmlFor="user-email">
@@ -260,11 +260,11 @@ export function UserManager({
           tinha 787px dentro de um contentor de 358, e os botões de ação
           acabavam 413px para lá da margem — inalcançáveis, sem nada a
           anunciar que existiam. */}
-      <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1 lg:overflow-x-auto">
+      <div className="ring-dourado-200 relative rounded bg-white ring-1 lg:overflow-x-auto">
         <table className="w-full text-sm">
           <caption className="sr-only">Contas de utilizador</caption>
           <thead className="hidden lg:table-header-group">
-            <tr className="border-ink-200 text-ink-700 border-b text-left">
+            <tr className="border-dourado-100 text-dourado-700 border-b text-left text-xs tracking-[0.08em] uppercase">
               <th scope="col" className="px-4 py-3 font-medium">
                 Utilizador
               </th>
@@ -292,7 +292,7 @@ export function UserManager({
               return (
                 <tr
                   key={user.id}
-                  className="border-ink-100 block border-b p-4 last:border-0 lg:table-row lg:p-0"
+                  className="border-dourado-100 block border-b p-4 last:border-0 lg:table-row lg:p-0"
                 >
                   <td className="block px-0 py-1 break-words lg:table-cell lg:px-4 lg:py-3">
                     {aRenomear ? (
@@ -378,8 +378,8 @@ export function UserManager({
                     <span
                       className={
                         user.role === "admin"
-                          ? "bg-amarelo-500 text-ink-800 inline-block rounded-md px-2 py-0.5 text-xs font-semibold"
-                          : "text-ink-800 inline-block rounded-md bg-cyan-500 px-2 py-0.5 text-xs font-semibold"
+                          ? "bg-dourado-300 text-ink-800 inline-block rounded px-2 py-0.5 text-xs font-semibold"
+                          : "border-dourado-600 text-dourado-700 inline-block rounded border px-2 py-0.5 text-xs font-semibold"
                       }
                     >
                       {ROLE_LABELS[user.role]}
@@ -390,7 +390,7 @@ export function UserManager({
                     {user.isActive ? (
                       <span className="text-ink-800">Ativa</span>
                     ) : (
-                      <span className="bg-ink-200 text-ink-800 inline-block rounded-md px-2 py-0.5 text-xs font-semibold">
+                      <span className="bg-ink-200 text-ink-800 inline-block rounded px-2 py-0.5 text-xs font-semibold">
                         Desativada
                       </span>
                     )}

@@ -15,12 +15,12 @@ export default async function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
           <LogoEvento className="h-16 w-auto sm:h-20" />
-          <h1 className="text-ink-900 mt-6 text-xl font-semibold">
+          <h1 className="text-ink-900 font-display mt-6 text-3xl font-normal">
             Distribuição de Kits
           </h1>
           <p className="text-ink-700 mt-1 text-sm">Inicie sessão para continuar.</p>
         </div>
-        <div className="ring-ink-200 rounded-2xl bg-white p-6 shadow-sm ring-1">
+        <div className="ring-dourado-200 rounded bg-white p-6 ring-1">
           <LoginForm />
         </div>
       </div>

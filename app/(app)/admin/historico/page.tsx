@@ -60,7 +60,7 @@ export default async function HistoricoPage(props: {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-ink-900 text-xl font-semibold">Histórico</h1>
+        <h1 className="text-ink-900 font-display text-3xl font-normal">Histórico</h1>
         <p className="text-ink-700 mt-1 text-sm">
           Todas as entregas, anulações e alterações administrativas.
         </p>
@@ -68,7 +68,7 @@ export default async function HistoricoPage(props: {
 
       <form
         method="get"
-        className="ring-ink-200 grid grid-cols-2 gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-4 lg:grid-cols-6"
+        className="ring-dourado-200 grid grid-cols-2 gap-3 rounded bg-white p-4 ring-1 sm:grid-cols-4 lg:grid-cols-6"
       >
         <Filter label="N.º colaborador" htmlFor="numero">
           <input
@@ -76,7 +76,7 @@ export default async function HistoricoPage(props: {
             name="numero"
             defaultValue={filter.employeeNumber ?? ""}
             maxLength={40}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            className="ring-dourado-200 w-full rounded bg-white px-3 py-2 text-sm ring-1"
           />
         </Filter>
 
@@ -113,7 +113,7 @@ export default async function HistoricoPage(props: {
             name="de"
             type="date"
             defaultValue={filter.from ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            className="ring-dourado-200 w-full rounded bg-white px-3 py-2 text-sm ring-1"
           />
         </Filter>
 
@@ -123,7 +123,7 @@ export default async function HistoricoPage(props: {
             name="ate"
             type="date"
             defaultValue={filter.to ?? ""}
-            className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            className="ring-dourado-200 w-full rounded bg-white px-3 py-2 text-sm ring-1"
           />
         </Filter>
 
@@ -131,7 +131,7 @@ export default async function HistoricoPage(props: {
           <Button type="submit">Filtrar</Button>
           <ProgressLink
             href="/admin/historico"
-            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded-lg px-4 py-2.5 text-sm font-medium"
+            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded px-4 py-2.5 text-sm font-medium"
           >
             Limpar
           </ProgressLink>
@@ -139,7 +139,7 @@ export default async function HistoricoPage(props: {
       </form>
 
       {entries.length === 0 ? (
-        <div className="text-ink-700 ring-ink-200 space-y-3 rounded-2xl bg-white p-8 text-center text-sm ring-1">
+        <div className="text-ink-700 ring-dourado-200 space-y-3 rounded bg-white p-8 text-center text-sm ring-1">
           {foraDeAlcance ? (
             <>
               <p>
@@ -164,11 +164,11 @@ export default async function HistoricoPage(props: {
         // cartão. Com seis colunas, o botão Anular nunca estava no ecrã ao
         // mesmo tempo que o nome de quem recebeu o kit — anular às cegas numa
         // ação destrutiva é o pior sítio para o fazer.
-        <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1 md:overflow-x-auto">
+        <div className="ring-dourado-200 relative rounded bg-white ring-1 md:overflow-x-auto">
           <table className="w-full text-sm">
             <caption className="sr-only">Registo de ações</caption>
             <thead className="hidden md:table-header-group">
-              <tr className="border-ink-200 text-ink-700 border-b text-left">
+              <tr className="border-dourado-100 text-dourado-700 border-b text-left text-xs tracking-[0.08em] uppercase">
                 <th scope="col" className="px-4 py-2 font-medium">
                   Data e hora
                 </th>
@@ -193,7 +193,7 @@ export default async function HistoricoPage(props: {
               {entries.map((entry) => (
                 <tr
                   key={entry.id}
-                  className="border-ink-100 block border-b p-4 last:border-0 md:table-row md:p-0"
+                  className="border-dourado-100 block border-b p-4 last:border-0 md:table-row md:p-0"
                 >
                   <td className="text-ink-700 block px-0 py-1 tabular-nums md:table-cell md:px-4 md:py-2.5 md:whitespace-nowrap">
                     {formatDateTime(entry.performedAt)}
@@ -205,9 +205,9 @@ export default async function HistoricoPage(props: {
                     <span
                       className={
                         entry.action === "DELIVERY_REVERSED"
-                          ? "bg-laranja-500 text-ink-800 inline-block rounded-md px-2 py-0.5 font-semibold"
+                          ? "bg-laranja-500 text-ink-800 inline-block rounded px-2 py-0.5 font-semibold"
                           : entry.action === "DELIVERED"
-                            ? "bg-eco-500 text-ink-800 inline-block rounded-md px-2 py-0.5 font-semibold"
+                            ? "bg-eco-500 text-ink-800 inline-block rounded px-2 py-0.5 font-semibold"
                             : "text-ink-700"
                       }
                     >
@@ -304,7 +304,7 @@ function PageLink({
   children: React.ReactNode;
 }) {
   const base =
-    "ring-ink-200 inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1 transition duration-100 select-none";
+    "ring-dourado-200 inline-flex min-h-11 items-center rounded bg-white px-4 py-2.5 text-sm font-medium ring-1 transition duration-100 select-none";
 
   if (!disponivel) {
     return (

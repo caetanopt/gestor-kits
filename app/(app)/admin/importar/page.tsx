@@ -13,7 +13,9 @@ export default async function ImportarPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-ink-900 text-xl font-semibold">Importar colaboradores</h1>
+        <h1 className="text-ink-900 font-display text-3xl font-normal">
+          Importar colaboradores
+        </h1>
         <p className="text-ink-700 mt-1 text-sm">
           O ficheiro é analisado primeiro; nada é escrito até confirmar.
         </p>

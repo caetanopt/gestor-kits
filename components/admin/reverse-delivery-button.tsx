@@ -64,7 +64,7 @@ export function ReverseDeliveryButton({
   }
 
   return (
-    <div className="bg-amarelo-100 ring-amarelo-300 space-y-2 rounded-xl p-3 text-left ring-1">
+    <div className="bg-amarelo-100 ring-amarelo-300 space-y-2 rounded p-3 text-left ring-1">
       <p className="text-ink-800 text-sm font-medium">
         Anular a entrega a {employeeLabel}?
       </p>
@@ -81,7 +81,7 @@ export function ReverseDeliveryButton({
         onChange={(event) => setReason(event.target.value)}
         maxLength={500}
         placeholder="Motivo (opcional)"
-        className="ring-ink-200 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+        className="ring-dourado-200 w-full rounded bg-white px-3 py-2 text-sm ring-1"
       />
 
       <div className="flex gap-2">

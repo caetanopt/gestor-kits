@@ -93,7 +93,7 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
         </Alert>
       )}
 
-      <div className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1">
+      <div className="ring-dourado-200 space-y-4 rounded bg-white p-5 ring-1">
         <div>
           <label htmlFor="import-file" className="text-ink-700 block text-sm font-medium">
             Ficheiro de colaboradores
@@ -107,7 +107,7 @@ export function ImportWizard({ hasCompanies }: { hasCompanies: boolean }) {
               setReport(null);
               setError(null);
             }}
-            className="text-ink-700 ring-ink-200 file:bg-ink-100 file:text-ink-700 mt-2 block w-full rounded-lg text-sm ring-1 file:mr-3 file:rounded-l-lg file:border-0 file:px-4 file:py-2.5 file:text-sm file:font-medium"
+            className="text-ink-700 ring-dourado-200 file:bg-ink-100 file:text-ink-700 mt-2 block w-full rounded text-sm ring-1 file:mr-3 file:rounded-l-lg file:border-0 file:px-4 file:py-2.5 file:text-sm file:font-medium"
           />
           <p className="text-ink-700 mt-2 text-xs">
             CSV ou Excel (.xlsx). Colunas:{" "}
@@ -172,7 +172,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
       )}
 
       {report.preview.length > 0 && !report.committed && (
-        <div className="ring-ink-200 relative rounded-2xl bg-white shadow-sm ring-1">
+        <div className="ring-dourado-200 relative rounded bg-white ring-1">
           <p className="text-ink-700 px-4 py-3 text-sm font-medium">
             Primeiros colaboradores a criar
           </p>
@@ -180,7 +180,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
             <table className="w-full text-sm">
               <caption className="sr-only">Primeiros colaboradores a criar</caption>
               <thead>
-                <tr className="border-ink-200 text-ink-700 border-y text-left">
+                <tr className="border-dourado-100 text-dourado-700 border-b text-left text-xs tracking-[0.08em] uppercase">
                   <th scope="col" className="px-4 py-2 font-medium">
                     Número
                   </th>
@@ -199,7 +199,7 @@ function ReportView({ report, blocking }: { report: ImportReport; blocking: numb
                 {report.preview.map((row) => (
                   <tr
                     key={row.employeeNumber}
-                    className="border-ink-100 border-b last:border-0"
+                    className="border-dourado-100 border-b last:border-0"
                   >
                     <td className="px-4 py-2 tabular-nums">{row.employeeNumber}</td>
                     <td className="px-4 py-2">{row.name}</td>
@@ -244,7 +244,7 @@ function IssueList({
   const shown = issues.slice(0, 50);
 
   return (
-    <details className="ring-ink-200 rounded-2xl bg-white p-4 shadow-sm ring-1">
+    <details className="ring-dourado-200 rounded bg-white p-4 ring-1">
       <summary className="text-ink-800 flex min-h-11 items-center text-sm font-medium">
         {title} ({issues.length})
       </summary>

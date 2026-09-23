@@ -83,6 +83,9 @@
   --color-dourado-500: #f4b15f;
   --color-dourado-600: #c9973f; /* traço do separador ativo */
   --color-dourado-700: #8a5a14; /* texto dourado sobre branco (5,9:1) */
+  /* Contorno de foco: o mesmo tom serve sobre os cartões brancos (4,1:1) e
+     sobre o fundo escuro (4,7:1), acima dos 3:1 pedidos. */
+  --color-dourado-foco: #a87323;
 
   /* ── Papéis de estado ────────────────────────────────────────────────────
    * Nomes semânticos para o domínio. Sempre usados como FUNDO.
@@ -183,8 +186,10 @@ body {
     min-height: 2.75rem;
   }
 
+  /* Dourado e não ciano: o ciano destoava do tema do evento. Ver
+     --color-dourado-foco para os contrastes. */
   :focus-visible {
-    outline: 3px solid var(--color-cyan-500);
+    outline: 3px solid var(--color-dourado-foco);
     outline-offset: 2px;
   }
 

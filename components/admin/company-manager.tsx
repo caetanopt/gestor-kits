@@ -97,9 +97,9 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
         <form
           ref={formRef}
           onSubmit={save}
-          className="ring-ink-200 space-y-4 rounded-2xl bg-white p-5 shadow-sm ring-1"
+          className="ring-dourado-200 space-y-4 rounded bg-white p-5 ring-1"
         >
-          <h2 className="text-ink-900 font-semibold">
+          <h2 className="text-ink-900 font-display text-xl font-normal">
             {editing ? "Editar empresa" : "Nova empresa"}
           </h2>
 
@@ -150,17 +150,17 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
       )}
 
       {companies.length === 0 ? (
-        <p className="text-ink-700 ring-ink-200 rounded-2xl bg-white p-8 text-center text-sm ring-1">
+        <p className="text-ink-700 ring-dourado-200 rounded bg-white p-8 text-center text-sm ring-1">
           Ainda não existem empresas. Crie a primeira para poder importar colaboradores.
         </p>
       ) : (
-        <div className="ring-ink-200 relative overflow-x-auto rounded-2xl bg-white shadow-sm ring-1">
+        <div className="ring-dourado-200 relative overflow-x-auto rounded bg-white ring-1">
           <table className="w-full text-sm">
             <caption className="sr-only">
               Empresas participantes e kits que cada uma entregou
             </caption>
             <thead>
-              <tr className="border-ink-200 text-ink-700 border-b text-left">
+              <tr className="border-dourado-100 text-dourado-700 border-b text-left text-xs tracking-[0.08em] uppercase">
                 <th scope="col" className="px-4 py-3 font-medium">
                   Empresa
                 </th>
@@ -185,7 +185,10 @@ export function CompanyManager({ companies }: { companies: CompanyTotalsRow[] })
             </thead>
             <tbody>
               {companies.map((company) => (
-                <tr key={company.id} className="border-ink-100 border-b last:border-0">
+                <tr
+                  key={company.id}
+                  className="border-dourado-100 border-b last:border-0"
+                >
                   <td className="text-ink-900 px-4 py-3 font-medium">{company.name}</td>
                   <td className="text-ink-700 hidden px-4 py-3 lg:table-cell">
                     {company.code}

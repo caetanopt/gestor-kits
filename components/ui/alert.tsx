@@ -32,7 +32,7 @@ export function Alert({
       // `alert` anuncia imediatamente em leitores de ecrã; usado apenas para
       // erros, não para conteúdo informativo.
       role={tone === "error" ? "alert" : "status"}
-      className={`flex gap-3 overflow-hidden rounded-xl ${box}`}
+      className={`flex gap-3 overflow-hidden rounded ${box}`}
     >
       <span aria-hidden="true" className={`w-1.5 shrink-0 ${bar}`} />
       <div className="flex min-w-0 flex-1 gap-3 py-3 pr-4">

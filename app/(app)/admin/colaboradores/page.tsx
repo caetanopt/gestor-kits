@@ -55,14 +55,16 @@ export default async function ColaboradoresPage(props: {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-ink-900 text-xl font-semibold">Colaboradores</h1>
+          <h1 className="text-ink-900 font-display text-3xl font-normal">
+            Colaboradores
+          </h1>
           <p className="text-ink-700 mt-1 text-sm">
             Adicione um a um ou importe um ficheiro.
           </p>
         </div>
         <ProgressLink
           href="/admin/importar"
-          className="ring-ink-300 text-ink-900 hover:bg-ink-50 inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold ring-1"
+          className="ring-ink-300 text-ink-900 hover:bg-ink-50 inline-flex min-h-11 items-center rounded bg-white px-4 py-2.5 text-sm font-semibold ring-1"
         >
           Importar ficheiro
         </ProgressLink>
@@ -70,7 +72,7 @@ export default async function ColaboradoresPage(props: {
 
       <form
         method="get"
-        className="ring-ink-200 grid gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 sm:grid-cols-3 lg:grid-cols-4"
+        className="ring-dourado-200 grid gap-3 rounded bg-white p-4 ring-1 sm:grid-cols-3 lg:grid-cols-4"
       >
         <div className="sm:col-span-2">
           <label htmlFor="q" className="text-ink-700 mb-1 block text-xs font-medium">
@@ -82,7 +84,7 @@ export default async function ColaboradoresPage(props: {
             defaultValue={filter.q ?? ""}
             maxLength={160}
             placeholder="Número, nome ou email"
-            className="ring-ink-200 placeholder:text-ink-700 w-full rounded-lg bg-white px-3 py-2 text-sm ring-1"
+            className="ring-dourado-200 placeholder:text-ink-700 w-full rounded bg-white px-3 py-2 text-sm ring-1"
           />
         </div>
 
@@ -136,7 +138,7 @@ export default async function ColaboradoresPage(props: {
           <Button type="submit">Filtrar</Button>
           <ProgressLink
             href="/admin/colaboradores"
-            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded-lg px-4 py-2.5 text-sm font-medium"
+            className="text-ink-700 hover:bg-ink-100 inline-flex min-h-11 items-center rounded px-4 py-2.5 text-sm font-medium"
           >
             Limpar
           </ProgressLink>
@@ -155,7 +157,7 @@ export default async function ColaboradoresPage(props: {
           {page > 0 ? (
             <ProgressLink
               href={paginaHref(page - 1)}
-              className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
+              className="ring-dourado-200 rounded bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               ← Anteriores
             </ProgressLink>
@@ -165,7 +167,7 @@ export default async function ColaboradoresPage(props: {
           {hasMore && (
             <ProgressLink
               href={paginaHref(page + 1)}
-              className="ring-ink-200 rounded-lg bg-white px-4 py-2.5 text-sm font-medium ring-1"
+              className="ring-dourado-200 rounded bg-white px-4 py-2.5 text-sm font-medium ring-1"
             >
               Seguintes →
             </ProgressLink>

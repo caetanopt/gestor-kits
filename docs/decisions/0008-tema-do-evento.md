@@ -69,6 +69,22 @@ arredondados.
   números em Rubik, barra de progresso dourada, CSV com contorno.
 - Rótulos e cálculos não mudam.
 
+## Restantes páginas e foco
+
+- Empresas, Colaboradores, Histórico, Utilizadores, Importar e login com o
+  mesmo desenho: cartões de cantos retos com filete dourado, sem sombra,
+  cabeçalhos de tabela em dourado escuro e maiúsculas, separadores
+  dourados claros, títulos em Rubik.
+- Etiquetas "Por entregar" e "Distribuidor" com contorno dourado;
+  "Administrador" cheia a dourado claro. "Entregue" continua verde.
+- Todos os botões com cantos retos; o secundário passa a contorno azul
+  profundo, como o Pesquisar do convite.
+- **Foco dourado `#A87323` em vez de ciano**, em toda a aplicação. O mesmo
+  tom passa os 3:1 sobre branco (4,1:1), sobre o campo creme e sobre o
+  fundo escuro (4,7:1). Os campos deixaram de ter um anel de foco próprio:
+  fica só o contorno global, sem bordas duplas.
+- Os avisos informativos mantêm o ciano da marca: não são foco nem estado.
+
 Contrastes fixados em `tests/unit/contraste.test.ts`.
 
 ## Reverter

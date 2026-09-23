@@ -44,7 +44,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 export function Input({ className = "", ...props }: InputProps) {
   return (
     <input
-      className={`text-ink-900 ring-ink-200 placeholder:text-ink-700 disabled:bg-ink-100 w-full rounded-lg bg-white px-3.5 py-2.5 ring-1 focus:ring-2 focus:ring-cyan-500 ${className}`}
+      className={`text-ink-900 ring-dourado-200 placeholder:text-ink-700 disabled:bg-ink-100 w-full rounded bg-white px-3.5 py-2.5 ring-1 ${className}`}
       {...props}
     />
   );
@@ -67,7 +67,7 @@ export function Select({ compact = false, className = "", ...props }: SelectProp
 
   return (
     <select
-      className={`campo-selecao text-ink-900 ring-ink-200 disabled:bg-ink-100 w-full rounded-lg bg-white ring-1 focus:ring-2 focus:ring-cyan-500 ${medidas} ${className}`}
+      className={`campo-selecao text-ink-900 ring-dourado-200 disabled:bg-ink-100 w-full rounded bg-white ring-1 ${medidas} ${className}`}
       {...props}
     />
   );

@@ -529,7 +529,6 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
             type="button"
             size={compacto ? "md" : "lg"}
             variant="contorno"
-            retos
             disabled={busy || !query.trim()}
             onClick={() => {
               if (mode === "numero") void searchByNumber(query);
@@ -542,7 +541,6 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
             type="button"
             size={compacto ? "md" : "lg"}
             variant="ghost"
-            retos
             onClick={reset}
             disabled={busy}
           >
@@ -579,7 +577,6 @@ export function DistributionScreen({ companies }: { companies: CompanyOption[] }
               <Button
                 type="button"
                 variant="contorno"
-                retos
                 onClick={() => setScreen(estadoAusente(query))}
               >
                 Não está na lista? Acrescentar
@@ -693,7 +690,7 @@ function MatchList({
           todos: três Danielas e nenhuma é aquela. Sem esta saída, a lista era
           um beco. */}
       <div className="border-dourado-100 border-t px-5 py-3">
-        <Button type="button" variant="contorno" retos onClick={onAusente}>
+        <Button type="button" variant="contorno" onClick={onAusente}>
           Nenhum destes? Acrescentar colaborador
         </Button>
       </div>
@@ -824,10 +821,10 @@ function AusenteCard({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" size="lg" retos>
+        <Button type="submit" size="lg">
           Acrescentar e abrir
         </Button>
-        <Button type="button" size="lg" variant="contorno" retos onClick={onCancel}>
+        <Button type="button" size="lg" variant="contorno" onClick={onCancel}>
           Cancelar
         </Button>
       </div>
@@ -886,7 +883,6 @@ function FoundCard({
         type="button"
         size="xl"
         variant="evento"
-        retos
         className="w-full"
         disabled={!canDeliver}
         onClick={onDeliver}
@@ -917,7 +913,6 @@ function FoundCard({
                 <Button
                   type="button"
                   variant="danger"
-                  retos
                   onClick={() => onAnular(delivery.id)}
                 >
                   Confirmar anulação
@@ -925,7 +920,6 @@ function FoundCard({
                 <Button
                   type="button"
                   variant="contorno"
-                  retos
                   onClick={() => setAConfirmar(false)}
                 >
                   Cancelar
@@ -937,7 +931,6 @@ function FoundCard({
               <Button
                 type="button"
                 variant="contorno"
-                retos
                 onClick={() => setAConfirmar(true)}
               >
                 Entreguei por engano — anular

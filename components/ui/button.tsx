@@ -18,8 +18,10 @@ type Size = "sm" | "md" | "lg" | "xl";
 const VARIANTS: Record<Variant, string> = {
   primary:
     "bg-azul-900 text-white hover:bg-azul-700 active:bg-azul-700 disabled:bg-ink-200 disabled:text-ink-700",
+  // Contorno fino azul profundo, como o Pesquisar do convite. Igual ao
+  // `contorno`, que fica como nome explícito para os cartões do evento.
   secondary:
-    "bg-white text-ink-900 ring-1 ring-ink-300 hover:bg-ink-50 active:bg-ink-100 disabled:text-ink-700",
+    "bg-white text-azul-900 ring-1 ring-azul-900 hover:bg-dourado-50 active:bg-dourado-100 disabled:text-ink-700 disabled:ring-ink-300",
   danger:
     "bg-laranja-500 text-ink-800 hover:bg-laranja-300 active:bg-laranja-300 disabled:bg-ink-200 disabled:text-ink-700",
   ghost: "text-ink-700 hover:bg-ink-100 active:bg-ink-200 disabled:text-ink-700",
@@ -74,34 +76,26 @@ const SIZES: Record<Size, string> = {
 };
 
 /**
- * Cantos. Separados do tamanho para os cartões do evento poderem pedir
- * cantos retos sem uma segunda classe de raio a disputar com a primeira —
- * no Tailwind, qual de duas ganha depende da ordem no CSS, não no className.
+ * Cantos quase retos (4 px) em todos os tamanhos, como nos cartões do
+ * convite do evento. Separados do tamanho para que um tamanho nunca traga
+ * um segundo raio a disputar este.
  */
-const RAIOS: Record<Size, string> = {
-  sm: "rounded-md",
-  md: "rounded-lg",
-  lg: "rounded-xl",
-  xl: "rounded-2xl",
-};
+const RAIO = "rounded";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   size?: Size;
-  /** Cantos quase retos (4 px), como nos cartões do evento. */
-  retos?: boolean;
 };
 
 export function Button({
   variant = "primary",
   size = "md",
-  retos = false,
   className = "",
   ...props
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 font-semibold disabled:cursor-not-allowed ${TOQUE} ${VARIANTS[variant]} ${SIZES[size]} ${retos ? "rounded" : RAIOS[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-semibold disabled:cursor-not-allowed ${TOQUE} ${VARIANTS[variant]} ${SIZES[size]} ${RAIO} ${className}`}
       {...props}
     />
   );

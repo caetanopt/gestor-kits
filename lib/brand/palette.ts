@@ -47,6 +47,8 @@ export const EVENTO = {
   /** Filete dos cartões e fundo creme do campo de pesquisa. */
   filete: "#E6C98F",
   creme: "#FFFDF8",
+  /** Contorno de foco, igual em fundo claro e escuro. */
+  foco: "#A87323",
   /** Texto sobre o fundo do evento: títulos, corrente e auxiliar. */
   textoTitulo: "#FFFFFF",
   textoCorrente: "#E6ECF2",
