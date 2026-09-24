@@ -2,6 +2,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/api/errors";
 import { mapPostgrestError } from "@/lib/api/rpc";
+import { lerTodasAsPaginas } from "@/lib/supabase/paginar";
 import {
   employeeResultSchema,
   type EmployeeFilter,
@@ -123,8 +124,6 @@ export async function saveEmployee(
   return parsed.data;
 }
 
-/** Teto da exportação, igual ao da exportação geral. */
-const MANUAIS_MAX = 20_000;
 /**
  * Identificadores por pedido. Cada um ocupa 37 caracteres no URL do
  * PostgREST; 100 dão ~4 KB, bem abaixo dos limites de um pedido GET.
@@ -166,16 +165,22 @@ export async function countManualEmployees(): Promise<number> {
 export async function listManualEmployees(): Promise<ColaboradorManual[]> {
   const supabase = await createSupabaseServerClient();
 
-  const { data: registos, error } = await supabase
-    .from("delivery_logs")
-    .select("employee_id, performed_by, performed_at, metadata")
-    .eq("action", "EMPLOYEE_CREATED")
-    .not("employee_id", "is", null)
-    .order("performed_at", { ascending: true })
-    .range(0, MANUAIS_MAX - 1);
-  if (error) throw mapPostgrestError(error);
-
-  const lista = registos ?? [];
+  // Por páginas: o Supabase corta cada resposta em 1000 linhas. A ordem por
+  // data de criação é aplicada no fim, em combinarCriacoesManuais.
+  const lista = await lerTodasAsPaginas(
+    (depoisDe: number | null, tamanho) => {
+      let query = supabase
+        .from("delivery_logs")
+        .select("id, employee_id, performed_by, performed_at, metadata")
+        .eq("action", "EMPLOYEE_CREATED")
+        .not("employee_id", "is", null)
+        .order("id", { ascending: true })
+        .limit(tamanho);
+      if (depoisDe !== null) query = query.gt("id", depoisDe);
+      return query;
+    },
+    (row) => row.id,
+  );
   const ids = [
     ...new Set(lista.map((r) => r.employee_id).filter((v): v is string => !!v)),
   ];

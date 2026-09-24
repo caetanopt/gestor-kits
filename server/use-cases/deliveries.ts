@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppError } from "@/lib/api/errors";
 import { mapPostgrestError } from "@/lib/api/rpc";
+import { lerTodasAsPaginas } from "@/lib/supabase/paginar";
 import {
   deliveryResultSchema,
   employeeLookupSchema,
@@ -98,9 +99,6 @@ export async function searchEmployeesForDelivery(query: string): Promise<Employe
   return parseRpc(employeeSearchSchema, data, "search_employees_for_delivery");
 }
 
-/** Teto do ficheiro exportado. Um evento fica muito abaixo disto. */
-const EXPORT_MAX = 20_000;
-
 /**
  * Todos os colaboradores, para exportar.
  *
@@ -111,30 +109,36 @@ const EXPORT_MAX = 20_000;
  * Vai tudo, recebido ou não: o documento serve para ver os dois lados, e um
  * total só significa alguma coisa se as duas partes estiverem lá.
  *
- * O `range` explícito existe porque o PostgREST limita as respostas a mil
- * linhas por defeito. Sem ele, um evento grande exportaria um ficheiro
- * silenciosamente truncado, que é pior do que nenhum.
+ * Lida por páginas (`lerTodasAsPaginas`): o Supabase corta cada resposta em
+ * 1000 linhas, e um único pedido exportava só os primeiros mil. As páginas
+ * vêm por `id`; a ordem do documento — empresa, depois nome — é aplicada no
+ * fim, sobre a lista inteira.
  */
 export async function listEmployeesForExport(
   companyId?: string,
 ): Promise<ExportedEmployee[]> {
   const supabase = await createSupabaseServerClient();
 
-  let query = supabase
-    .from("employee_list")
-    .select(
-      "company_name, employee_number, name, email, kit_delivered, delivered_at, delivered_by_name",
-    )
-    .order("company_name", { ascending: true })
-    .order("name", { ascending: true })
-    .range(0, EXPORT_MAX - 1);
+  const data = await lerTodasAsPaginas(
+    (depoisDe: string | null, tamanho) => {
+      let query = supabase
+        .from("employee_list")
+        .select(
+          "id, company_name, employee_number, name, email, kit_delivered, delivered_at, delivered_by_name",
+        )
+        .order("id", { ascending: true })
+        .limit(tamanho);
+      if (companyId) query = query.eq("company_id", companyId);
+      if (depoisDe) query = query.gt("id", depoisDe);
+      return query;
+    },
+    (row) => row.id,
+  );
 
-  if (companyId) query = query.eq("company_id", companyId);
+  const porNome = (a: string, b: string) => a.localeCompare(b, "pt-PT");
+  data.sort((a, b) => porNome(a.company_name, b.company_name) || porNome(a.name, b.name));
 
-  const { data, error } = await query;
-  if (error) throw mapPostgrestError(error);
-
-  return (data ?? []).map((row) => ({
+  return data.map((row) => ({
     companyName: row.company_name,
     employeeNumber: row.employee_number,
     name: row.name,
